@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # 1. Tu Base de Datos Virtual
+  mysql-db:
+    image: mysql:8.0
+    container_name: valledelsol-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: solalertas_db 
+    ports:
+      - "3307:3306"
+    networks:
+      - red-municipalidad
+
+  # 2. El Microservicio de Alertas que programaste
+  solalertas-app:
+    build:
+      context: ./SolAlertas   
+      dockerfile: Dockerfile
+    container_name: solalertas-microservice
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql-db
+    environment:
+      # Añadimos el &allowPublicKeyRetrieval=true al final de la URL adentro de las comillas
+      - "SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/solalertas_db?useSSL=false&serverTimezone=America/Santiago&allowPublicKeyRetrieval=true"
+      - "SPRING_DATASOURCE_PASSWORD=root"
+      - "SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect"
+
+    networks:
+      - red-municipalidad
+
+  # 3. El API Gateway (Guardia de tráfico)
+  gateway-app:
+    build:
+      context: ./apiGateway 
+      dockerfile: Dockerfile
+    container_name: municipalidad-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - solalertas-app
+    environment:
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_URI=http://solalertas-app:8080
+    networks:
+      - red-municipalidad
+
+networks:
+  red-municipalidad:
+    driver: bridge
