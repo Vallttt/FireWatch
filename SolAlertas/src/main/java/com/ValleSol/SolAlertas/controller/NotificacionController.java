@@ -43,7 +43,7 @@ public class NotificacionController {
         // 3. Persistimos en MySQL
         return repository.save(alertaArmada);
     }
-    @GetMapping("/listar")
+    @GetMapping
     public List<Notificacion> historialDeAlertas() {
         return repository.findAll();
     }

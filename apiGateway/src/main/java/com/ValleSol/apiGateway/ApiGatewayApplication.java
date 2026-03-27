@@ -18,8 +18,8 @@ public class ApiGatewayApplication {
     public RouteLocator interceptorAlertas(RouteLocatorBuilder builder) {
         return builder.routes()
                 .route("ms-alertas", r -> r
-                        .path("/api/alertas/**") // Toda petición con esta URL
-                        .uri("http://localhost:8080")) // Se enviará "escondida" al microservicio solitario
+                        .path("/api/alertas/**")
+                        .uri("http://solalertas-app:8080"))
                 .build();
     }
 
