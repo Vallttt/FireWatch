@@ -56,6 +56,19 @@ services:
     networks:
       - red-municipalidad
 
+  # 4. Frontend (Sitio Web/App Ionic)
+  frontend-app:
+    build:
+      context: ./valledelsol-app
+      dockerfile: Dockerfile
+    container_name: valledelsol-frontend
+    ports:
+      - "8100:80"
+    depends_on:
+      - gateway-app
+    networks:
+      - red-municipalidad
+
 networks:
   red-municipalidad:
     driver: bridge

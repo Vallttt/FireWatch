@@ -1,0 +1,13 @@
+.alerta-card {
+  margin: 16px;
+  border-radius: 16px;
+}
+
+.form-item {
+  margin-bottom: 12px;
+}
+
+.btn-alerta {
+  margin-top: 20px;
+  font-weight: bold;
+}
