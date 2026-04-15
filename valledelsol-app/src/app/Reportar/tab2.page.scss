@@ -1,0 +1,272 @@
+/* ==========================================================================
+   REPORTAR EMERGENCIA · estilos específicos
+   (los estilos base de tarjetas, segments e inputs vienen del global)
+   ========================================================================== */
+
+/* ==========================================================================
+   STATUS PILL (header)
+   ========================================================================== */
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.status-pill ion-icon {
+  font-size: 10px;
+}
+
+.status-pill.danger {
+  color: var(--vds-red-500);
+}
+
+.status-pill.danger ion-icon {
+  color: var(--vds-red-500);
+}
+
+/* ==========================================================================
+   FILA DE TÍTULO DEL MAPA + BOTÓN CENTRAR
+   ========================================================================== */
+.map-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 6px 18px;
+}
+
+.map-hint {
+  font-size: 13px;
+  color: var(--vds-text-soft);
+  margin: 6px 18px 12px 18px;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   BLOQUE CONTENEDOR DEL MAPA
+   ========================================================================== */
+.report-map-wrapper {
+  width: calc(100% - 30px);
+  margin: 15px auto;
+  height: 40vh;
+  min-height: 250px;
+  position: relative;
+
+  border-radius: 24px;
+  overflow: hidden;
+
+  border-bottom: 4px solid var(--ion-color-danger, #DC1F26);
+  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
+  z-index: 10;
+}
+
+/* ==========================================================================
+   MAPA INTERNO
+   ========================================================================== */
+.report-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* ==========================================================================
+   BOTÓN DE CENTRAR UBICACIÓN
+   ========================================================================== */
+.locate-btn-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFF5F5 100%);
+  border: 1.5px solid rgba(220, 31, 38, 0.35);
+  border-radius: 12px;
+  color: var(--vds-red-500);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(220, 31, 38, 0.18);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+}
+
+.locate-btn-box ion-icon {
+  font-size: 18px;
+  color: var(--vds-red-500);
+}
+
+.locate-btn-box:hover {
+  background: var(--red-gradient);
+  color: #ffffff;
+  border-color: var(--vds-red-500);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(220, 31, 38, 0.38);
+}
+
+.locate-btn-box:hover ion-icon {
+  color: #ffffff;
+}
+
+.locate-btn-box:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* ==========================================================================
+   GEO CARD (mapa)
+   ========================================================================== */
+.geo-card {
+  margin-top: 14px !important;
+}
+
+/* ==========================================================================
+   HISTORIAL DE REPORTES
+   ========================================================================== */
+.history-list {
+  background: transparent !important;
+  padding: 0;
+}
+
+.history-item {
+  --background: var(--vds-bg-input);
+  --border-radius: 14px;
+  --inner-padding-end: 10px;
+  --padding-start: 12px;
+  --min-height: 70px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--vds-border);
+}
+
+.history-icon-bg {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--red-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  box-shadow: 0 4px 10px rgba(220, 31, 38, 0.25);
+}
+
+.history-icon-bg ion-icon {
+  font-size: 18px;
+  color: #ffffff;
+}
+
+.history-item ion-label h2 {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: var(--vds-text);
+  margin-bottom: 2px;
+}
+
+.history-item ion-label p {
+  font-size: 12px;
+  color: var(--vds-text-soft);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.history-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px !important;
+}
+
+.severity-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.severity-tag.baja { background: #E8F5E9; color: #1B5E20; }
+.severity-tag.media { background: #FFF3E0; color: #E65100; }
+.severity-tag.alta { background: #FFCDD2; color: #B71C1C; }
+
+.delete-btn {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid rgba(220, 31, 38, 0.25);
+  border-radius: 10px;
+  background: #FFF5F5;
+  color: var(--vds-red-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  padding: 0;
+  font-family: inherit;
+}
+
+.delete-btn ion-icon { font-size: 16px; }
+
+.delete-btn:hover {
+  background: var(--vds-red-500);
+  color: #ffffff;
+  border-color: var(--vds-red-500);
+}
+
+/* ==========================================================================
+   MODO OSCURO
+   ========================================================================== */
+:host-context(body.dark) {
+  .map-hint {
+    color: #E8D5D7;
+  }
+
+  .locate-btn-box {
+    background: #341A1F;
+    border-color: rgba(255, 77, 94, 0.35);
+    color: #FF4D5E;
+  }
+
+  .locate-btn-box ion-icon {
+    color: #FF4D5E;
+  }
+
+  .locate-btn-box:hover {
+    background: var(--red-gradient);
+    color: #ffffff;
+  }
+
+  .locate-btn-box:hover ion-icon {
+    color: #ffffff;
+  }
+
+  .history-item {
+    --background: #341A1F;
+    border-color: rgba(255, 77, 94, 0.22);
+  }
+
+  .history-item ion-label h2 { color: #FFFFFF !important; }
+  .history-item ion-label p  { color: #E8D5D7 !important; }
+
+  .severity-tag.baja  { background: #1A3A1E; color: #66BB6A; }
+  .severity-tag.media  { background: #3A2A10; color: #FFB74D; }
+  .severity-tag.alta   { background: #4A1A1E; color: #FF6E7E; }
+
+  .delete-btn {
+    background: #341A1F;
+    border-color: rgba(255, 77, 94, 0.25);
+    color: #FF4D5E;
+  }
+
+  .delete-btn:hover {
+    background: #FF4D5E;
+    color: #ffffff;
+  }
+}

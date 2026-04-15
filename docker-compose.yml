@@ -1,62 +1,159 @@
-version: '3.8'
-
 services:
-  # 1. Base de Datos MySQL
-  mysql-db:
-    image: mysql:8.0
-    container_name: valledelsol-mysql
+
+  # ============================================================
+  # BASE DE DATOS — PostgreSQL
+  # ============================================================
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: valledelsol-postgres
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: solalertas_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
     ports:
-      - "3307:3306"
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
       - red-municipalidad
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  # 2. Microservicio de Alertas
-  solalertas-app:
+  # ============================================================
+  # MICROSERVICIO — Auth Service (:8080)
+  # ============================================================
+  auth-app:
     build:
-      context: ./SolAlertas
+      context: ./authservice-valleSol
       dockerfile: Dockerfile
-    container_name: solalertas-microservice
+    container_name: valledelsol-auth
     ports:
       - "8080:8080"
     depends_on:
-      mysql-db:
+      postgres-db:
         condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/solalertas_db?useSSL=false&serverTimezone=America/Santiago&allowPublicKeyRetrieval=true
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/auth_vallesol_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=123456
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT=60000
     networks:
       - red-municipalidad
 
-  # 3. API Gateway
+  # ============================================================
+  # MICROSERVICIO — Report Service (:8081)
+  # ============================================================
+  report-app:
+    build:
+      context: ./ReportService - ValleSol
+      dockerfile: Dockerfile
+    container_name: valledelsol-reportes
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/report_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - GEO_SERVICE_URL=http://geo-app:8082
+      - ALERTAS_SERVICE_URL=http://alertas-app:8083
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # MICROSERVICIO — Geo Service (:8082)
+  # ============================================================
+  geo-app:
+    build:
+      context: ./Geo Service
+      dockerfile: Dockerfile
+    container_name: valledelsol-geo
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/geo_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # MICROSERVICIO — SolAlertas (:8083)
+  # ============================================================
+  alertas-app:
+    build:
+      context: ./SolAlertas
+      dockerfile: Dockerfile
+    container_name: valledelsol-alertas
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/alert_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - AUTH_SERVICE_URL=http://auth-app:8080
+      - GEO_SERVICE_URL=http://geo-app:8082
+      - REPORTES_SERVICE_URL=http://report-app:8081
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # BFF — Orquestador (:8001)
+  # ============================================================
+  bff-app:
+    build:
+      context: ./BFF-ValleSol
+      dockerfile: Dockerfile
+    container_name: valledelsol-bff
+    ports:
+      - "8001:8001"
+    depends_on:
+      - auth-app
+      - report-app
+      - geo-app
+      - alertas-app
+    environment:
+      - MS_AUTH_URL=http://auth-app:8080
+      - MS_REPORTES_URL=http://report-app:8081
+      - MS_GEO_URL=http://geo-app:8082
+      - MS_ALERTAS_URL=http://alertas-app:8083
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # API GATEWAY (:8000) — Única puerta de entrada
+  # ============================================================
   gateway-app:
     build:
       context: ./apiGateway
       dockerfile: Dockerfile
-    container_name: municipalidad-gateway
+    container_name: valledelsol-gateway
     ports:
       - "8000:8000"
     depends_on:
-      - solalertas-app
+      - bff-app
     environment:
-      - SPRING_CLOUD_GATEWAY_ROUTES_0_ID=ms-alertas
-      - SPRING_CLOUD_GATEWAY_ROUTES_0_URI=http://solalertas-app:8080
-      - SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0=Path=/api/alertas/**
+      - BFF_URL=http://bff-app:8001
     networks:
       - red-municipalidad
 
-  # 4. Frontend (Sitio Web/App Ionic)
+  # ============================================================
+  # FRONTEND — Angular/Ionic + Nginx (:8100)
+  # ============================================================
   frontend-app:
     build:
       context: ./valledelsol-app
@@ -72,3 +169,6 @@ services:
 networks:
   red-municipalidad:
     driver: bridge
+
+volumes:
+  postgres-data:

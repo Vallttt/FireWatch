@@ -1,0 +1,307 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Mapa de Emergencias</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+
+  <!-- ============================================================
+       1. MAPA SATELITAL
+       ============================================================ -->
+  <div class="map-wrapper">
+    <div id="globalMap" class="map-container"></div>
+  </div>
+
+  <!-- ============================================================
+       2. FOCO SELECCIONADO
+       ============================================================ -->
+  <ion-card *ngIf="focoSeleccionado" class="focus-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="flame"></ion-icon>
+        <ion-card-subtitle>Emergencia detectada</ion-card-subtitle>
+      </div>
+      <ion-card-title>{{ focoSeleccionado.desc }}</ion-card-title>
+    </ion-card-header>
+
+    <ion-card-content>
+      <div class="estado-row">
+        <span class="estado-badge" [ngClass]="focoSeleccionado.estado">
+          {{ focoSeleccionado.estado | uppercase }}
+        </span>
+        <span class="brigada-info" *ngIf="focoSeleccionado.brigada">
+          {{ focoSeleccionado.brigada }}
+        </span>
+        <span class="brigada-info critico" *ngIf="!focoSeleccionado.brigada && focoSeleccionado.estado === 'activo'">
+          Sin brigada asignada
+        </span>
+      </div>
+
+      <!-- Acciones admin -->
+      <div class="focus-actions" *ngIf="isAdmin">
+        <button
+          *ngIf="focoSeleccionado.brigada && focoSeleccionado.estado === 'activo'"
+          class="action-btn outline"
+          (click)="desasignarBrigada()">
+          <ion-icon name="arrow-undo-outline"></ion-icon>
+          Desasignar
+        </button>
+        <button
+          *ngIf="focoSeleccionado.estado === 'activo'"
+          class="action-btn controlado"
+          (click)="cambiarEstado('controlado')">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          Controlado
+        </button>
+        <button
+          *ngIf="focoSeleccionado.estado !== 'finalizado'"
+          class="action-btn finalizado"
+          (click)="cambiarEstado('finalizado')">
+          <ion-icon name="close-circle-outline"></ion-icon>
+          Finalizado
+        </button>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================
+       3. BRIGADAS DISPONIBLES (admin)
+       ============================================================ -->
+  <ion-card *ngIf="isAdmin" class="main-card admin-panel">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="shield-half-outline"></ion-icon>
+        <ion-card-title>Brigadas disponibles</ion-card-title>
+      </div>
+      <p class="subtitle">
+        {{ focoSeleccionado && !focoSeleccionado.brigada && focoSeleccionado.estado === 'activo'
+            ? 'Selecciona una unidad para despachar'
+            : 'Toca un foco rojo en el mapa para desplegar unidades' }}
+      </p>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-list lines="none" class="brigade-list" *ngIf="brigadasDisponibles.length > 0; else noBrigades">
+        <ion-item *ngFor="let brigada of brigadasDisponibles" class="brigade-item">
+          <div class="brigade-icon-bg" slot="start">
+            <ion-icon name="shield-half-outline"></ion-icon>
+          </div>
+          <ion-label>
+            <h2>{{ brigada.nombre }}</h2>
+            <p>Llegada estimada: {{ brigada.tiempoMinutos }} min</p>
+          </ion-label>
+
+          <div slot="end" class="brigade-actions">
+            <button
+              type="button"
+              class="dispatch-btn"
+              [disabled]="!focoSeleccionado || !!focoSeleccionado.brigada || focoSeleccionado?.estado !== 'activo'"
+              (click)="asignarBrigada(brigada)">
+              Despachar
+            </button>
+            <button
+              type="button"
+              class="delete-btn"
+              (click)="eliminarBrigada(brigada)">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </div>
+        </ion-item>
+      </ion-list>
+
+      <ng-template #noBrigades>
+        <div class="empty-state">
+          <p>Todas las unidades han sido despachadas.</p>
+        </div>
+      </ng-template>
+
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================
+       4. BRIGADAS EN ZONA DE INCENDIO (admin)
+       ============================================================ -->
+  <ion-card *ngIf="isAdmin && brigadasOcupadas.length > 0" class="main-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <ion-card-title>Brigadas en zona de incendio</ion-card-title>
+      </div>
+      <p class="subtitle">Unidades actualmente desplegadas</p>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-list lines="none" class="brigade-list">
+        <ion-item *ngFor="let brigada of brigadasOcupadas" class="brigade-item occupied">
+          <div class="brigade-icon-bg occupied" slot="start">
+            <ion-icon name="shield-half-outline"></ion-icon>
+          </div>
+          <ion-label>
+            <h2>{{ brigada.nombre }}</h2>
+            <p>{{ getEmergenciaDesc(brigada.emergenciaId) }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================
+       5. AGREGAR NUEVA BRIGADA (admin)
+       ============================================================ -->
+  <ion-card *ngIf="isAdmin" class="main-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="add-circle-outline"></ion-icon>
+        <ion-card-title>Agregar nueva brigada</ion-card-title>
+      </div>
+    </ion-card-header>
+
+    <ion-card-content>
+      <div class="create-brigade-row">
+        <input
+          type="text"
+          class="brigade-input"
+          placeholder="Nombre de brigada"
+          [(ngModel)]="nuevaBrigadaNombre">
+        <button type="button" class="create-btn" (click)="crearBrigada()">
+          <ion-icon name="add-circle-outline"></ion-icon>
+        </button>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================
+       6. HISTORIAL DE INCENDIOS (admin)
+       ============================================================ -->
+  <ion-card *ngIf="isAdmin" class="main-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="flame"></ion-icon>
+        <ion-card-title>Historial de incendios</ion-card-title>
+      </div>
+      <p class="subtitle">Todos los incidentes registrados</p>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-list lines="none" class="history-list" *ngIf="emergencias.length > 0; else sinIncendios">
+        <ion-item *ngFor="let em of emergencias" class="history-item">
+          <div class="history-icon-bg" slot="start">
+            <ion-icon name="flame"></ion-icon>
+          </div>
+          <ion-label>
+            <h2>{{ em.desc }}</h2>
+            <p class="history-meta">
+              <span class="estado-badge" [ngClass]="em.estado">{{ em.estado | uppercase }}</span>
+              <span *ngIf="em.brigada" class="brigada-tag">{{ em.brigada }}</span>
+            </p>
+          </ion-label>
+          <button type="button" slot="end" class="delete-btn" (click)="eliminarEmergencia(em)">
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </ion-item>
+      </ion-list>
+
+      <ng-template #sinIncendios>
+        <div class="empty-state">
+          <p>No hay incendios registrados.</p>
+        </div>
+      </ng-template>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================
+       7. PREVENCIÓN Y CONTROL (usuario)
+       ============================================================ -->
+  <ion-card *ngIf="!isAdmin" class="main-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="leaf-outline"></ion-icon>
+        <ion-card-title>Prevención y control de incendios</ion-card-title>
+      </div>
+      <p class="subtitle">Recomendaciones para la comunidad</p>
+    </ion-card-header>
+
+    <ion-card-content>
+      <div class="tip-list">
+        <div class="tip-item">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          <p>No realice quemas agrícolas ni fogatas en épocas de calor o viento fuerte.</p>
+        </div>
+        <div class="tip-item">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          <p>Mantenga despejado al menos 3 metros alrededor de su vivienda de vegetación seca.</p>
+        </div>
+        <div class="tip-item">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          <p>Si detecta humo o fuego, reporte inmediatamente usando la sección "Reportar".</p>
+        </div>
+        <div class="tip-item">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          <p>Tenga siempre a mano un kit de emergencia con agua, linterna y documentos.</p>
+        </div>
+        <div class="tip-item">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          <p>No arroje colillas de cigarrillos ni vidrios en zonas de vegetación.</p>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================
+       6. PROTOCOLOS DE EVACUACIÓN (usuario)
+       ============================================================ -->
+  <ion-card *ngIf="!isAdmin" class="main-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="exit-outline"></ion-icon>
+        <ion-card-title>Protocolos de evacuación</ion-card-title>
+      </div>
+      <p class="subtitle">Siga estos pasos en caso de emergencia</p>
+    </ion-card-header>
+
+    <ion-card-content>
+      <div class="protocol-list">
+        <div class="protocol-step">
+          <span class="step-number">1</span>
+          <div>
+            <h4>Mantenga la calma</h4>
+            <p>Actúe con rapidez pero sin pánico. Reúna a su familia y mascotas.</p>
+          </div>
+        </div>
+        <div class="protocol-step">
+          <span class="step-number">2</span>
+          <div>
+            <h4>Tome su kit de emergencia</h4>
+            <p>Documentos, agua, medicamentos esenciales y linterna.</p>
+          </div>
+        </div>
+        <div class="protocol-step">
+          <span class="step-number">3</span>
+          <div>
+            <h4>Diríjase al punto de encuentro</h4>
+            <p>Siga las rutas de evacuación señalizadas. No regrese por pertenencias.</p>
+          </div>
+        </div>
+        <div class="protocol-step">
+          <span class="step-number">4</span>
+          <div>
+            <h4>Siga las instrucciones oficiales</h4>
+            <p>Obedezca al personal de emergencias y manténgase informado por canales oficiales.</p>
+          </div>
+        </div>
+        <div class="protocol-step">
+          <span class="step-number">5</span>
+          <div>
+            <h4>Protéjase del humo</h4>
+            <p>Cubra nariz y boca con un paño húmedo. Cierre ventanas si permanece en interiores.</p>
+          </div>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>

@@ -1,12 +1,9 @@
 package com.ValleSol.SolAlertas.model;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,14 +15,16 @@ public class Notificacion {
 
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    @GeneratedValue
+    private UUID id;
+    @Column(name = "reporte_id", nullable = false)
+    private UUID reporteId;
+    private UUID usuarioId;
     private String tipoAlerta;
-    private String mensaje;
     private String destinatario;
-
-    private LocalDateTime fechaEnvio = LocalDateTime.now();
+    private String mensaje;
+    private String estadoEnvio;
+    private LocalDateTime fechaEnvio;
 
 
 

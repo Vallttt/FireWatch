@@ -2,9 +2,9 @@ package com.ValleSol.SolAlertas.service;
 
 import org.springframework.stereotype.Component;
 
+
 @Component
 public class AlertaFactory {
-
 
     public GeneradorAlerta obtenerGenerador(String tipo) {
 
@@ -15,6 +15,5 @@ public class AlertaFactory {
         } else {
             throw new IllegalArgumentException("Tipo de alerta no soportado: " + tipo);
         }
-       
     }
 }

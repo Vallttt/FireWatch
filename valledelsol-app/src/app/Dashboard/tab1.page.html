@@ -1,0 +1,131 @@
+<ion-header class="ion-no-border" [class.header-hidden]="headerHidden">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Dashboard</ion-title>
+    <ion-buttons slot="end" class="status-pill">
+      
+      
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content
+  [fullscreen]="true"
+  [scrollEvents]="true"
+  (ionScroll)="onContentScroll($event)">
+
+  <div class="header-title">
+    <h2>Panel de Comando</h2>
+    <p>Vigilancia activa · Valle del Sol</p>
+  </div>
+
+  <!-- ============================================================
+       STAT CARDS
+       ============================================================ -->
+  <ion-grid class="stats-grid">
+    <ion-row>
+      <ion-col size="6">
+        <div class="stat-card">
+          <ion-icon class="stat-icon" name="flame-outline"></ion-icon>
+          <p class="stat-label">Focos activos</p>
+          <h3 class="stat-value">{{ stats.totalIncendios | number:'2.0-0' }}</h3>
+        </div>
+      </ion-col>
+      <ion-col size="6">
+        <div class="stat-card">
+          <ion-icon class="stat-icon" name="warning-outline"></ion-icon>
+          <p class="stat-label">Alertas</p>
+          <h3 class="stat-value">{{ stats.alertasEmitidas | number:'2.0-0' }}</h3>
+        </div>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col size="6">
+        <div class="stat-card">
+          <ion-icon class="stat-icon" name="time-outline"></ion-icon>
+          <p class="stat-label">Brigadas activas</p>
+          <h3 class="stat-value">{{ stats.brigadasActivas | number:'2.0-0' }}</h3>
+        </div>
+      </ion-col>
+      <ion-col size="6">
+        <div class="stat-card">
+          <ion-icon class="stat-icon" name="trending-up-outline"></ion-icon>
+          <p class="stat-label">Estado global</p>
+          <h3 class="stat-value">{{ stats.estadoGlobal }}</h3>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- ============================================================
+       ACCESOS RÁPIDOS
+       ============================================================ -->
+  <ion-card class="history-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="navigate-outline"></ion-icon>
+        <ion-card-title>Accesos rápidos</ion-card-title>
+      </div>
+      <p class="subtitle">Operaciones más utilizadas</p>
+    </ion-card-header>
+
+    <ion-card-content>
+
+      <!-- Crear reporte -->
+      <button type="button" class="action-card" (click)="saltarAReportar()">
+        <div class="action-icon-bg">
+          <ion-icon name="flame"></ion-icon>
+        </div>
+        <div class="action-text">
+          <h3>Crear reporte</h3>
+          <p>Registrar un nuevo incidente</p>
+        </div>
+        <ion-icon class="action-arrow" name="chevron-forward-outline"></ion-icon>
+      </button>
+
+      <!-- Ver mapa -->
+      <button type="button" class="action-card" (click)="saltarAlMapa()">
+        <div class="action-icon-bg">
+          <ion-icon name="map-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <h3>Mapa satelital</h3>
+          <p>Ver focos activos en vivo</p>
+        </div>
+        <ion-icon class="action-arrow" name="chevron-forward-outline"></ion-icon>
+      </button>
+
+      <!-- Ir a alertas -->
+      <button type="button" class="action-card" (click)="saltarAAlertas()">
+        <div class="action-icon-bg">
+          <ion-icon name="notifications-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <h3>Enviar alerta</h3>
+          <p>Notificar a la comunidad</p>
+        </div>
+        <ion-icon class="action-arrow" name="chevron-forward-outline"></ion-icon>
+      </button>
+
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================
+       ACTIVIDAD RECIENTE
+       ============================================================ -->
+  <ion-card class="history-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="time-outline"></ion-icon>
+        <ion-card-title>Actividad reciente</ion-card-title>
+      </div>
+      <p class="subtitle">Últimos eventos del sistema</p>
+    </ion-card-header>
+    <ion-card-content class="empty-state">
+      <p>Sin eventos recientes. El sistema permanece en monitoreo activo.</p>
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>
