@@ -1,23 +1,22 @@
 services:
 
   # ============================================================
-  # BASE DE DATOS — PostgreSQL
+  # BASE DE DATOS — MySQL
   # ============================================================
-  postgres-db:
-    image: postgres:16-alpine
-    container_name: valledelsol-postgres
+  mysql-db:
+    image: mysql:8.0
+    container_name: valledelsol-mysql
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: 123456
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - mysql-data:/var/lib/mysql
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
       - red-municipalidad
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p123456"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -33,12 +32,14 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      postgres-db:
+      mysql-db:
         condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/auth_vallesol_db
-      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/auth_vallesol_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     networks:
       - red-municipalidad
@@ -54,12 +55,14 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      postgres-db:
+      mysql-db:
         condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/report_db
-      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/report_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - GEO_SERVICE_URL=http://geo-app:8082
       - ALERTAS_SERVICE_URL=http://alertas-app:8083
@@ -77,12 +80,14 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      postgres-db:
+      mysql-db:
         condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/geo_db
-      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/geo_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     networks:
       - red-municipalidad
@@ -98,12 +103,14 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      postgres-db:
+      mysql-db:
         condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/alert_db
-      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/alert_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - AUTH_SERVICE_URL=http://auth-app:8080
       - GEO_SERVICE_URL=http://geo-app:8082
@@ -171,4 +178,4 @@ networks:
     driver: bridge
 
 volumes:
-  postgres-data:
+  mysql-data:

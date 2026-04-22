@@ -12,12 +12,16 @@ import java.util.UUID;
 @Repository
 public interface NotificacionRepository extends JpaRepository<Notificacion, UUID> {
 
-    // Devuelve un representante por despacho (DISTINCT ON es PostgreSQL nativo)
     @Query(value = """
-        SELECT DISTINCT ON (COALESCE(despacho_id, id))
-               *
-        FROM notificaciones
-        ORDER BY COALESCE(despacho_id, id), fecha_envio DESC
+        SELECT n.*
+        FROM notificaciones n
+        INNER JOIN (
+            SELECT COALESCE(despacho_id, id) AS group_key, MAX(fecha_envio) AS max_fecha
+            FROM notificaciones
+            GROUP BY COALESCE(despacho_id, id)
+        ) g ON COALESCE(n.despacho_id, n.id) = g.group_key
+           AND n.fecha_envio = g.max_fecha
+        ORDER BY n.fecha_envio DESC
         """, nativeQuery = true)
     List<Notificacion> findOnePerDispatch();
 
