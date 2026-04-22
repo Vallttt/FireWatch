@@ -13,11 +13,14 @@ export interface AlertaRequest {
 }
 
 export interface Notificacion {
-  id: number;
-  tipo: string;
+  id: string;
+  tipoAlerta: string;
   mensaje: string;
   fechaEnvio: string;
-  [key: string]: any;          // campos extra que envíe el backend
+  destinatario: string;
+  estadoEnvio: string;
+  reporteId?: string;
+  usuarioId?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -36,5 +39,9 @@ export class AlertService {
 
   historial(): Observable<Notificacion[]> {
     return this.http.get<Notificacion[]>(this.baseUrl);
+  }
+
+  eliminarAlerta(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }

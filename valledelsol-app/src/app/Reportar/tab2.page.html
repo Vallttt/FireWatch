@@ -118,7 +118,7 @@
       <!-- Severidad -->
       <div class="input-section">
         <ion-label class="section-label">Nivel de severidad</ion-label>
-        <ion-segment [(ngModel)]="severidad" class="custom-segment">
+        <ion-segment [(ngModel)]="severidad" class="custom-segment" (ionChange)="onSeveridadChange()">
           <ion-segment-button value="baja">
             <ion-label>Baja</ion-label>
           </ion-segment-button>

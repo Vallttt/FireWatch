@@ -9,7 +9,10 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "build:android": "ng build --configuration android && npx cap sync android",
+    "open:android": "npx cap open android",
+    "run:android": "ng build --configuration android && npx cap sync android && npx cap run android"
   },
   "private": true,
   "dependencies": {
@@ -18,8 +21,10 @@
     "@angular/platform-browser": "^20.0.0",
     "@angular/platform-browser-dynamic": "^20.0.0",
     "@angular/router": "^20.0.0",
+    "@capacitor/android": "^8.3.0",
     "@capacitor/app": "8.1.0",
     "@capacitor/core": "8.3.0",
+    "@capacitor/geolocation": "^8.2.0",
     "@capacitor/haptics": "8.0.2",
     "@capacitor/keyboard": "8.0.2",
     "@capacitor/status-bar": "8.0.2",
@@ -43,6 +48,7 @@
     "@angular/compiler-cli": "^20.3.18",
     "@angular/core": "^20.3.18",
     "@angular/language-service": "^20.0.0",
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "8.3.0",
     "@ionic/angular-toolkit": "^12.0.0",
     "@types/jasmine": "~5.1.0",

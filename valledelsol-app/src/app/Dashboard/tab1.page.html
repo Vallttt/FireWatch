@@ -123,8 +123,20 @@
       </div>
       <p class="subtitle">Últimos eventos del sistema</p>
     </ion-card-header>
-    <ion-card-content class="empty-state">
-      <p>Sin eventos recientes. El sistema permanece en monitoreo activo.</p>
+    <ion-card-content>
+      <div *ngIf="actividadReciente.length === 0" class="empty-state">
+        <p>Sin eventos recientes.</p>
+      </div>
+      <ion-list *ngIf="actividadReciente.length > 0" lines="none">
+        <ion-item *ngFor="let item of actividadReciente" class="activity-item">
+          <ion-icon [name]="item.icono" slot="start" color="medium"></ion-icon>
+          <ion-label>
+            <p>{{ item.descripcion }}</p>
+            <p class="fecha-alerta">{{ formatearFecha(item.fecha) }}</p>
+          </ion-label>
+          <ion-badge slot="end" [color]="item.badgeColor">{{ item.badge }}</ion-badge>
+        </ion-item>
+      </ion-list>
     </ion-card-content>
   </ion-card>
 

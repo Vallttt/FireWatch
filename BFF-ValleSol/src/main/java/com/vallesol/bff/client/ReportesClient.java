@@ -27,4 +27,7 @@ public interface ReportesClient {
 
     @GetMapping("/api/reportes/focos-activos")
     Integer obtenerTotalFocosActivos();
+
+    @DeleteMapping("/api/reportes/{id}")
+    void eliminarReporte(@PathVariable("id") String id);
 }

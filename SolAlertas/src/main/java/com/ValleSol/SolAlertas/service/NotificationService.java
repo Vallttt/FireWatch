@@ -29,30 +29,23 @@ public class NotificationService {
 
     public void procesarAlerta(AlertaRequestDTO request) {
         List<UserAlertRequestDTO> usuarios = authClient.getUsersForAlerts();
-
         GeneradorAlerta generador = factory.obtenerGenerador(request.getTipo());
 
+        // UUID compartido por todas las notificaciones de este envío
+        UUID despachoId = UUID.randomUUID();
+
         for (UserAlertRequestDTO user : usuarios) {
-
-            String destinatario = null;
-
-            if ("EMAIL".equalsIgnoreCase(request.getTipo())) {
-                destinatario = user.getEmail();
-            } else if ("SMS".equalsIgnoreCase(request.getTipo())) {
-                destinatario = user.getPhone();
-            }
+            String destinatario = "SMS".equalsIgnoreCase(request.getTipo())
+                    ? user.getPhone()
+                    : user.getEmail();
 
             if (destinatario != null && !destinatario.isBlank()) {
-                Notificacion alerta = generador.generarAlerta(
-                        request.getMensaje(),
-                        destinatario
-                );
-
+                Notificacion alerta = generador.generarAlerta(request.getMensaje(), destinatario);
+                alerta.setDespachoId(despachoId);
                 alerta.setReporteId(request.getReporteId());
                 alerta.setEstadoEnvio("PENDIENTE");
                 alerta.setUsuarioId(user.getId() != null ? UUID.fromString(user.getId()) : null);
                 alerta.setFechaEnvio(LocalDateTime.now());
-
                 repository.save(alerta);
             }
         }

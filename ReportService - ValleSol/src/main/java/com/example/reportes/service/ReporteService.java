@@ -129,6 +129,13 @@ public class ReporteService {
         return convertir(actualizado);
     }
 
+    public void eliminarReporte(UUID id) {
+        if (!reporteRepository.existsById(id)) {
+            throw new RuntimeException("Reporte no encontrado");
+        }
+        reporteRepository.deleteById(id);
+    }
+
     public int contarFocosActivos() {
         return (int) reporteRepository.findAll().stream()
                 .filter(r -> r.getEstado() == ReportStatus.ACTIVE)

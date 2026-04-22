@@ -6,10 +6,9 @@ import com.ValleSol.SolAlertas.dto.UserAlertRequestDTO;
 import com.ValleSol.SolAlertas.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 import com.ValleSol.SolAlertas.dto.AlertaRequestDTO;
 import com.ValleSol.SolAlertas.model.Notificacion;
@@ -17,8 +16,6 @@ import com.ValleSol.SolAlertas.repository.NotificacionRepository;
 import com.ValleSol.SolAlertas.service.AlertaFactory;
 import com.ValleSol.SolAlertas.service.GeneradorAlerta;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 
 @RestController
@@ -46,7 +43,7 @@ public class NotificacionController {
 
     @GetMapping
     public List<Notificacion> historialDeAlertas() {
-        return repository.findAll();
+        return repository.findOnePerDispatch();
     }
 
     @GetMapping("/test-auth")
@@ -61,6 +58,21 @@ public class NotificacionController {
     @GetMapping("/conteo")
     public int conteoDeAlertas() {
         return (int) repository.count();
+    }
+
+    @DeleteMapping("/{id}")
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<Void> eliminarAlerta(@PathVariable UUID id) {
+        Notificacion notif = repository.findById(id).orElse(null);
+        if (notif == null) return ResponseEntity.notFound().build();
+
+        if (notif.getDespachoId() != null) {
+            // Borra todas las notificaciones del mismo envío
+            repository.deleteByDespachoId(notif.getDespachoId());
+        } else {
+            repository.deleteById(id);
+        }
+        return ResponseEntity.noContent().build();
     }
 
 }

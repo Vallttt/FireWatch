@@ -187,19 +187,21 @@
     </ion-card-header>
 
     <ion-card-content>
-      <ion-list lines="none" class="history-list" *ngIf="emergencias.length > 0; else sinIncendios">
-        <ion-item *ngFor="let em of emergencias" class="history-item">
+      <ion-list lines="none" class="history-list" *ngIf="historialIncendios.length > 0; else sinIncendios">
+        <ion-item *ngFor="let reporte of historialIncendios" class="history-item">
           <div class="history-icon-bg" slot="start">
             <ion-icon name="flame"></ion-icon>
           </div>
           <ion-label>
-            <h2>{{ em.desc }}</h2>
+            <h2>{{ reporte.descripcion }}</h2>
             <p class="history-meta">
-              <span class="estado-badge" [ngClass]="em.estado">{{ em.estado | uppercase }}</span>
-              <span *ngIf="em.brigada" class="brigada-tag">{{ em.brigada }}</span>
+              <span class="estado-badge" [ngClass]="reporte.estado === 'ACTIVE' ? 'activo' : 'finalizado'">
+                {{ reporte.estado === 'ACTIVE' ? 'ACTIVO' : 'FINALIZADO' }}
+              </span>
+              <span class="brigada-tag">{{ reporte.severity }}</span>
             </p>
           </ion-label>
-          <button type="button" slot="end" class="delete-btn" (click)="eliminarEmergencia(em)">
+          <button type="button" slot="end" class="delete-btn" (click)="eliminarDeHistorial(reporte)">
             <ion-icon name="trash-outline"></ion-icon>
           </button>
         </ion-item>

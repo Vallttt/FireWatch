@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import {
   IonContent, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
-  IonItem, IonLabel, IonTextarea, IonButton,
+  IonItem, IonLabel, IonTextarea, IonButton, IonList, IonBadge,
   IonIcon, IonToggle, ToastController, IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle,
   IonSegment, IonSegmentButton
 } from '@ionic/angular/standalone';
@@ -11,10 +11,10 @@ import { addIcons } from 'ionicons';
 import {
   megaphoneOutline, warningOutline, flameOutline, shieldHalfOutline,
   checkmarkCircleOutline, warning, notificationsOutline, callOutline,
-  mailOutline, paperPlaneOutline, ellipse, timeOutline
+  mailOutline, paperPlaneOutline, ellipse, timeOutline, trashOutline
 } from 'ionicons/icons';
 
-import { AlertService } from '../services/alert.service';
+import { AlertService, Notificacion } from '../services/alert.service';
 
 @Component({
   selector: 'app-tab3',
@@ -24,7 +24,7 @@ import { AlertService } from '../services/alert.service';
   imports: [
     FormsModule, CommonModule,
     IonContent, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
-    IonItem, IonLabel, IonTextarea, IonButton,
+    IonItem, IonLabel, IonTextarea, IonButton, IonList, IonBadge,
     IonIcon, IonToggle, IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle,
     IonSegment, IonSegmentButton
   ]
@@ -34,6 +34,9 @@ export class Tab3Page {
   mensaje: string = '';
   loading: boolean = false;
   protocoloSeleccionado: string = '';
+
+  historialAlertas: Notificacion[] = [];
+  loadingHistorial = false;
 
   // Canales de distribución
   canalPush: boolean = true;
@@ -50,7 +53,48 @@ export class Tab3Page {
     addIcons({
       ellipse, megaphoneOutline, warningOutline, flameOutline, shieldHalfOutline,
       checkmarkCircleOutline, warning, notificationsOutline, callOutline,
-      mailOutline, paperPlaneOutline, timeOutline
+      mailOutline, paperPlaneOutline, timeOutline, trashOutline
+    });
+  }
+
+  ionViewDidEnter() {
+    this.cargarHistorial();
+  }
+
+  async eliminarAlerta(alerta: Notificacion) {
+    this.alertService.eliminarAlerta(alerta.id).subscribe({
+      next: async () => {
+        this.historialAlertas = this.historialAlertas.filter(a => a.id !== alerta.id);
+        await this.showToast('Alerta eliminada', 'warning');
+      },
+      error: async (err) => {
+        console.error('Error al eliminar alerta', err);
+        await this.showToast('Error al eliminar la alerta', 'danger');
+      }
+    });
+  }
+
+  private cargarHistorial() {
+    this.loadingHistorial = true;
+    this.alertService.historial().subscribe({
+      next: (data) => {
+        this.historialAlertas = data.sort((a, b) =>
+          new Date(b.fechaEnvio).getTime() - new Date(a.fechaEnvio).getTime()
+        );
+        this.loadingHistorial = false;
+      },
+      error: (err) => {
+        console.warn('No se pudo cargar historial de alertas', err);
+        this.loadingHistorial = false;
+      }
+    });
+  }
+
+  formatearFecha(fecha: string): string {
+    const d = new Date(fecha);
+    return d.toLocaleDateString('es-CL', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
     });
   }
 
@@ -126,6 +170,7 @@ export class Tab3Page {
         await this.showToast('Alerta enviada exitosamente', 'success');
         this.mensaje = '';
         this.protocoloSeleccionado = '';
+        this.cargarHistorial();
       },
       error: async (err) => {
         this.loading = false;

@@ -61,4 +61,8 @@ export class ReportService {
   actualizarEstado(id: string, body: ReportStatusUpdate): Observable<ReporteResponse> {
     return this.http.patch<ReporteResponse>(`${this.baseUrl}/${id}/estado`, body);
   }
+
+  eliminarReporte(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
 }

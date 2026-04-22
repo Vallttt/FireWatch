@@ -130,8 +130,37 @@
       </div>
       <p class="subtitle">Últimas alertas enviadas</p>
     </ion-card-header>
-    <ion-card-content class="empty-state">
-      <p>Red en silencio. No se han enviado alertas todavía.</p>
+    <ion-card-content>
+
+      <div *ngIf="loadingHistorial" class="empty-state">
+        <p>Cargando historial…</p>
+      </div>
+
+      <div *ngIf="!loadingHistorial && historialAlertas.length === 0" class="empty-state">
+        <p>Red en silencio. No se han enviado alertas todavía.</p>
+      </div>
+
+      <ion-list *ngIf="!loadingHistorial && historialAlertas.length > 0" lines="full">
+        <ion-item *ngFor="let alerta of historialAlertas">
+          <ion-icon
+            [name]="alerta.tipoAlerta === 'SMS' ? 'call-outline' : 'mail-outline'"
+            slot="start"
+            color="medium">
+          </ion-icon>
+          <ion-label>
+            <h3>{{ alerta.destinatario }}</h3>
+            <p>{{ alerta.mensaje }}</p>
+            <p class="fecha-alerta">{{ formatearFecha(alerta.fechaEnvio) }}</p>
+          </ion-label>
+          <ion-badge slot="end" [color]="alerta.estadoEnvio === 'ENVIADO' ? 'success' : 'warning'">
+            {{ alerta.tipoAlerta }}
+          </ion-badge>
+          <ion-button slot="end" fill="clear" color="danger" (click)="eliminarAlerta(alerta)">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+      </ion-list>
+
     </ion-card-content>
   </ion-card>
 

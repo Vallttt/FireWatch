@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.example.reportes.dto.request.ReportStatusUpdateDTO;
 import com.example.reportes.enums.ReportStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.reportes.dto.request.ReporteRequestDTO;
@@ -26,13 +27,21 @@ public class ReporteController {
 
     @GetMapping
     public List<ReporteResponseDTO> listarReportes() {
-
         return reporteService.listarReportes();
+    }
+
+    /**
+     * Cuenta los reportes con estado ACTIVE (focos activos).
+     * Usado por el BFF para el dashboard.
+     * DEBE estar antes de /{id} para que Spring no lo confunda con un UUID.
+     */
+    @GetMapping("/focos-activos")
+    public int contarFocosActivos() {
+        return reporteService.contarFocosActivos();
     }
 
     @GetMapping("/{id}")
     public ReporteResponseDTO obtenerReporte(@PathVariable UUID id) {
-
         return reporteService.obtenerPorId(id);
     }
 
@@ -41,13 +50,10 @@ public class ReporteController {
         return reporteService.actualizarEstado(id, request);
     }
 
-    /**
-     * Cuenta los reportes con estado ACTIVE (focos activos).
-     * Usado por el BFF para el dashboard.
-     */
-    @GetMapping("/focos-activos")
-    public int contarFocosActivos() {
-        return reporteService.contarFocosActivos();
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarReporte(@PathVariable UUID id) {
+        reporteService.eliminarReporte(id);
+        return ResponseEntity.noContent().build();
     }
 
 }

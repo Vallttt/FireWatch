@@ -62,4 +62,15 @@ public class ReportesProxyController {
                     .body(Map.of("error", "Report Service no disponible", "message", e.getMessage()));
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminarReporte(@PathVariable String id) {
+        try {
+            reportesClient.eliminarReporte(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(503)
+                    .body(Map.of("error", "Report Service no disponible", "message", e.getMessage()));
+        }
+    }
 }

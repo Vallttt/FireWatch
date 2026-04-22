@@ -20,6 +20,7 @@ import {
 
 import * as L from 'leaflet';
 import { ReportService, ReporteResponse, SeverityLevel } from '../services/report.service';
+import { GeolocationService } from '../services/geolocation.service';
 
 @Component({
   selector: 'app-tab2',
@@ -64,7 +65,8 @@ export class Tab2Page {
 
   constructor(
     private toastController: ToastController,
-    private reportService: ReportService
+    private reportService: ReportService,
+    private geoSvc: GeolocationService
   ) {
     addIcons({
       ellipse, locationOutline, navigate, timerOutline, listOutline,
@@ -152,31 +154,21 @@ export class Tab2Page {
     this.obtenerMiUbicacionReal();
   }
 
-  obtenerMiUbicacionReal() {
+  async obtenerMiUbicacionReal() {
     if (!this.map) {
       this.cargarMapa();
     }
 
-    this.map?.flyTo([this.latLng.lat, this.latLng.lng], 15, { duration: 0.8 });
-
-    if (!navigator.geolocation) {
-      this.showToast('Geolocalización no disponible en este dispositivo', 'warning');
-      return;
+    try {
+      const pos = await this.geoSvc.getCurrentPosition();
+      this.latLng.lat = pos.lat;
+      this.latLng.lng = pos.lng;
+      this.map?.flyTo([pos.lat, pos.lng], 16, { duration: 1 });
+      this.marker?.setLatLng([pos.lat, pos.lng]);
+    } catch (err: any) {
+      console.warn('Ubicación no disponible:', err?.message);
+      this.showToast(err?.message || 'No se pudo obtener la ubicación', 'warning');
     }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        this.latLng.lat = position.coords.latitude;
-        this.latLng.lng = position.coords.longitude;
-        this.map?.flyTo([this.latLng.lat, this.latLng.lng], 16, { duration: 1 });
-        this.marker?.setLatLng([this.latLng.lat, this.latLng.lng]);
-      },
-      (err) => {
-        console.warn('Permiso de ubicación denegado.', err);
-        this.showToast('No se pudo obtener tu ubicación. Usando ubicación por defecto.', 'danger');
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
   }
 
   usarPlantilla(tipo: string | number | undefined) {
@@ -184,7 +176,17 @@ export class Tab2Page {
     if (tipo === 'Forestal' || tipo === 'Estructural' || tipo === 'Urbano') {
       this.tipoDesc = tipo;
       this.severidad = 'media';
-      this.descripcion = `Incendio ${tipo.toLowerCase()} de severidad media`;
+      this.actualizarDescripcionTemplate();
+    }
+  }
+
+  onSeveridadChange() {
+    this.actualizarDescripcionTemplate();
+  }
+
+  private actualizarDescripcionTemplate() {
+    if (this.tipoDesc) {
+      this.descripcion = `Incendio ${this.tipoDesc.toLowerCase()} de severidad ${this.severidad}`;
     }
   }
 
@@ -232,7 +234,7 @@ export class Tab2Page {
   }
 
   async eliminarReporte(reporte: ReporteResponse) {
-    this.reportService.actualizarEstado(reporte.id, { estado: 'INACTIVE' }).subscribe({
+    this.reportService.eliminarReporte(reporte.id).subscribe({
       next: async () => {
         this.historialReportes = this.historialReportes.filter(r => r.id !== reporte.id);
         await this.showToast('Reporte eliminado', 'warning');

@@ -7,7 +7,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Configuración CORS del BFF.
- * Permite que el API Gateway reenvíe requests al BFF sin bloqueo CORS.
+ * Usa allowedOriginPatterns("*") para aceptar cualquier origen,
+ * incluyendo capacitor://localhost (Android), http://localhost (web),
+ * y cualquier IP de red local. Es compatible con allowCredentials=true.
  */
 @Configuration
 public class CorsConfig {
@@ -18,7 +20,7 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:8000", "http://localhost:8100", "http://localhost:4200")
+                        .allowedOriginPatterns("*")
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

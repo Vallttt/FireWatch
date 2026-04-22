@@ -71,9 +71,16 @@ export class LoginPage {
       error: async (err) => {
         this.loading = false;
         console.error('Login error', err);
-        const msg = err.status === 0
-          ? 'No se pudo conectar con el servidor'
-          : (err.error?.message || 'Credenciales incorrectas');
+        let msg: string;
+        if (err.status === 0) {
+          msg = 'No se pudo conectar con el servidor';
+        } else if (err.status === 401) {
+          msg = 'Correo o contraseña incorrectos';
+        } else if (err.status === 403) {
+          msg = 'Usuario no habilitado para iniciar sesión';
+        } else {
+          msg = err.error?.message || 'Error al iniciar sesión';
+        }
         await this.mostrarToast(msg, 'danger');
       }
     });
@@ -125,9 +132,14 @@ export class LoginPage {
       error: async (err) => {
         this.loading = false;
         console.error('Register error', err);
-        const msg = err.status === 0
-          ? 'No se pudo conectar con el servidor'
-          : (err.error?.message || 'Error al registrar');
+        let msg: string;
+        if (err.status === 0) {
+          msg = 'No se pudo conectar con el servidor';
+        } else if (err.status === 400) {
+          msg = err.error?.message || 'El correo ya se encuentra registrado';
+        } else {
+          msg = err.error?.message || 'Error al registrar';
+        }
         await this.mostrarToast(msg, 'danger');
       }
     });

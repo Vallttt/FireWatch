@@ -17,7 +17,9 @@ public class Notificacion {
     @Id
     @GeneratedValue
     private UUID id;
-    @Column(name = "reporte_id", nullable = false)
+    @Column(name = "despacho_id")
+    private UUID despachoId;
+    @Column(name = "reporte_id")
     private UUID reporteId;
     private UUID usuarioId;
     private String tipoAlerta;

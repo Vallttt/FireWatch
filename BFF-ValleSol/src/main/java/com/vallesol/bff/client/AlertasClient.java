@@ -21,4 +21,7 @@ public interface AlertasClient {
 
     @GetMapping("/api/alertas/conteo")
     Integer obtenerTotalAlertas();
+
+    @DeleteMapping("/api/alertas/{id}")
+    void eliminarAlerta(@PathVariable("id") String id);
 }

@@ -40,4 +40,15 @@ public class AlertasProxyController {
                     .body(Map.of("error", "Alertas Service no disponible", "message", e.getMessage()));
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminarAlerta(@PathVariable String id) {
+        try {
+            alertasClient.eliminarAlerta(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(503)
+                    .body(Map.of("error", "Alertas Service no disponible", "message", e.getMessage()));
+        }
+    }
 }

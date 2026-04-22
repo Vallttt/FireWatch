@@ -39,7 +39,11 @@ public class DashboardController {
                 Map<String, Object> geoResponse = geoClient.getBrigades();
                 Object dataObj = geoResponse.get("data");
                 if (dataObj instanceof List) {
-                    brigadas = ((List<?>) dataObj).size();
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> brigadeList = (List<Map<String, Object>>) dataObj;
+                    brigadas = (int) brigadeList.stream()
+                        .filter(b -> "DEPLOYED".equals(b.get("status")))
+                        .count();
                 }
             } catch (Exception geoEx) {
                 System.out.println("Geo Service no disponible para brigadas: " + geoEx.getMessage());

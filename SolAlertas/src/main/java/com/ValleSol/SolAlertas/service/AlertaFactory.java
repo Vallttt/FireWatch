@@ -10,10 +10,10 @@ public class AlertaFactory {
 
         if ("SMS".equalsIgnoreCase(tipo)) {
             return new GeneradorSms();
-        } else if ("EMAIL".equalsIgnoreCase(tipo)) {
-            return new GeneradorEmail();
         } else {
-            throw new IllegalArgumentException("Tipo de alerta no soportado: " + tipo);
+            // Cualquier otro tipo (EMAIL, Evacuación, Emergencia, Preventiva, etc.)
+            // se envía como EMAIL por defecto
+            return new GeneradorEmail();
         }
     }
 }

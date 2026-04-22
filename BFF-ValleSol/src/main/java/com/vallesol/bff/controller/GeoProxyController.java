@@ -19,7 +19,7 @@ public class GeoProxyController {
     @Autowired
     private GeoClient geoClient;
 
-    /* ===== MAP DATA ===== */
+    /* ===== DATOS DEL MAPA ===== */
     @GetMapping("/api/map-data")
     public ResponseEntity<?> getMapData() {
         try {
@@ -30,7 +30,7 @@ public class GeoProxyController {
         }
     }
 
-    /* ===== BRIGADES ===== */
+    /* ===== BRIGADAS ===== */
     @GetMapping("/api/brigades")
     public ResponseEntity<?> getBrigades() {
         try {
@@ -81,7 +81,7 @@ public class GeoProxyController {
         }
     }
 
-    /* ===== MAPPED REPORTS ===== */
+    /* ===== REPORTES MAPEADOS ===== */
     @GetMapping("/api/mapped-reports")
     public ResponseEntity<?> getMappedReports() {
         try {
@@ -122,7 +122,7 @@ public class GeoProxyController {
         }
     }
 
-    /* ===== ZONES ===== */
+    /* ===== ZONAS ===== */
     @GetMapping("/api/zones")
     public ResponseEntity<?> getZones() {
         try {
@@ -133,7 +133,7 @@ public class GeoProxyController {
         }
     }
 
-    /* ===== EVACUATION ROUTES ===== */
+    /* ===== rutas de evacuación ===== */
     @GetMapping("/api/evacroute")
     public ResponseEntity<?> getEvacuationRoutes() {
         try {

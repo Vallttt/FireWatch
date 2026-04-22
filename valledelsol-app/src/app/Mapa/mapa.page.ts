@@ -18,6 +18,7 @@ import {
 import * as L from 'leaflet';
 
 import { GeoService, BrigadeResponse, MappedReportResponse } from '../services/geo.service';
+import { ReportService, ReporteResponse } from '../services/report.service';
 
 @Component({
   selector: 'app-mapa',
@@ -42,6 +43,7 @@ export class MapaPage implements OnInit {
   public nuevaBrigadaNombre = '';
 
   public emergencias: any[] = [];
+  public historialIncendios: ReporteResponse[] = [];
 
   private marcadoresLeaflet: L.Marker[] = [];
   private backendLoaded = false;
@@ -49,7 +51,8 @@ export class MapaPage implements OnInit {
   constructor(
     private ngZone: NgZone,
     private toastController: ToastController,
-    private geoService: GeoService
+    private geoService: GeoService,
+    private reportService: ReportService
   ) {
     addIcons({
       flame, ellipse, shieldHalfOutline,
@@ -75,36 +78,65 @@ export class MapaPage implements OnInit {
       next: (data) => {
         this.backendLoaded = true;
 
-        // Mapear brigadas
-        if (data.brigades) {
-          this.brigadasDisponibles = data.brigades
-            .filter(b => b.status === 'AVAILABLE')
-            .map(b => ({
-              id: b.id,
-              nombre: b.name,
-              tiempoMinutos: 10,
-              backendId: b.id
-            }));
-
-          const deployed = data.brigades.filter(b => b.status === 'DEPLOYED');
-          // Las brigadas desplegadas se vinculan a emergencias más abajo
-        }
+        // Mapear brigadas disponibles
+        this.brigadasDisponibles = (data.brigades || [])
+          .filter(b => b.status === 'AVAILABLE')
+          .map(b => ({ id: b.id, nombre: b.name, tiempoMinutos: 10, backendId: b.id }));
 
         // Mapear reportes del mapa como emergencias
-        if (data.reports) {
-          this.emergencias = data.reports
-            .filter(r => r.reportStatus === 'ACTIVE')
-            .map((r, i) => ({
-              id: i + 1,
-              backendId: r.id,
-              lat: r.latitude,
-              lng: r.longitude,
-              desc: `Incendio ${r.severity} (${r.externalReportId?.substring(0, 8) || 'N/A'})`,
-              brigada: null,
-              estado: 'activo',
-              severity: r.severity
-            }));
-        }
+        this.emergencias = (data.reports || [])
+          .filter(r => r.reportStatus === 'ACTIVE')
+          .map((r, i) => ({
+            id: i + 1,
+            backendId: r.id,
+            externalReportId: r.externalReportId,
+            lat: r.latitude,
+            lng: r.longitude,
+            desc: `Incendio ${r.severity} (${r.externalReportId?.substring(0, 8) || 'N/A'})`,
+            brigada: null,
+            estado: 'activo',
+            severity: r.severity
+          }));
+
+        // Reconectar brigadas DEPLOYED con sus incendios (por coordenadas)
+        this.brigadasOcupadas = [];
+        (data.brigades || [])
+          .filter(b => b.status === 'DEPLOYED')
+          .forEach(brigade => {
+            const emergencia = this.emergencias.find(e =>
+              Math.abs(e.lat - brigade.latitude) < 0.001 &&
+              Math.abs(e.lng - brigade.longitude) < 0.001
+            );
+            if (emergencia) {
+              emergencia.brigada = brigade.name;
+              (this.brigadasOcupadas as any[]).push({
+                id: brigade.id,
+                nombre: brigade.name,
+                tiempoMinutos: 10,
+                backendId: brigade.id,
+                emergenciaId: emergencia.id
+              });
+            } else {
+              // Brigada DEPLOYED sin incendio activo → resetear a AVAILABLE
+              this.geoService.updateBrigade(brigade.id, {
+                name: brigade.name,
+                institution: brigade.institution || 'Valle del Sol',
+                status: 'AVAILABLE',
+                latitude: -33.46,
+                longitude: -70.65
+              }).subscribe({
+                next: () => {
+                  this.brigadasDisponibles.push({
+                    id: brigade.id,
+                    nombre: brigade.name,
+                    tiempoMinutos: 10,
+                    backendId: brigade.id
+                  });
+                },
+                error: (err) => console.warn('No se pudo resetear brigada huérfana', err)
+              });
+            }
+          });
 
         this.desplegarRadares();
       },
@@ -112,6 +144,15 @@ export class MapaPage implements OnInit {
         console.warn('No se pudo conectar con Geo Service.', err);
         this.showToast('No se pudo cargar datos del mapa', 'danger');
       }
+    });
+
+    this.reportService.listarReportes().subscribe({
+      next: (reportes) => {
+        this.historialIncendios = reportes.sort((a, b) =>
+          new Date(b.fechaIncidente).getTime() - new Date(a.fechaIncidente).getTime()
+        );
+      },
+      error: (err) => console.warn('No se pudo cargar historial de reportes', err)
     });
   }
 
@@ -234,6 +275,15 @@ export class MapaPage implements OnInit {
           latitude: -33.46,
           longitude: -70.65
         }).subscribe({
+          next: () => {
+            this.geoService.getBrigades().subscribe({
+              next: (brigades) => {
+                this.brigadasDisponibles = brigades
+                  .filter(b => b.status === 'AVAILABLE')
+                  .map(b => ({ id: b.id, nombre: b.name, tiempoMinutos: 10, backendId: b.id }));
+              }
+            });
+          },
           error: (err) => console.warn('No se pudo actualizar brigada en backend', err)
         });
       }
@@ -255,6 +305,28 @@ export class MapaPage implements OnInit {
 
     if (nuevoEstado === 'finalizado' && this.focoSeleccionado.brigada) {
       this.devolverBrigada(this.focoSeleccionado);
+    }
+
+    if (nuevoEstado === 'finalizado') {
+      const foco = this.focoSeleccionado;
+
+      // Borrar del Geo Service → desaparece del mapa
+      if (foco.backendId) {
+        this.geoService.deleteMappedReport(foco.backendId).subscribe({
+          error: (err) => console.warn('No se pudo eliminar mapped_report en Geo Service', err)
+        });
+      }
+
+      // Marcar INACTIVE en Report Service → actualiza dashboard
+      if (foco.externalReportId) {
+        this.reportService.actualizarEstado(foco.externalReportId, { estado: 'INACTIVE' }).subscribe({
+          next: (updated) => {
+            const idx = this.historialIncendios.findIndex(r => r.id === foco.externalReportId);
+            if (idx !== -1) this.historialIncendios[idx] = updated;
+          },
+          error: (err) => console.warn('No se pudo actualizar estado en Report Service', err)
+        });
+      }
     }
 
     this.focoSeleccionado.estado = nuevoEstado;
@@ -315,6 +387,16 @@ export class MapaPage implements OnInit {
       b => b.id !== brigada.id
     );
     await this.showToast(`${brigada.nombre} eliminada`, 'warning');
+  }
+
+  async eliminarDeHistorial(reporte: ReporteResponse) {
+    this.reportService.eliminarReporte(reporte.id).subscribe({
+      next: async () => {
+        this.historialIncendios = this.historialIncendios.filter(r => r.id !== reporte.id);
+        await this.showToast('Reporte eliminado del historial', 'warning');
+      },
+      error: async () => this.showToast('Error al eliminar el reporte', 'danger')
+    });
   }
 
   getEmergenciaDesc(emergenciaId: number): string {
