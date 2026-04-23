@@ -159,7 +159,7 @@ services:
       - red-municipalidad
 
   # ============================================================
-  # FRONTEND — Angular/Ionic + Nginx (:8100)
+  # FRONTEND WEB — Angular/Ionic + Nginx (:8100)
   # ============================================================
   frontend-app:
     build:
@@ -168,6 +168,23 @@ services:
     container_name: valledelsol-frontend
     ports:
       - "8100:80"
+    depends_on:
+      - gateway-app
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # FRONTEND ANDROID — App móvil servida via Nginx (:8101)
+  # Misma app que el APK pero accesible como web para pruebas.
+  # En producción real el APK se instala directamente en el dispositivo.
+  # ============================================================
+  android-app:
+    build:
+      context: ./valledelsol-android
+      dockerfile: Dockerfile
+    container_name: valledelsol-android
+    ports:
+      - "8101:80"
     depends_on:
       - gateway-app
     networks:

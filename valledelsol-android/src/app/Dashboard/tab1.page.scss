@@ -1,0 +1,218 @@
+/* ==========================================================================
+   DASHBOARD  ·  estilos específicos
+   (los estilos base de tarjetas y tipografía vienen del global)
+   ========================================================================== */
+
+/* ==========================================================================
+   HEADER
+   ========================================================================== */
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2BA84A;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.status-pill ion-icon {
+  font-size: 10px;
+}
+
+.header-title {
+  padding: 18px 22px 6px 22px;
+}
+
+.header-title h2 {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--vds-text);
+  margin: 0;
+  letter-spacing: -0.6px;
+}
+
+.header-title p {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--vds-text-soft);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   STAT CARDS (KPIs)
+   ========================================================================== */
+.stats-grid {
+  padding: 0 14px;
+}
+
+.stats-grid ion-col {
+  padding: 6px;
+}
+
+.stat-card {
+  background: var(--vds-bg-card);
+  border: 1px solid var(--vds-border);
+  box-shadow: var(--shadow-card);
+  border-radius: 18px;
+  padding: 20px 18px;
+  position: relative;
+  overflow: hidden;
+  margin: 0 !important;
+  animation: fadeInUp 0.5s ease both;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgba(220, 31, 38, 0.12);
+}
+
+.stat-icon {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  font-size: 22px;
+  color: var(--vds-red-500);
+  opacity: 0.85;
+  filter: drop-shadow(0 4px 8px rgba(220, 31, 38, 0.25));
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--vds-text-soft);
+  margin: 0 0 10px 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.stat-value {
+  font-size: 30px;
+  font-weight: 800;
+  margin: 0;
+  background: var(--red-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -1px;
+}
+
+/* ==========================================================================
+   ACTION CARDS (Accesos rápidos)
+   ========================================================================== */
+.action-card {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  margin: 10px 0;
+  border-radius: 16px;
+  background: var(--vds-bg-input);
+  border: 1px solid var(--vds-border);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  text-align: left;
+}
+
+.action-card:first-of-type { margin-top: 4px; }
+
+.action-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(220, 31, 38, 0.30);
+  box-shadow: 0 12px 28px rgba(220, 31, 38, 0.15);
+}
+
+.action-card:active { transform: scale(0.98); }
+
+.action-icon-bg {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #ffffff;
+  flex-shrink: 0;
+  background: var(--red-gradient);
+  box-shadow: 0 8px 18px rgba(220, 31, 38, 0.32);
+  transition: transform 0.3s ease;
+}
+
+.action-card:hover .action-icon-bg {
+  transform: rotate(-6deg) scale(1.06);
+}
+
+.action-icon-bg ion-icon {
+  font-size: 22px;
+  color: #ffffff !important;
+}
+
+.action-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.action-text h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--vds-text);
+  letter-spacing: -0.2px;
+}
+
+.action-text p {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: var(--vds-text-soft);
+  font-weight: 500;
+}
+
+.action-arrow {
+  font-size: 18px;
+  color: var(--vds-red-500);
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.action-card:hover .action-arrow {
+  transform: translateX(4px);
+}
+
+/* ==========================================================================
+   MODO OSCURO
+   ========================================================================== */
+:host-context(body.dark) {
+
+  .header-title h2 { color: #FFFFFF; }
+  .header-title p  { color: #E8D5D7; }
+
+  .stat-card {
+    background: #2A1418;
+    border-color: rgba(255, 77, 94, 0.22);
+  }
+
+  .stat-value {
+    background: linear-gradient(135deg, #FFFFFF 0%, #FF4D5E 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .action-card {
+    background: #341A1F;
+    border-color: rgba(255, 77, 94, 0.22);
+  }
+
+  .action-card:hover {
+    border-color: #FF4D5E;
+  }
+
+  .action-text h3 { color: #FFFFFF; }
+  .action-text p  { color: #E8D5D7; }
+}

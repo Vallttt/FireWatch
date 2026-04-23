@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Valle del Sol</string>
+    <string name="title_activity_main">Valle del Sol</string>
+    <string name="package_name">com.vallesol.app</string>
+    <string name="custom_url_scheme">com.vallesol.app</string>
+</resources>

@@ -1,0 +1,157 @@
+<ion-header class="ion-no-border" [class.header-hidden]="headerHidden">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Alertas</ion-title>
+    <ion-buttons slot="end" class="status-pill">
+      
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content
+  [fullscreen]="true"
+  [scrollEvents]="true"
+  (ionScroll)="onContentScroll($event)">
+
+  <!-- ============================================================
+       TARJETA PRINCIPAL · enviar alerta
+       ============================================================ -->
+  <ion-card class="main-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="megaphone-outline"></ion-icon>
+        <ion-card-title>Enviar alerta a la comunidad</ion-card-title>
+      </div>
+      <p class="subtitle">Despliegue masivo de alertas</p>
+    </ion-card-header>
+
+    <ion-card-content>
+
+      <!-- Plantillas rápidas -->
+      <div class="input-section">
+        <ion-label class="section-label">Protocolos de alerta</ion-label>
+        <ion-segment
+          [(ngModel)]="protocoloSeleccionado"
+          class="custom-segment"
+          (ionChange)="aplicarProtocolo($event.detail.value)">
+
+          <ion-segment-button value="Evacuación">
+            <ion-label>Evacuación</ion-label>
+          </ion-segment-button>
+
+          <ion-segment-button value="Incendio">
+            <ion-label>Incendio</ion-label>
+          </ion-segment-button>
+
+          <ion-segment-button value="Prevención">
+            <ion-label>Prevención</ion-label>
+          </ion-segment-button>
+
+          <ion-segment-button value="Controlado">
+            <ion-label>Controlado</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+
+      <!-- Tipo de alerta -->
+      <div class="input-section">
+        <ion-label class="section-label">Clasificación</ion-label>
+        <div class="custom-input">
+          <ion-icon name="warning-outline" class="prefix-icon"></ion-icon>
+          <select class="native-select" [(ngModel)]="tipo">
+            <option value="" disabled selected>Elegir opción</option>
+            <option value="Emergencia">Emergencia táctica</option>
+            <option value="Evacuación">Evacuación forzosa</option>
+            <option value="Preventiva">Acción preventiva</option>
+            <option value="Informativo">Boletín informativo</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Mensaje -->
+      <div class="input-section">
+        <ion-label class="section-label">Cuerpo del mensaje</ion-label>
+        <div class="custom-textarea">
+          <ion-textarea
+            rows="4"
+            placeholder="Redacta la orden a la población civil…"
+            [(ngModel)]="mensaje">
+          </ion-textarea>
+        </div>
+      </div>
+
+      <!-- Canales de envío -->
+      <div class="channels-section">
+        <ion-label class="section-label">Distribución de red</ion-label>
+
+        <ion-item lines="none" class="channel-item">
+          <ion-icon name="notifications-outline" slot="start" color="primary"></ion-icon>
+          <ion-label>Push Android (automático)</ion-label>
+          <ion-badge slot="end" color="primary">Activo</ion-badge>
+        </ion-item>
+
+        <ion-item lines="none" class="channel-item">
+          <ion-icon name="mail-outline" slot="start"></ion-icon>
+          <ion-label>Boletín electrónico (Email)</ion-label>
+          <ion-toggle slot="end" [(ngModel)]="canalMail" [checked]="true"></ion-toggle>
+        </ion-item>
+      </div>
+
+      <!-- Botón enviar -->
+      <ion-button
+        expand="block"
+        shape="round"
+        class="submit-btn"
+        (click)="enviarAlerta()"
+        [disabled]="loading">
+        <ion-icon slot="start" name="paper-plane-outline"></ion-icon>
+        {{ loading ? 'Enrutando…' : 'Transmitir alerta global' }}
+      </ion-button>
+
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================
+       HISTORIAL
+       ============================================================ -->
+  <ion-card class="history-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="time-outline"></ion-icon>
+        <ion-card-title>Historial operativo</ion-card-title>
+      </div>
+      <p class="subtitle">Últimas alertas enviadas</p>
+    </ion-card-header>
+    <ion-card-content>
+
+      <div *ngIf="loadingHistorial" class="empty-state">
+        <p>Cargando historial…</p>
+      </div>
+
+      <div *ngIf="!loadingHistorial && historialAlertas.length === 0" class="empty-state">
+        <p>Red en silencio. No se han enviado alertas todavía.</p>
+      </div>
+
+      <ion-list *ngIf="!loadingHistorial && historialAlertas.length > 0" lines="full">
+        <ion-item *ngFor="let alerta of historialAlertas">
+          <ion-icon name="mail-outline" slot="start" color="medium"></ion-icon>
+          <ion-label>
+            <h3>{{ alerta.destinatario }}</h3>
+            <p>{{ alerta.mensaje }}</p>
+            <p class="fecha-alerta">{{ formatearFecha(alerta.fechaEnvio) }}</p>
+          </ion-label>
+          <ion-badge slot="end" [color]="alerta.estadoEnvio === 'ENVIADO' ? 'success' : 'warning'">
+            {{ alerta.tipoAlerta }}
+          </ion-badge>
+          <ion-button slot="end" fill="clear" color="danger" (click)="eliminarAlerta(alerta)">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+      </ion-list>
+
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>

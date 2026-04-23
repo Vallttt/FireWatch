@@ -1,0 +1,9 @@
+node_modules
+.angular
+www
+dist
+.git
+.claude
+.vscode
+.editorconfig
+karma.conf.js

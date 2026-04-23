@@ -27,6 +27,11 @@ public class NotificationService {
         return authClient.getUsersForAlerts();
     }
 
+    /**
+     * Procesa y persiste una alerta para todos los usuarios notificables.
+     * Canal único: EMAIL. El tipo (Evacuación, Emergencia, etc.) determina
+     * solo la clasificación de la alerta, no el canal.
+     */
     public void procesarAlerta(AlertaRequestDTO request) {
         List<UserAlertRequestDTO> usuarios = authClient.getUsersForAlerts();
         GeneradorAlerta generador = factory.obtenerGenerador(request.getTipo());
@@ -35,15 +40,13 @@ public class NotificationService {
         UUID despachoId = UUID.randomUUID();
 
         for (UserAlertRequestDTO user : usuarios) {
-            String destinatario = "SMS".equalsIgnoreCase(request.getTipo())
-                    ? user.getPhone()
-                    : user.getEmail();
+            String email = user.getEmail();
 
-            if (destinatario != null && !destinatario.isBlank()) {
-                Notificacion alerta = generador.generarAlerta(request.getMensaje(), destinatario);
+            if (email != null && !email.isBlank()) {
+                Notificacion alerta = generador.generarAlerta(request.getMensaje(), email);
                 alerta.setDespachoId(despachoId);
                 alerta.setReporteId(request.getReporteId());
-                alerta.setEstadoEnvio("PENDIENTE");
+                alerta.setEstadoEnvio("ENVIADO");
                 alerta.setUsuarioId(user.getId() != null ? UUID.fromString(user.getId()) : null);
                 alerta.setFechaEnvio(LocalDateTime.now());
                 repository.save(alerta);

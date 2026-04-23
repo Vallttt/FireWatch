@@ -72,7 +72,7 @@
 
       <!-- Mensaje -->
       <div class="input-section">
-        <ion-label class="section-label">Cuerpo del mensaje (SMS / Push)</ion-label>
+        <ion-label class="section-label">Cuerpo del mensaje</ion-label>
         <div class="custom-textarea">
           <ion-textarea
             rows="4"
@@ -87,21 +87,9 @@
         <ion-label class="section-label">Distribución de red</ion-label>
 
         <ion-item lines="none" class="channel-item">
-          <ion-icon name="notifications-outline" slot="start"></ion-icon>
-          <ion-label>Notificación App (Push)</ion-label>
-          <ion-toggle slot="end" [(ngModel)]="canalPush"></ion-toggle>
-        </ion-item>
-
-        <ion-item lines="none" class="channel-item">
-          <ion-icon name="call-outline" slot="start"></ion-icon>
-          <ion-label>SMS masivo telefónico</ion-label>
-          <ion-toggle slot="end" [(ngModel)]="canalSms"></ion-toggle>
-        </ion-item>
-
-        <ion-item lines="none" class="channel-item">
           <ion-icon name="mail-outline" slot="start"></ion-icon>
-          <ion-label>Boletín electrónico (Mail)</ion-label>
-          <ion-toggle slot="end" [(ngModel)]="canalMail"></ion-toggle>
+          <ion-label>Boletín electrónico (Email)</ion-label>
+          <ion-toggle slot="end" [(ngModel)]="canalMail" [checked]="true"></ion-toggle>
         </ion-item>
       </div>
 
@@ -142,11 +130,7 @@
 
       <ion-list *ngIf="!loadingHistorial && historialAlertas.length > 0" lines="full">
         <ion-item *ngFor="let alerta of historialAlertas">
-          <ion-icon
-            [name]="alerta.tipoAlerta === 'SMS' ? 'call-outline' : 'mail-outline'"
-            slot="start"
-            color="medium">
-          </ion-icon>
+          <ion-icon name="mail-outline" slot="start" color="medium"></ion-icon>
           <ion-label>
             <h3>{{ alerta.destinatario }}</h3>
             <p>{{ alerta.mensaje }}</p>

@@ -1,0 +1,555 @@
+/* ==========================================================================
+   MAPA  ·  estilos específicos
+   ========================================================================== */
+
+/* ==========================================================================
+   MAPA (contenedor)
+   ========================================================================== */
+.map-wrapper {
+  width: calc(100% - 30px);
+  margin: 15px auto;
+  height: 40vh;
+  min-height: 250px;
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  border-bottom: 4px solid var(--ion-color-danger, #DC1F26);
+  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* ==========================================================================
+   FOCUS CARD (foco seleccionado)
+   ========================================================================== */
+.focus-card {
+  margin-top: 10px;
+  margin-left: 15px;
+  margin-right: 15px;
+  z-index: 20;
+  position: relative;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(139, 0, 0, 0.06);
+}
+
+/* Estado row */
+.estado-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.estado-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.estado-badge.activo { background: #FFCDD2; color: #B71C1C; }
+.estado-badge.controlado { background: #C8E6C9; color: #1B5E20; }
+.estado-badge.finalizado { background: #E0E0E0; color: #616161; }
+
+.brigada-info {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--vds-text-soft);
+}
+
+.brigada-info.critico {
+  color: var(--vds-red-500);
+  font-weight: 800;
+}
+
+/* ==========================================================================
+   ACCIONES DEL FOCO (admin)
+   ========================================================================== */
+.focus-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.action-btn ion-icon { font-size: 16px; }
+
+.action-btn.outline {
+  background: #FFF5F5;
+  color: var(--vds-red-500);
+  border: 1.5px solid rgba(220, 31, 38, 0.3);
+}
+
+.action-btn.controlado {
+  background: #E8F5E9;
+  color: #1B5E20;
+}
+
+.action-btn.finalizado {
+  background: #F5F5F5;
+  color: #616161;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+}
+
+.action-btn:active {
+  transform: scale(0.96);
+}
+
+/* ==========================================================================
+   PANEL DE BRIGADAS
+   ========================================================================== */
+.admin-panel ion-card-content {
+  padding-top: 4px;
+}
+
+.brigade-list {
+  background: transparent !important;
+  padding: 0;
+}
+
+.brigade-item {
+  --background: var(--vds-bg-input);
+  --background-hover: rgba(220, 31, 38, 0.05);
+  --border-radius: 14px;
+  --inner-padding-end: 10px;
+  --padding-start: 12px;
+  --min-height: 64px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--vds-border);
+  transition: all 0.25s ease;
+}
+
+.brigade-item:hover {
+  --background: #ffffff;
+  border-color: rgba(220, 31, 38, 0.25);
+  box-shadow: 0 8px 18px rgba(220, 31, 38, 0.10);
+}
+
+.brigade-icon-bg {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #E65100 0%, #FF6D00 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  box-shadow: 0 6px 14px rgba(230, 81, 0, 0.32);
+}
+
+.brigade-icon-bg ion-icon {
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.brigade-icon-bg.occupied {
+  background: linear-gradient(135deg, #BF360C 0%, #E65100 100%);
+  box-shadow: 0 6px 14px rgba(230, 81, 0, 0.32);
+}
+
+.brigade-item ion-label h2 {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: var(--vds-text);
+  margin-bottom: 2px;
+}
+
+.brigade-item ion-label p {
+  font-size: 12px;
+  color: var(--vds-text-soft);
+  margin: 0;
+}
+
+.brigade-item.occupied {
+  border-color: rgba(230, 81, 0, 0.15);
+}
+
+/* Brigade action buttons row */
+.brigade-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   BOTÓN DESPACHAR
+   ========================================================================== */
+.dispatch-btn {
+  background: linear-gradient(135deg, #E65100 0%, #FF6D00 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 6px 14px rgba(230, 81, 0, 0.30);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  height: 36px;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.dispatch-btn:hover:not([disabled]) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(230, 81, 0, 0.40);
+}
+
+.dispatch-btn:active:not([disabled]) {
+  transform: scale(0.96);
+}
+
+.dispatch-btn[disabled] {
+  background: #E5E0E1;
+  color: #B89599;
+  box-shadow: none;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   BOTÓN ELIMINAR BRIGADA
+   ========================================================================== */
+.delete-btn {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid rgba(220, 31, 38, 0.25);
+  border-radius: 10px;
+  background: #FFF5F5;
+  color: var(--vds-red-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  padding: 0;
+  font-family: inherit;
+}
+
+.delete-btn ion-icon {
+  font-size: 16px;
+}
+
+.delete-btn:hover {
+  background: var(--vds-red-500);
+  color: #ffffff;
+  border-color: var(--vds-red-500);
+}
+
+/* ==========================================================================
+   FORMULARIO CREAR BRIGADA
+   ========================================================================== */
+.create-brigade-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.brigade-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1.5px solid var(--vds-border-input);
+  border-radius: var(--radius-input);
+  background: var(--vds-bg-input);
+  color: var(--vds-text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.brigade-input::placeholder {
+  color: var(--vds-text-mute);
+}
+
+.brigade-input:focus {
+  border-color: var(--vds-red-500);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(220, 31, 38, 0.08);
+}
+
+.create-btn {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 12px;
+  background: var(--red-gradient);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(220, 31, 38, 0.30);
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+  padding: 0;
+  font-family: inherit;
+}
+
+.create-btn ion-icon {
+  font-size: 22px;
+}
+
+.create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(220, 31, 38, 0.40);
+}
+
+/* ==========================================================================
+   TIPS Y PROTOCOLOS (usuario)
+   ========================================================================== */
+.tip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: var(--vds-bg-input);
+  border-radius: 12px;
+  border: 1px solid var(--vds-border);
+}
+
+.tip-item ion-icon {
+  font-size: 20px;
+  color: var(--vds-red-500);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.tip-item p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vds-text);
+  line-height: 1.5;
+}
+
+.protocol-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.protocol-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  background: var(--vds-bg-input);
+  border-radius: 14px;
+  border: 1px solid var(--vds-border);
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--red-gradient);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(220, 31, 38, 0.30);
+}
+
+.protocol-step h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--vds-text);
+}
+
+.protocol-step p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vds-text-soft);
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   HISTORIAL DE INCENDIOS
+   ========================================================================== */
+.history-list {
+  background: transparent !important;
+  padding: 0;
+}
+
+.history-item {
+  --background: var(--vds-bg-input);
+  --border-radius: 14px;
+  --inner-padding-end: 10px;
+  --padding-start: 12px;
+  --min-height: 70px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--vds-border);
+}
+
+.history-icon-bg {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--red-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  box-shadow: 0 4px 10px rgba(220, 31, 38, 0.25);
+}
+
+.history-icon-bg ion-icon {
+  font-size: 18px;
+  color: #ffffff;
+}
+
+.history-item ion-label h2 {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: var(--vds-text);
+  margin-bottom: 2px;
+}
+
+.history-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px !important;
+}
+
+.brigada-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--vds-text-soft);
+}
+
+/* ==========================================================================
+   MODO OSCURO
+   ========================================================================== */
+:host-context(body.dark) {
+  .estado-badge.activo { background: #4A1A1E; color: #FF6E7E; }
+  .estado-badge.controlado { background: #1A3A1E; color: #66BB6A; }
+  .estado-badge.finalizado { background: #2A2A2A; color: #BDBDBD; }
+
+  .brigada-info { color: #E8D5D7; }
+  .brigada-info.critico { color: #FF4D5E; }
+
+  .action-btn.outline {
+    background: #341A1F;
+    color: #FF4D5E;
+    border-color: rgba(255, 77, 94, 0.3);
+  }
+
+  .action-btn.controlado {
+    background: #1A3A1E;
+    color: #66BB6A;
+  }
+
+  .action-btn.finalizado {
+    background: #2A2A2A;
+    color: #BDBDBD;
+  }
+
+  .brigade-item {
+    --background: #341A1F;
+    border-color: rgba(255, 77, 94, 0.22);
+  }
+
+  .brigade-item:hover {
+    --background: #3D1E24;
+    border-color: #FF4D5E;
+  }
+
+  .brigade-item ion-label h2 { color: #FFFFFF !important; }
+  .brigade-item ion-label p  { color: #E8D5D7 !important; }
+
+  .brigade-item.occupied {
+    border-color: rgba(255, 109, 0, 0.3);
+  }
+
+  .dispatch-btn[disabled] {
+    background: #2A1418;
+    color: #6B5358;
+  }
+
+  .delete-btn {
+    background: #341A1F;
+    border-color: rgba(255, 77, 94, 0.25);
+    color: #FF4D5E;
+  }
+
+  .delete-btn:hover {
+    background: #FF4D5E;
+    color: #ffffff;
+  }
+
+  .brigade-input {
+    background: #341A1F;
+    border-color: rgba(255, 77, 94, 0.30);
+    color: #ffffff;
+  }
+
+  .brigade-input::placeholder { color: #8B5358; }
+
+  .brigade-input:focus {
+    border-color: #FF4D5E;
+    background: #3D1E24;
+    box-shadow: 0 0 0 4px rgba(255, 77, 94, 0.18);
+  }
+
+  .tip-item,
+  .protocol-step {
+    background: #341A1F;
+    border-color: rgba(255, 77, 94, 0.15);
+  }
+
+  .tip-item p { color: #E8D5D7 !important; }
+  .protocol-step h4 { color: #FFFFFF !important; }
+  .protocol-step p { color: #E8D5D7 !important; }
+
+  .history-item {
+    --background: #341A1F;
+    border-color: rgba(255, 77, 94, 0.22);
+  }
+
+  .history-item ion-label h2 { color: #FFFFFF !important; }
+
+  .brigada-tag { color: #E8D5D7; }
+}

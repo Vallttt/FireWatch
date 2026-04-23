@@ -1,0 +1,199 @@
+<!--
+  Página de reporte de emergencias.
+  Permite al usuario marcar la ubicación, clasificar el incidente,
+  ajustar severidad y enviar observaciones.
+-->
+
+<ion-header class="ion-no-border" [class.header-hidden]="headerHidden">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+
+    <ion-title>Reportar Emergencia</ion-title>
+
+    <ion-buttons slot="end" class="status-pill danger">
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content
+  [fullscreen]="true"
+  [scrollEvents]="true"
+  (ionScroll)="onContentScroll($event)">
+
+  <!-- ============================================================
+       1. MAPA INTERACTIVO
+       ============================================================ -->
+  <ion-card class="geo-card">
+    <ion-card-content class="ion-no-padding">
+
+      <div class="map-title-row">
+        <div class="card-title-container">
+          <ion-icon name="location-outline"></ion-icon>
+          <ion-card-title>Ubicación</ion-card-title>
+        </div>
+
+        <button
+          type="button"
+          class="locate-btn-box"
+          (click)="obtenerMiUbicacionReal()">
+          <ion-icon name="navigate"></ion-icon>
+          <span>Centrar</span>
+        </button>
+      </div>
+
+      <p class="map-hint">
+        Arrastra el marcador en el mapa para señalar la ubicación
+      </p>
+
+      <!-- NUEVO WRAPPER DEL MAPA -->
+      <div class="report-map-wrapper">
+        <div id="reportMap" class="report-map"></div>
+      </div>
+
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================
+       2. CLASIFICACIÓN INICIAL
+       ============================================================ -->
+  <ion-card class="main-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="apps-outline"></ion-icon>
+        <ion-card-title>Reportes predeterminados</ion-card-title>
+      </div>
+      <p class="subtitle">Selecciona una plantilla para empezar</p>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-segment
+        [(ngModel)]="clasificacionInicial"
+        class="custom-segment"
+        (ionChange)="usarPlantilla($event.detail.value)">
+
+        <ion-segment-button value="Forestal">
+          <ion-label>Forestal</ion-label>
+        </ion-segment-button>
+
+        <ion-segment-button value="Estructural">
+          <ion-label>Estructural</ion-label>
+        </ion-segment-button>
+
+        <ion-segment-button value="Urbano">
+          <ion-label>Urbano</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================
+       3. DESCRIPCIÓN
+       ============================================================ -->
+  <ion-card class="main-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="list-outline"></ion-icon>
+        <ion-card-title>Descripción del incidente</ion-card-title>
+      </div>
+    </ion-card-header>
+
+    <ion-card-content>
+
+      <!-- Tipo -->
+      <div class="input-section">
+        <ion-label class="section-label">Tipo de incidente</ion-label>
+        <div class="custom-input">
+          <ion-icon name="flame-outline" class="prefix-icon"></ion-icon>
+          <select class="native-select" [(ngModel)]="tipoDesc">
+            <option value="" disabled selected>Elegir opción</option>
+            <option value="FORESTAL">Forestal</option>
+            <option value="ESTRUCTURAL">Estructural</option>
+            <option value="URBANO">Urbano</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Severidad -->
+      <div class="input-section">
+        <ion-label class="section-label">Nivel de severidad</ion-label>
+        <ion-segment [(ngModel)]="severidad" class="custom-segment" (ionChange)="onSeveridadChange()">
+          <ion-segment-button value="baja">
+            <ion-label>Baja</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="media">
+            <ion-label>Media</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="alta">
+            <ion-label>Alta</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+
+      <!-- Observaciones -->
+      <div class="input-section">
+        <ion-label class="section-label">Observaciones del ciudadano</ion-label>
+        <div class="custom-textarea">
+          <ion-textarea
+            rows="4"
+            placeholder="Describa el incidente o seleccione una clasificación inicial."
+            [(ngModel)]="descripcion">
+          </ion-textarea>
+        </div>
+      </div>
+
+      <!-- BOTÓN ENVIAR -->
+      <ion-button
+        expand="block"
+        shape="round"
+        class="submit-btn"
+        (click)="reportar()">
+        <ion-icon slot="start" name="paper-plane-outline"></ion-icon>
+        Enviar reporte
+      </ion-button>
+
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================
+       4. HISTORIAL DE REPORTES (admin)
+       ============================================================ -->
+  <ion-card *ngIf="isAdmin" class="history-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="time-outline"></ion-icon>
+        <ion-card-title>Historial de reportes</ion-card-title>
+      </div>
+      <p class="subtitle">Reportes registrados en el sistema</p>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-list lines="none" class="history-list" *ngIf="historialReportes.length > 0; else sinReportes">
+        <ion-item *ngFor="let reporte of historialReportes" class="history-item">
+          <div class="history-icon-bg" slot="start">
+            <ion-icon name="flame-outline"></ion-icon>
+          </div>
+          <ion-label>
+            <h2>{{ reporte.descripcion }}</h2>
+            <p>{{ reporte.usuarioReportante }}</p>
+            <p class="history-meta">
+              <span class="severity-tag" [ngClass]="mapSeverityLabel(reporte.severity)">{{ reporte.severity }}</span>
+              {{ formatearFecha(reporte.fechaIncidente) }}
+            </p>
+          </ion-label>
+          <button type="button" slot="end" class="delete-btn" (click)="eliminarReporte(reporte)">
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </ion-item>
+      </ion-list>
+
+      <ng-template #sinReportes>
+        <div class="empty-state">
+          <p>No se han enviado reportes todavía.</p>
+        </div>
+      </ng-template>
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>
