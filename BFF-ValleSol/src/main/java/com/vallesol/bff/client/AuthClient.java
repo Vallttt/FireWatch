@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Feign Client → Auth Service (:8080)
- * El BFF reenvía login y register al microservicio de autenticación.
+ * The BFF forwards login and register requests to the authentication microservice.
  */
 @FeignClient(name = "ms-auth", url = "${ms.auth.url}")
 public interface AuthClient {

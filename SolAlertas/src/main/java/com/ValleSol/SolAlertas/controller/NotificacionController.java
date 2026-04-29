@@ -36,13 +36,13 @@ public class NotificacionController {
     private NotificationService notificacionService;
 
     @PostMapping("/enviar")
-    public ResponseEntity<String> enviarNuevaAlerta(@RequestBody AlertaRequestDTO request) {
-        notificationService.procesarAlerta(request);
-        return ResponseEntity.ok("Alertas procesadas correctamente");
+    public ResponseEntity<String> sendNewAlert(@RequestBody AlertaRequestDTO request) {
+        notificationService.processAlert(request);
+        return ResponseEntity.ok("Alerts processed successfully");
     }
 
     @GetMapping
-    public List<Notificacion> historialDeAlertas() {
+    public List<Notificacion> alertHistory() {
         return repository.findOnePerDispatch();
     }
 
@@ -52,22 +52,22 @@ public class NotificacionController {
     }
 
     /**
-     * Retorna la cantidad total de alertas registradas.
-     * Usado por el BFF para el dashboard.
+     * Returns the total number of registered alerts.
+     * Used by the BFF for the dashboard.
      */
     @GetMapping("/conteo")
-    public int conteoDeAlertas() {
+    public int alertCount() {
         return (int) repository.count();
     }
 
     @DeleteMapping("/{id}")
     @org.springframework.transaction.annotation.Transactional
-    public ResponseEntity<Void> eliminarAlerta(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteAlert(@PathVariable UUID id) {
         Notificacion notif = repository.findById(id).orElse(null);
         if (notif == null) return ResponseEntity.notFound().build();
 
         if (notif.getDespachoId() != null) {
-            // Borra todas las notificaciones del mismo envío
+            // Delete all notifications belonging to the same dispatch
             repository.deleteByDespachoId(notif.getDespachoId());
         } else {
             repository.deleteById(id);

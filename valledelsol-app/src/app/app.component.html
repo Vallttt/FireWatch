@@ -17,73 +17,50 @@
       <ion-content>
         <ion-list lines="none">
 
-          <!-- Dashboard (solo admin, oculto en emergencia) -->
           <ion-menu-toggle auto-hide="false" *ngIf="isAdmin && !isEmergencyMode">
-            <ion-item
-              routerLink="/dashboard"
-              routerDirection="root"
-              routerLinkActive="selected">
+            <ion-item routerLink="/dashboard" routerDirection="root" routerLinkActive="selected">
               <ion-icon slot="start" name="grid-outline"></ion-icon>
-              <ion-label>Dashboard</ion-label>
+              <ion-label>Panel</ion-label>
             </ion-item>
           </ion-menu-toggle>
 
-          <!-- Reportar (siempre visible) -->
           <ion-menu-toggle auto-hide="false">
-            <ion-item
-              routerLink="/reportar"
-              routerDirection="root"
-              routerLinkActive="selected">
+            <ion-item routerLink="/reportar" routerDirection="root" routerLinkActive="selected">
               <ion-icon slot="start" name="document-text-outline"></ion-icon>
               <ion-label>Reportar</ion-label>
             </ion-item>
           </ion-menu-toggle>
 
-          <!-- Mapa (oculto en modo emergencia) -->
           <ion-menu-toggle auto-hide="false" *ngIf="!isEmergencyMode">
-            <ion-item
-              routerLink="/mapa"
-              routerDirection="root"
-              routerLinkActive="selected">
+            <ion-item routerLink="/mapa" routerDirection="root" routerLinkActive="selected">
               <ion-icon slot="start" name="map-outline"></ion-icon>
               <ion-label>Mapa</ion-label>
             </ion-item>
           </ion-menu-toggle>
 
-          <!-- Alertas (solo admin, oculto en emergencia) -->
           <ion-menu-toggle auto-hide="false" *ngIf="isAdmin && !isEmergencyMode">
-            <ion-item
-              routerLink="/alertas"
-              routerDirection="root"
-              routerLinkActive="selected">
+            <ion-item routerLink="/alertas" routerDirection="root" routerLinkActive="selected">
               <ion-icon slot="start" name="notifications-outline"></ion-icon>
               <ion-label>Alertas</ion-label>
             </ion-item>
           </ion-menu-toggle>
 
-          <!-- Separador -->
           <div style="height: 1px; background-color: #eaeaea; margin: 15px 20px;"></div>
 
-          <!-- Tema oscuro -->
           <ion-item>
             <ion-icon slot="start" name="moon-outline" color="dark"></ion-icon>
-            <ion-label>Tema Noche</ion-label>
-            <ion-toggle
-              slot="end"
-              color="dark"
-              (ionChange)="toggleDarkMode($event)">
-            </ion-toggle>
+            <ion-label>Modo nocturno</ion-label>
+            <ion-toggle slot="end" color="dark" (ionChange)="toggleDarkMode($event)"></ion-toggle>
           </ion-item>
         </ion-list>
       </ion-content>
 
-      <!-- CERRAR SESIÓN -->
       <div style="padding: 0px 15px; margin-top: 20px;">
-            <ion-button expand="block" shape="round" color="danger" fill="solid" (click)="cerrarSesion()">
-              <ion-icon slot="start" name="log-out-outline"></ion-icon>
-              CERRAR SESIÓN
-            </ion-button>
-          </div>
+        <ion-button expand="block" shape="round" color="danger" fill="solid" (click)="logout()">
+          <ion-icon slot="start" name="log-out-outline"></ion-icon>
+          CERRAR SESIÓN
+        </ion-button>
+      </div>
 
       <ion-footer class="ion-no-border">
         <p class="footer-text">FireWatch © 2026</p>

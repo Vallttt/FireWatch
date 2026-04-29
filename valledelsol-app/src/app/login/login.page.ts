@@ -25,6 +25,7 @@ import { AuthService } from '../services/auth.service';
     IonLabel
   ]
 })
+// El componente LoginPage maneja tanto el inicio de sesión como el registro de nuevos usuarios, con validaciones básicas y feedback mediante toasts. También incluye un modo de emergencia que simula un inicio de sesión rápido para ciudadanos en situaciones críticas. Las funciones están organizadas por secciones para facilitar su comprensión y mantenimiento.
 export class LoginPage {
   modo: string = 'login';
   email: string = '';
@@ -45,14 +46,17 @@ export class LoginPage {
     addIcons({flame,mailOutline,lockClosedOutline,personOutline,logInOutline,personAddOutline,eyeOutline,eyeOffOutline,warningOutline,callOutline});
   }
 
-  cambiarModo(modo: string | number | undefined) {
+  switchMode(modo: string | number | undefined) {
     if (typeof modo !== 'string') return;
     this.modo = modo;
   }
 
-  async iniciarSesion() {
+  // ------------------------------------------------------------------ //
+  //  LOGIN
+  // ------------------------------------------------------------------ //
+  async login() {
     if (!this.email || !this.password) {
-      await this.mostrarToast('Completa todos los campos', 'warning');
+      await this.showToast('Por favor complete todos los campos', 'warning');
       return;
     }
 
@@ -62,7 +66,6 @@ export class LoginPage {
     this.authService.login({ email: this.email, password: this.password }).subscribe({
       next: (res) => {
         this.loading = false;
-        // El servicio ya guarda token y role en localStorage
         if (res.role === 'ADMIN') {
           window.location.href = '/dashboard';
         } else {
@@ -78,34 +81,36 @@ export class LoginPage {
         } else if (err.status === 401) {
           msg = 'Correo o contraseña incorrectos';
         } else if (err.status === 403) {
-          msg = 'Usuario no habilitado para iniciar sesión';
+          msg = 'La cuenta de usuario no está habilitada';
         } else {
           msg = err.error?.message || 'Error al iniciar sesión';
         }
-        await this.mostrarToast(msg, 'danger');
+        await this.showToast(msg, 'danger');
       }
     });
   }
 
-  async registrarse() {
+  // ------------------------------------------------------------------ //
+  //  REGISTRO
+  // ------------------------------------------------------------------ //
+  async register() {
     if (!this.nombre || !this.phone || !this.email || !this.password || !this.confirmPassword) {
-      await this.mostrarToast('Completa todos los campos', 'warning');
+      await this.showToast('Por favor complete todos los campos', 'warning');
       return;
     }
     if (this.phone.replace(/\D/g, '').length < 8) {
-      await this.mostrarToast('Ingresa un número de teléfono válido', 'warning');
+      await this.showToast('Ingrese un número de teléfono válido', 'warning');
       return;
     }
-
     if (this.password !== this.confirmPassword) {
-      await this.mostrarToast('Las contraseñas no coinciden', 'danger');
+      await this.showToast('Las contraseñas no coinciden', 'danger');
       return;
     }
 
     this.loading = true;
     localStorage.removeItem('emergencyMode');
 
-    // Separar nombre y apellido
+    // El backend espera firstName y lastName por separado, así que hacemos una división simple del campo nombre completo. Si solo se ingresa un nombre, se usará como firstName y lastName quedará igual para evitar campos vacíos.
     const parts = this.nombre.trim().split(' ');
     const firstName = parts[0];
     const lastName = parts.slice(1).join(' ') || firstName;
@@ -119,9 +124,9 @@ export class LoginPage {
     }).subscribe({
       next: async (res) => {
         this.loading = false;
-        await this.mostrarToast('Cuenta creada exitosamente. Iniciando sesión...', 'success');
+        await this.showToast('Cuenta creada exitosamente. Iniciando sesión...', 'success');
 
-        // Auto-login después del registro
+        // Auto login después de registro exitoso, pero no esperar a que termine para mostrar el toast de éxito
         this.authService.login({ email: this.email, password: this.password }).subscribe({
           next: (loginRes) => {
             if (loginRes.role === 'ADMIN') {
@@ -131,7 +136,7 @@ export class LoginPage {
             }
           },
           error: async () => {
-            await this.mostrarToast('Cuenta creada. Inicia sesión manualmente.', 'warning');
+            await this.showToast('Cuenta creada. Inicia sesión manualmente.', 'warning');
           }
         });
       },
@@ -142,18 +147,20 @@ export class LoginPage {
         if (err.status === 0) {
           msg = 'No se pudo conectar con el servidor';
         } else if (err.status === 400) {
-          msg = err.error?.message || 'El correo ya se encuentra registrado';
+          msg = err.error?.message || 'El correo ya está registrado';
         } else {
-          msg = err.error?.message || 'Error al registrar';
+          msg = err.error?.message || 'Error al registrarse';
         }
-        await this.mostrarToast(msg, 'danger');
+        await this.showToast(msg, 'danger');
       }
     });
   }
-
-  async ingresarEmergencia() {
+  // ------------------------------------------------------------------ //
+  //  MODO EMERGENCIA
+  // ------------------------------------------------------------------ //
+  async enterEmergency() {
     this.loadingEmergencia = true;
-    await this.mostrarToast('Abriendo canal rojo de Emergencias...', 'danger');
+    await this.showToast('Abriendo canal de emergencia...', 'danger');
 
     setTimeout(() => {
       this.loadingEmergencia = false;
@@ -166,9 +173,9 @@ export class LoginPage {
   togglePassword() { this.showPassword = !this.showPassword; }
   toggleConfirmPassword() { this.showConfirmPassword = !this.showConfirmPassword; }
 
-  private async mostrarToast(mensaje: string, color: string = 'primary') {
+  private async showToast(message: string, color: string = 'primary') {
     const toast = await this.toastController.create({
-      message: mensaje,
+      message,
       duration: 2200,
       position: 'top',
       color

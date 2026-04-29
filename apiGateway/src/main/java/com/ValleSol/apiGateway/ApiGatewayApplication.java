@@ -23,9 +23,9 @@ public class ApiGatewayApplication {
     }
 
     /**
-     * CORS global — acepta cualquier origen (web, Capacitor Android/iOS, emulador AVD).
-     * Necesario para que la WebView de Capacitor (origen http://localhost) pueda
-     * hacer peticiones cross-origin al gateway en http://10.0.2.2:8000.
+     * Global CORS — accepts any origin (web, Capacitor Android/iOS, AVD emulator).
+     * Required so that the Capacitor WebView (origin http://localhost) can make
+     * cross-origin requests to the gateway at http://10.0.2.2:8000.
      */
     @Bean
     public CorsWebFilter corsWebFilter() {
@@ -43,37 +43,37 @@ public class ApiGatewayApplication {
     }
 
     /**
-     * ÚNICA PUERTA DE ENTRADA.
-     * Todo el tráfico del frontend pasa por el API Gateway hacia el BFF.
-     * El BFF orquesta las llamadas a los microservicios.
+     * SINGLE ENTRY POINT.
+     * All frontend traffic passes through the API Gateway to the BFF.
+     * The BFF orchestrates calls to the microservices.
      *
-     * Frontend (:8100) → API Gateway (:8000) → BFF (:8001) → Microservicios
+     * Frontend (:8100) → API Gateway (:8000) → BFF (:8001) → Microservices
      */
     @Bean
     public RouteLocator routeLocator(RouteLocatorBuilder builder) {
         return builder.routes()
 
-                // 1. Autenticación → BFF → Auth Service
+                // 1. Authentication → BFF → Auth Service
                 .route("bff-auth", r -> r
                         .path("/auth/**")
                         .uri(bffUrl))
 
-                // 2. Reportes → BFF → Report Service
+                // 2. Reports → BFF → Report Service
                 .route("bff-reportes", r -> r
                         .path("/api/reportes/**")
                         .uri(bffUrl))
 
-                // 3. Alertas → BFF → SolAlertas
+                // 3. Alerts → BFF → SolAlertas
                 .route("bff-alertas", r -> r
                         .path("/api/alertas/**")
                         .uri(bffUrl))
 
-                // 4. Mapa / Geo → BFF → Geo Service
+                // 4. Map / Geo → BFF → Geo Service
                 .route("bff-mapa", r -> r
                         .path("/api/mapa/**")
                         .uri(bffUrl))
 
-                // 5. Dashboard → BFF (orquestación local)
+                // 5. Dashboard → BFF (local orchestration)
                 .route("bff-dashboard", r -> r
                         .path("/api/dashboard/**")
                         .uri(bffUrl))

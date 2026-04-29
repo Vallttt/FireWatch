@@ -26,43 +26,43 @@ public class DashboardController {
     private GeoClient geoClient;
 
     @GetMapping("/stats")
-    public Map<String, Object> recopilarEstadisticas() {
-        Map<String, Object> reporteMaestro = new HashMap<>();
+    public Map<String, Object> gatherStatistics() {
+        Map<String, Object> masterReport = new HashMap<>();
 
         try {
-            int incendios = reportesClient.obtenerTotalFocosActivos();
-            int alertas = alertasClient.obtenerTotalAlertas();
+            int fires = reportesClient.getTotalActiveFires();
+            int alerts = alertasClient.getTotalAlerts();
 
-            // Contar brigadas reales desde Geo Service
-            int brigadas = 0;
+            // Count real brigades from the Geo Service
+            int brigades = 0;
             try {
                 Map<String, Object> geoResponse = geoClient.getBrigades();
                 Object dataObj = geoResponse.get("data");
                 if (dataObj instanceof List) {
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> brigadeList = (List<Map<String, Object>>) dataObj;
-                    brigadas = (int) brigadeList.stream()
+                    brigades = (int) brigadeList.stream()
                         .filter(b -> "DEPLOYED".equals(b.get("status")))
                         .count();
                 }
             } catch (Exception geoEx) {
-                System.out.println("Geo Service no disponible para brigadas: " + geoEx.getMessage());
+                System.out.println("Geo Service unavailable for brigades: " + geoEx.getMessage());
             }
 
-            reporteMaestro.put("totalIncendios", incendios);
-            reporteMaestro.put("alertasEmitidas", alertas);
-            reporteMaestro.put("brigadasActivas", brigadas);
-            reporteMaestro.put("estadoGlobal", incendios > 3 ? "CRÍTICO" : "ESTABLE");
-            reporteMaestro.put("status", "BFF_SUCCESS");
+            masterReport.put("totalIncendios", fires);
+            masterReport.put("alertasEmitidas", alerts);
+            masterReport.put("brigadasActivas", brigades);
+            masterReport.put("estadoGlobal", fires > 3 ? "CRÍTICO" : "ESTABLE");
+            masterReport.put("status", "BFF_SUCCESS");
 
         } catch (Exception e) {
-            reporteMaestro.put("totalIncendios", 0);
-            reporteMaestro.put("alertasEmitidas", 0);
-            reporteMaestro.put("brigadasActivas", 0);
-            reporteMaestro.put("estadoGlobal", "SISTEMA DESCONECTADO");
-            reporteMaestro.put("status", "BFF_ERROR_SERVICIOS_CAIDOS");
+            masterReport.put("totalIncendios", 0);
+            masterReport.put("alertasEmitidas", 0);
+            masterReport.put("brigadasActivas", 0);
+            masterReport.put("estadoGlobal", "SIN CONEXIÓN");
+            masterReport.put("status", "BFF_ERROR_SERVICES_DOWN");
         }
 
-        return reporteMaestro;
+        return masterReport;
     }
 }

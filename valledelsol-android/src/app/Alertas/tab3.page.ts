@@ -39,6 +39,7 @@ export class Tab3Page {
   loadingHistorial = false;
 
   canalMail: boolean = true;
+  canalPush: boolean = false;
 
   headerHidden: boolean = false;
   private lastScroll: number = 0;
@@ -55,23 +56,23 @@ export class Tab3Page {
   }
 
   ionViewDidEnter() {
-    this.cargarHistorial();
+    this.loadHistory();
   }
 
-  async eliminarAlerta(alerta: Notificacion) {
+  async deleteAlert(alerta: Notificacion) {
     this.alertService.eliminarAlerta(alerta.id).subscribe({
       next: async () => {
         this.historialAlertas = this.historialAlertas.filter(a => a.id !== alerta.id);
         await this.showToast('Alerta eliminada', 'warning');
       },
       error: async (err) => {
-        console.error('Error al eliminar alerta', err);
+        console.error('Error deleting alert', err);
         await this.showToast('Error al eliminar la alerta', 'danger');
       }
     });
   }
 
-  private cargarHistorial() {
+  private loadHistory() {
     this.loadingHistorial = true;
     this.alertService.historial().subscribe({
       next: (data) => {
@@ -81,13 +82,13 @@ export class Tab3Page {
         this.loadingHistorial = false;
       },
       error: (err) => {
-        console.warn('No se pudo cargar historial de alertas', err);
+        console.warn('Could not load alert history', err);
         this.loadingHistorial = false;
       }
     });
   }
 
-  formatearFecha(fecha: string): string {
+  formatDate(fecha: string): string {
     const d = new Date(fecha);
     return d.toLocaleDateString('es-CL', {
       day: '2-digit', month: 'short', year: 'numeric',
@@ -105,33 +106,32 @@ export class Tab3Page {
     this.lastScroll = current;
   }
 
-  // Aplica un protocolo predefinido al seleccionar el segment
-  aplicarProtocolo(protocolo: string | number | undefined) {
+  applyProtocol(protocolo: string | number | undefined) {
     if (typeof protocolo !== 'string') return;
 
-    const plantillas: { [key: string]: { tipo: string; mensaje: string } } = {
+    const templates: { [key: string]: { tipo: string; mensaje: string } } = {
       'Evacuación': {
         tipo: 'Evacuación',
-        mensaje: 'EVACUACIÓN INMEDIATA: Se ha detectado un incendio en su zona. Diríjase al punto de encuentro más cercano y siga las instrucciones del personal de emergencia.'
+        mensaje: 'EVACUACIÓN INMEDIATA: Se ha detectado un incendio en su área. Diríjase al punto de reunión más cercano y siga las instrucciones del personal de emergencia.'
       },
       'Incendio': {
         tipo: 'Emergencia',
-        mensaje: 'ALERTA DE INCENDIO: Se ha reportado un foco de incendio en su sector. Manténgase alerta y siga las instrucciones oficiales del cuerpo de bomberos.'
+        mensaje: 'ALERTA DE INCENDIO: Se ha reportado un brote de incendio en su sector. Manténgase alerta y siga las instrucciones oficiales de los bomberos.'
       },
       'Prevención': {
         tipo: 'Preventiva',
-        mensaje: 'PREVENCIÓN: Condiciones climáticas adversas. Evite quemas y mantenga despejadas las áreas cercanas a vegetación seca.'
+        mensaje: 'PREVENCIÓN: Condiciones climáticas adversas. Evite quemas y mantenga libres las áreas cercanas a vegetación seca.'
       },
       'Controlado': {
         tipo: 'Informativo',
-        mensaje: 'INFORMACIÓN: El incendio reportado ha sido controlado. Puede retornar a sus actividades normales. Fin de la alerta roja.'
+        mensaje: 'INFORMACIÓN: El incendio reportado ha sido contenido. Puede retomar sus actividades normales. Fin de la alerta roja.'
       }
     };
 
-    const plantilla = plantillas[protocolo];
-    if (plantilla) {
-      this.tipo = plantilla.tipo;
-      this.mensaje = plantilla.mensaje;
+    const template = templates[protocolo];
+    if (template) {
+      this.tipo = template.tipo;
+      this.mensaje = template.mensaje;
     }
   }
 
@@ -145,30 +145,30 @@ export class Tab3Page {
     await toast.present();
   }
 
-  async enviarAlerta() {
+  async sendAlert() {
     if (!this.mensaje) {
-      await this.showToast('Escribe el cuerpo del mensaje de alerta', 'warning');
+      await this.showToast('Por favor escriba el cuerpo del mensaje', 'warning');
       return;
     }
-
 
     this.loading = true;
 
     this.alertService.enviarAlerta({
       mensaje: this.mensaje,
-      tipo: this.tipo || 'General'
+      tipo: this.tipo || 'General',
+      canalEmail: this.canalMail,
+      canalPush: this.canalPush
     }).subscribe({
       next: async () => {
         this.loading = false;
         await this.showToast('Alerta enviada exitosamente', 'success');
         this.mensaje = '';
         this.protocoloSeleccionado = '';
-        this.cargarHistorial();
+        this.loadHistory();
       },
       error: async (err) => {
         this.loading = false;
-        console.error('Error al enviar alerta', err);
-
+        console.error('Error sending alert', err);
         if (err.status === 0) {
           await this.showToast('Sin conexión al servidor', 'danger');
         } else {

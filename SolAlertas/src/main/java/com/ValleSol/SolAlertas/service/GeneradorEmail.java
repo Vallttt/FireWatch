@@ -9,15 +9,15 @@ public class GeneradorEmail implements GeneradorAlerta {
 
     @Override
     public Notificacion generarAlerta(String mensaje, String destinatario) {
-        Notificacion alertaEmail = new Notificacion();
-        
-        alertaEmail.setTipoAlerta("EMAIL"); 
+        Notificacion emailAlert = new Notificacion();
 
-        // Formato simulando un asunto de correo formal
-        alertaEmail.setMensaje("Asunto: [Catástrofe Municipal Valle del Sol] - " + mensaje);
-        alertaEmail.setDestinatario(destinatario); 
-        
-        return alertaEmail;
+        emailAlert.setTipoAlerta("EMAIL");
+
+        // Format simulating a formal email subject
+        emailAlert.setMensaje("Subject: [Municipal Disaster Valle del Sol] - " + mensaje);
+        emailAlert.setDestinatario(destinatario);
+
+        return emailAlert;
     }
 
 }

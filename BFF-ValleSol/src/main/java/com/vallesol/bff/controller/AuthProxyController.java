@@ -10,9 +10,9 @@ import java.util.Map;
 
 /**
  * BFF Proxy → Auth Service
- * Recibe requests del frontend (via Gateway) y las reenvía al microservicio de Auth.
- * Reenvía el código HTTP real del Auth Service (401, 400, etc.) para que el frontend
- * muestre mensajes de error apropiados.
+ * Receives requests from the frontend (via Gateway) and forwards them to the Auth microservice.
+ * Forwards the real HTTP status code from the Auth Service (401, 400, etc.) so the frontend
+ * can display appropriate error messages.
  */
 @RestController
 @RequestMapping("/auth")
@@ -27,14 +27,14 @@ public class AuthProxyController {
             Map<String, Object> response = authClient.login(body);
             return ResponseEntity.ok(response);
         } catch (FeignException e) {
-            // Auth Service retorna 401/403 para credenciales incorrectas
+            // Auth Service returns 401/403 for incorrect credentials
             int status = e.status();
-            String message = "Correo o contraseña incorrectos";
+            String message = "Incorrect email or password";
             return ResponseEntity.status(401)
                     .body(Map.of("message", message));
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Auth Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Auth Service unavailable", "message", e.getMessage()));
         }
     }
 
@@ -47,15 +47,15 @@ public class AuthProxyController {
             int status = e.status();
             String message;
             if (status == 400) {
-                message = "El correo ya se encuentra registrado";
+                message = "The email is already registered";
             } else {
-                message = "Error en el servicio de autenticación";
+                message = "Authentication service error";
             }
             return ResponseEntity.status(status)
                     .body(Map.of("message", message));
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Auth Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Auth Service unavailable", "message", e.getMessage()));
         }
     }
 }

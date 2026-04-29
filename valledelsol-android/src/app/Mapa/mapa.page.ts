@@ -66,24 +66,19 @@ export class MapaPage implements OnInit {
   ngOnInit() {
     const role = localStorage.getItem('userRole');
     this.isAdmin = (role === 'admin');
-    setTimeout(() => { this.iniciarMapaSatelital(); }, 200);
-    this.cargarDatosBackend();
+    setTimeout(() => { this.initSatelliteMap(); }, 200);
+    this.loadBackendData();
   }
 
-  /* ================================================================
-     CARGA DE DATOS DESDE BACKEND
-     ================================================================ */
-  private cargarDatosBackend() {
+  private loadBackendData() {
     this.geoService.getMapData().subscribe({
       next: (data) => {
         this.backendLoaded = true;
 
-        // Mapear brigadas disponibles
         this.brigadasDisponibles = (data.brigades || [])
           .filter(b => b.status === 'AVAILABLE')
           .map(b => ({ id: b.id, nombre: b.name, tiempoMinutos: 10, backendId: b.id }));
 
-        // Mapear reportes del mapa como emergencias
         this.emergencias = (data.reports || [])
           .filter(r => r.reportStatus === 'ACTIVE')
           .map((r, i) => ({
@@ -98,7 +93,6 @@ export class MapaPage implements OnInit {
             severity: r.severity
           }));
 
-        // Reconectar brigadas DEPLOYED con sus incendios (por coordenadas)
         this.brigadasOcupadas = [];
         (data.brigades || [])
           .filter(b => b.status === 'DEPLOYED')
@@ -117,7 +111,6 @@ export class MapaPage implements OnInit {
                 emergenciaId: emergencia.id
               });
             } else {
-              // Brigada DEPLOYED sin incendio activo → resetear a AVAILABLE
               this.geoService.updateBrigade(brigade.id, {
                 name: brigade.name,
                 institution: brigade.institution || 'Valle del Sol',
@@ -133,16 +126,16 @@ export class MapaPage implements OnInit {
                     backendId: brigade.id
                   });
                 },
-                error: (err) => console.warn('No se pudo resetear brigada huérfana', err)
+                error: (err) => console.warn('Could not reset orphaned brigade', err)
               });
             }
           });
 
-        this.desplegarRadares();
+        this.renderMarkers();
       },
       error: (err) => {
-        console.warn('No se pudo conectar con Geo Service.', err);
-        this.showToast('No se pudo cargar datos del mapa', 'danger');
+        console.warn('Could not connect to Geo Service.', err);
+        this.showToast('No se pudieron cargar los datos del mapa', 'danger');
       }
     });
 
@@ -152,7 +145,7 @@ export class MapaPage implements OnInit {
           new Date(b.fechaIncidente).getTime() - new Date(a.fechaIncidente).getTime()
         );
       },
-      error: (err) => console.warn('No se pudo cargar historial de reportes', err)
+      error: (err) => console.warn('Could not load report history', err)
     });
   }
 
@@ -170,10 +163,7 @@ export class MapaPage implements OnInit {
     }
   }
 
-  /* ================================================================
-     MAPA
-     ================================================================ */
-  iniciarMapaSatelital() {
+  initSatelliteMap() {
     this.map = L.map('globalMap', {
       zoomControl: false,
       attributionControl: false
@@ -186,10 +176,10 @@ export class MapaPage implements OnInit {
       maxZoom: 18
     }).addTo(this.map);
 
-    this.desplegarRadares();
+    this.renderMarkers();
   }
 
-  desplegarRadares() {
+  renderMarkers() {
     if (!this.map) return;
 
     this.marcadoresLeaflet.forEach(pin => pin.remove());
@@ -217,59 +207,47 @@ export class MapaPage implements OnInit {
       this.marcadoresLeaflet.push(pin);
 
       pin.on('click', () => {
-        this.ngZone.run(() => {
-          this.focoSeleccionado = fuego;
-        });
+        this.ngZone.run(() => { this.focoSeleccionado = fuego; });
       });
     });
   }
 
-  /* ================================================================
-     BRIGADAS
-     ================================================================ */
-  async asignarBrigada(brigadaSeleccionada: any) {
+  async assignBrigade(selectedBrigade: any) {
     if (!this.focoSeleccionado || this.focoSeleccionado.brigada) return;
 
-    // Actualizar estado en backend si está conectado
-    if (brigadaSeleccionada.backendId) {
-      this.geoService.updateBrigade(brigadaSeleccionada.backendId, {
-        name: brigadaSeleccionada.nombre,
+    if (selectedBrigade.backendId) {
+      this.geoService.updateBrigade(selectedBrigade.backendId, {
+        name: selectedBrigade.nombre,
         institution: 'Valle del Sol',
         status: 'DEPLOYED',
         latitude: this.focoSeleccionado.lat,
         longitude: this.focoSeleccionado.lng
       }).subscribe({
-        error: (err) => console.warn('No se pudo actualizar brigada en backend', err)
+        error: (err) => console.warn('Could not update brigade in backend', err)
       });
     }
 
-    this.focoSeleccionado.brigada = brigadaSeleccionada.nombre;
-    this.brigadasOcupadas.push({
-      ...brigadaSeleccionada,
-      emergenciaId: this.focoSeleccionado.id
-    });
-    this.brigadasDisponibles = this.brigadasDisponibles.filter(
-      b => b.id !== brigadaSeleccionada.id
-    );
-    this.desplegarRadares();
-    await this.showToast(`${brigadaSeleccionada.nombre} despachada`, 'success');
+    this.focoSeleccionado.brigada = selectedBrigade.nombre;
+    this.brigadasOcupadas.push({ ...selectedBrigade, emergenciaId: this.focoSeleccionado.id });
+    this.brigadasDisponibles = this.brigadasDisponibles.filter(b => b.id !== selectedBrigade.id);
+    this.renderMarkers();
+    await this.showToast(`${selectedBrigade.nombre} despachada`, 'success');
   }
 
-  async desasignarBrigada() {
+  async unassignBrigade() {
     if (!this.focoSeleccionado || !this.focoSeleccionado.brigada) return;
-    const brigadaNombre = this.focoSeleccionado.brigada;
-    this.devolverBrigada(this.focoSeleccionado);
-    this.desplegarRadares();
-    await this.showToast(`${brigadaNombre} retirada del foco`, 'warning');
+    const brigadeName = this.focoSeleccionado.brigada;
+    this.returnBrigade(this.focoSeleccionado);
+    this.renderMarkers();
+    await this.showToast(`${brigadeName} retirada del foco`, 'warning');
   }
 
-  private devolverBrigada(emergencia: any) {
-    const ocupada = this.brigadasOcupadas.find(b => b.emergenciaId === emergencia.id);
-    if (ocupada) {
-      // Actualizar en backend
-      if ((ocupada as any).backendId) {
-        this.geoService.updateBrigade((ocupada as any).backendId, {
-          name: ocupada.nombre,
+  private returnBrigade(emergencia: any) {
+    const occupied = this.brigadasOcupadas.find(b => b.emergenciaId === emergencia.id);
+    if (occupied) {
+      if ((occupied as any).backendId) {
+        this.geoService.updateBrigade((occupied as any).backendId, {
+          name: occupied.nombre,
           institution: 'Valle del Sol',
           status: 'AVAILABLE',
           latitude: -33.46,
@@ -284,73 +262,68 @@ export class MapaPage implements OnInit {
               }
             });
           },
-          error: (err) => console.warn('No se pudo actualizar brigada en backend', err)
+          error: (err) => console.warn('Could not update brigade in backend', err)
         });
       }
 
       this.brigadasDisponibles.push({
-        id: ocupada.id,
-        nombre: ocupada.nombre,
-        tiempoMinutos: ocupada.tiempoMinutos
+        id: occupied.id,
+        nombre: occupied.nombre,
+        tiempoMinutos: occupied.tiempoMinutos
       });
-      this.brigadasOcupadas = this.brigadasOcupadas.filter(
-        b => b.emergenciaId !== emergencia.id
-      );
+      this.brigadasOcupadas = this.brigadasOcupadas.filter(b => b.emergenciaId !== emergencia.id);
     }
     emergencia.brigada = null;
   }
 
-  async cambiarEstado(nuevoEstado: string) {
+  async changeStatus(newStatus: string) {
     if (!this.focoSeleccionado) return;
 
-    if (nuevoEstado === 'finalizado' && this.focoSeleccionado.brigada) {
-      this.devolverBrigada(this.focoSeleccionado);
+    if (newStatus === 'finalizado' && this.focoSeleccionado.brigada) {
+      this.returnBrigade(this.focoSeleccionado);
     }
 
-    if (nuevoEstado === 'finalizado') {
+    if (newStatus === 'finalizado') {
       const foco = this.focoSeleccionado;
 
-      // Borrar del Geo Service → desaparece del mapa
       if (foco.backendId) {
         this.geoService.deleteMappedReport(foco.backendId).subscribe({
-          error: (err) => console.warn('No se pudo eliminar mapped_report en Geo Service', err)
+          error: (err) => console.warn('Could not delete mapped_report in Geo Service', err)
         });
       }
 
-      // Marcar INACTIVE en Report Service → actualiza dashboard
       if (foco.externalReportId) {
         this.reportService.actualizarEstado(foco.externalReportId, { estado: 'INACTIVE' }).subscribe({
           next: (updated) => {
             const idx = this.historialIncendios.findIndex(r => r.id === foco.externalReportId);
             if (idx !== -1) this.historialIncendios[idx] = updated;
           },
-          error: (err) => console.warn('No se pudo actualizar estado en Report Service', err)
+          error: (err) => console.warn('Could not update status in Report Service', err)
         });
       }
     }
 
-    this.focoSeleccionado.estado = nuevoEstado;
-    this.desplegarRadares();
+    this.focoSeleccionado.estado = newStatus;
+    this.renderMarkers();
 
-    if (nuevoEstado === 'finalizado') {
+    if (newStatus === 'finalizado') {
       this.focoSeleccionado = null;
     }
 
     await this.showToast(
-      `Estado actualizado: ${nuevoEstado}`,
-      nuevoEstado === 'controlado' ? 'success' : 'medium'
+      `Estado actualizado: ${newStatus}`,
+      newStatus === 'controlado' ? 'success' : 'medium'
     );
   }
 
-  async crearBrigada() {
+  async createBrigade() {
     if (!this.nuevaBrigadaNombre.trim()) {
-      await this.showToast('Ingresa el nombre de la brigada', 'warning');
+      await this.showToast('Por favor ingresa el nombre de la brigada', 'warning');
       return;
     }
 
     const nombre = this.nuevaBrigadaNombre.trim();
 
-    // Intentar crear en backend
     this.geoService.createBrigade({
       name: nombre,
       institution: 'Valle del Sol',
@@ -369,27 +342,24 @@ export class MapaPage implements OnInit {
         this.showToast('Brigada creada', 'success');
       },
       error: (err) => {
-        console.error('Error al crear brigada en backend', err);
-        this.showToast('Error al crear brigada. Verifica la conexión.', 'danger');
+        console.error('Error creating brigade in backend', err);
+        this.showToast('Error al crear brigada. Verifica tu conexión.', 'danger');
       }
     });
   }
 
-  async eliminarBrigada(brigada: any) {
-    // Intentar eliminar en backend
+  async deleteBrigade(brigada: any) {
     if (brigada.backendId) {
       this.geoService.deleteBrigade(brigada.backendId).subscribe({
-        error: (err) => console.warn('No se pudo eliminar brigada en backend', err)
+        error: (err) => console.warn('Could not delete brigade in backend', err)
       });
     }
 
-    this.brigadasDisponibles = this.brigadasDisponibles.filter(
-      b => b.id !== brigada.id
-    );
+    this.brigadasDisponibles = this.brigadasDisponibles.filter(b => b.id !== brigada.id);
     await this.showToast(`${brigada.nombre} eliminada`, 'warning');
   }
 
-  async eliminarDeHistorial(reporte: ReporteResponse) {
+  async deleteFromHistory(reporte: ReporteResponse) {
     this.reportService.eliminarReporte(reporte.id).subscribe({
       next: async () => {
         this.historialIncendios = this.historialIncendios.filter(r => r.id !== reporte.id);
@@ -399,31 +369,24 @@ export class MapaPage implements OnInit {
     });
   }
 
-  getEmergenciaDesc(emergenciaId: number): string {
+  getEmergencyDesc(emergenciaId: number): string {
     const em = this.emergencias.find(e => e.id === emergenciaId);
     return em ? em.desc : 'Emergencia desconocida';
   }
 
-  async eliminarEmergencia(emergencia: any) {
-    // Eliminar del backend si tiene ID
+  async deleteEmergency(emergencia: any) {
     if (emergencia.backendId) {
       this.geoService.deleteMappedReport(emergencia.backendId).subscribe({
-        error: (err) => console.warn('No se pudo eliminar emergencia en backend', err)
+        error: (err) => console.warn('Could not delete emergency in backend', err)
       });
     }
 
-    // Devolver brigada si estaba asignada
-    if (emergencia.brigada) {
-      this.devolverBrigada(emergencia);
-    }
+    if (emergencia.brigada) { this.returnBrigade(emergencia); }
 
-    // Limpiar selección si es el foco actual
-    if (this.focoSeleccionado?.id === emergencia.id) {
-      this.focoSeleccionado = null;
-    }
+    if (this.focoSeleccionado?.id === emergencia.id) { this.focoSeleccionado = null; }
 
     this.emergencias = this.emergencias.filter(e => e.id !== emergencia.id);
-    this.desplegarRadares();
+    this.renderMarkers();
     await this.showToast('Emergencia eliminada del historial', 'warning');
   }
 }

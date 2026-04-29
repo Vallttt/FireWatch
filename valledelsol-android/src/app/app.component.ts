@@ -83,34 +83,34 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
-    await this.solicitarPermisoNotificaciones();
-    this.iniciarPollingAlertas();
+    await this.requestNotificationPermission();
+    this.startAlertPolling();
   }
 
   ngOnDestroy() {
     this.pollSubscription?.unsubscribe();
   }
 
-  // ─── Notificaciones Push Locales ─────────────────────────────────────────
+  // ─── Local Push Notifications ────────────────────────────────────────────
 
-  private async solicitarPermisoNotificaciones() {
+  private async requestNotificationPermission() {
     try {
       const perm = await LocalNotifications.requestPermissions();
       if (perm.display === 'granted') {
-        console.log('[Push] Permiso de notificaciones concedido');
+        console.log('[Push] Notification permission granted');
       }
     } catch (e) {
-      console.warn('[Push] No se pudo solicitar permiso:', e);
+      console.warn('[Push] Could not request permission:', e);
     }
   }
 
   /**
-   * Consulta el historial de alertas cada 30 segundos.
-   * Si llega una alerta nueva (más reciente que la última vista),
-   * muestra una notificación push local.
+   * Polls the alert history every 30 seconds.
+   * If a new alert arrives (more recent than the last seen one),
+   * shows a local push notification.
    */
-  private iniciarPollingAlertas() {
-    // Inicializar timestamp con el momento actual para no notificar alertas viejas
+  private startAlertPolling() {
+    // Initialize timestamp to now so old alerts are not re-notified
     this.lastAlertTimestamp = Date.now();
 
     this.pollSubscription = interval(30_000).subscribe(() => {
@@ -128,22 +128,22 @@ export class AppComponent implements OnInit, OnDestroy {
 
           if (latestTime > this.lastAlertTimestamp) {
             this.lastAlertTimestamp = latestTime;
-            this.mostrarNotificacionPush(latest.tipoAlerta, latest.mensaje);
+            this.showPushNotification(latest.tipoAlerta, latest.mensaje);
           }
         },
-        error: () => { /* silencioso en background */ }
+        error: () => { /* silent in background */ }
       });
     });
   }
 
-  private async mostrarNotificacionPush(titulo: string, cuerpo: string) {
+  private async showPushNotification(title: string, body: string) {
     try {
       await LocalNotifications.schedule({
         notifications: [
           {
             id: Date.now(),
-            title: `⚠️ Alerta Valle del Sol: ${titulo}`,
-            body: cuerpo.length > 100 ? cuerpo.substring(0, 100) + '…' : cuerpo,
+            title: `⚠️ Valle del Sol Alert: ${title}`,
+            body: body.length > 100 ? body.substring(0, 100) + '…' : body,
             smallIcon: 'ic_notification',
             sound: 'beep.wav',
             actionTypeId: '',
@@ -152,7 +152,7 @@ export class AppComponent implements OnInit, OnDestroy {
         ]
       });
     } catch (e) {
-      console.warn('[Push] Error al mostrar notificación:', e);
+      console.warn('[Push] Error displaying notification:', e);
     }
   }
 
@@ -166,7 +166,7 @@ export class AppComponent implements OnInit, OnDestroy {
     document.body.classList.toggle('dark', shouldAdd);
   }
 
-  cerrarSesion() {
+  logout() {
     this.authService.logout();
     window.location.href = '/login';
   }

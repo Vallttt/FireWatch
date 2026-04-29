@@ -35,7 +35,7 @@ export class Tab1Page implements OnInit {
   headerHidden: boolean = false;
   private lastScroll: number = 0;
 
-  // Stats dinámicos desde BFF
+  // estado inicial de las estadísticas, se actualizará al cargar los datos reales
   stats: DashboardStats = {
     totalIncendios: 0,
     alertasEmitidas: 0,
@@ -44,7 +44,7 @@ export class Tab1Page implements OnInit {
   };
 
   actividadReciente: any[] = [];
-
+  
   constructor(
     private router: Router,
     private dashboardService: DashboardService,
@@ -59,21 +59,21 @@ export class Tab1Page implements OnInit {
   }
 
   ngOnInit() {
-    this.cargarStats();
+    this.loadStats();
   }
 
   ionViewDidEnter() {
-    this.cargarStats();
-    this.cargarActividad();
+    this.loadStats();
+    this.loadActivity();
   }
 
-  private cargarStats() {
+  private loadStats() {
     this.dashboardService.getStats().subscribe({
       next: (data) => {
         this.stats = data;
       },
       error: (err) => {
-        console.warn('No se pudo conectar con el BFF.', err);
+        console.warn('Could not connect to BFF.', err);
         this.stats = {
           totalIncendios: 0,
           alertasEmitidas: 0,
@@ -84,10 +84,10 @@ export class Tab1Page implements OnInit {
     });
   }
 
-  // EVENTOS DE SALTO INDESTRUCTIBLES
-  saltarAlMapa() { this.router.navigate(['/mapa']); }
-  saltarAReportar() { this.router.navigate(['/reportar']); }
-  saltarAAlertas() { this.router.navigate(['/alertas']); }
+  // metodos para navegación a otras páginas
+  goToMap() { this.router.navigate(['/mapa']); }
+  goToReport() { this.router.navigate(['/reportar']); }
+  goToAlerts() { this.router.navigate(['/alertas']); }
 
   onContentScroll(e: any) {
     const current = e.detail.scrollTop;
@@ -99,10 +99,10 @@ export class Tab1Page implements OnInit {
     this.lastScroll = current;
   }
 
-  private cargarActividad() {
+  private loadActivity() {
     this.reportService.listarReportes().subscribe({
       next: (reportes) => {
-        const reporteItems = reportes.slice(0, 5).map(r => ({
+        const reportItems = reportes.slice(0, 5).map(r => ({
           tipo: 'reporte',
           icono: 'flame-outline',
           descripcion: r.descripcion,
@@ -111,7 +111,7 @@ export class Tab1Page implements OnInit {
           badgeColor: r.severity === 'HIGH' || r.severity === 'CRITICAL' ? 'danger' : 'warning'
         }));
         const alertItems = this.actividadReciente.filter(a => a.tipo === 'alerta');
-        this.actividadReciente = [...reporteItems, ...alertItems]
+        this.actividadReciente = [...reportItems, ...alertItems]
           .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
           .slice(0, 6);
       }
@@ -127,15 +127,15 @@ export class Tab1Page implements OnInit {
           badge: a.tipoAlerta,
           badgeColor: 'primary'
         }));
-        const reporteItems = this.actividadReciente.filter(a => a.tipo === 'reporte');
-        this.actividadReciente = [...reporteItems, ...alertItems]
+        const reportItems = this.actividadReciente.filter(a => a.tipo === 'reporte');
+        this.actividadReciente = [...reportItems, ...alertItems]
           .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
           .slice(0, 6);
       }
     });
   }
 
-  formatearFecha(fecha: string): string {
+  formatDate(fecha: string): string {
     const d = new Date(fecha);
     return d.toLocaleDateString('es-CL', {
       day: '2-digit', month: 'short', year: 'numeric',

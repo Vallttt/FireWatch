@@ -8,26 +8,29 @@ import java.util.Map;
 
 /**
  * Feign Client → Report Service (:8081)
- * El BFF reenvía operaciones de reportes de emergencia.
+ * The BFF forwards emergency report operations.
  */
 @FeignClient(name = "ms-reportes", url = "${ms.reportes.url}")
 public interface ReportesClient {
 
     @PostMapping("/api/reportes")
-    Map<String, Object> crearReporte(@RequestBody Map<String, Object> body);
+    Map<String, Object> createReport(@RequestBody Map<String, Object> body);
 
     @GetMapping("/api/reportes")
-    List<Map<String, Object>> listarReportes();
+    List<Map<String, Object>> listReports();
 
     @GetMapping("/api/reportes/{id}")
-    Map<String, Object> obtenerReporte(@PathVariable("id") String id);
+    Map<String, Object> getReport(@PathVariable("id") String id);
 
     @PatchMapping("/api/reportes/{id}/estado")
-    Map<String, Object> actualizarEstado(@PathVariable("id") String id, @RequestBody Map<String, Object> body);
+    Map<String, Object> updateStatus(@PathVariable("id") String id, @RequestBody Map<String, Object> body);
 
     @GetMapping("/api/reportes/focos-activos")
-    Integer obtenerTotalFocosActivos();
+    Integer getTotalActiveFires();
 
     @DeleteMapping("/api/reportes/{id}")
-    void eliminarReporte(@PathVariable("id") String id);
+    void deleteReport(@PathVariable("id") String id);
+
+    @GetMapping("/api/reportes/{id}/media")
+    java.util.List<Map<String, Object>> getMedia(@PathVariable("id") String id);
 }

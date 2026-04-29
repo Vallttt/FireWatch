@@ -2,9 +2,7 @@
 
   <div class="login-wrapper">
 
-    <!-- ============================================================
-         BRAND BLOCK · Logo + título
-         ============================================================ -->
+    <!-- BRAND BLOCK -->
     <div class="brand-block">
       <div class="brand-icon">
         <ion-icon name="flame"></ion-icon>
@@ -13,38 +11,29 @@
       <p class="brand-subtitle">Municipalidad Valle del Sol</p>
     </div>
 
-    <!-- ============================================================
-         LOGIN CARD
-         ============================================================ -->
+    <!-- LOGIN CARD -->
     <div class="login-card">
 
-      <!-- Selector Login / Registro -->
       <ion-segment
         [value]="modo"
         class="custom-segment mode-segment"
-        (ionChange)="cambiarModo($event.detail.value)">
+        (ionChange)="switchMode($event.detail.value)">
         <ion-segment-button value="login">
-          <ion-label>Iniciar Sesión</ion-label>
+          <ion-label>Iniciar sesión</ion-label>
         </ion-segment-button>
         <ion-segment-button value="register">
           <ion-label>Registrarse</ion-label>
         </ion-segment-button>
       </ion-segment>
 
-      <!-- ============================================================
-           FORMULARIO LOGIN
-           ============================================================ -->
+      <!-- LOGIN FORM -->
       <div class="form-block" *ngIf="modo === 'login'">
 
         <div class="input-section">
           <ion-label class="section-label">Correo electrónico</ion-label>
           <div class="custom-input">
             <ion-icon name="mail-outline" class="prefix-icon"></ion-icon>
-            <ion-input
-              type="email"
-              placeholder="ejemplo@gmail.com"
-              [(ngModel)]="email">
-            </ion-input>
+            <ion-input type="email" placeholder="ejemplo@gmail.com" [(ngModel)]="email"></ion-input>
           </div>
         </div>
 
@@ -69,29 +58,23 @@
           expand="block"
           shape="round"
           class="submit-btn"
-          (click)="iniciarSesion()"
+          (click)="login()"
           [disabled]="loading">
           <ion-icon slot="start" name="log-in-outline"></ion-icon>
-          {{ loading ? 'Verificando…' : 'Ingresar' }}
+          {{ loading ? 'Verificando…' : 'Iniciar sesión' }}
         </ion-button>
 
         <p class="form-help">¿Olvidaste tu contraseña?</p>
       </div>
 
-      <!-- ============================================================
-           FORMULARIO REGISTRO
-           ============================================================ -->
+      <!-- REGISTRATION FORM -->
       <div class="form-block" *ngIf="modo === 'register'">
 
         <div class="input-section">
           <ion-label class="section-label">Nombre completo</ion-label>
           <div class="custom-input">
             <ion-icon name="person-outline" class="prefix-icon"></ion-icon>
-            <ion-input
-              type="text"
-              placeholder="Juan Pérez"
-              [(ngModel)]="nombre">
-            </ion-input>
+            <ion-input type="text" placeholder="Ej: Juan Pérez" [(ngModel)]="nombre"></ion-input>
           </div>
         </div>
 
@@ -99,11 +82,7 @@
           <ion-label class="section-label">Número de teléfono</ion-label>
           <div class="custom-input">
             <ion-icon name="call-outline" class="prefix-icon"></ion-icon>
-            <ion-input
-              type="tel"
-              placeholder="+56912345678"
-              [(ngModel)]="phone">
-            </ion-input>
+            <ion-input type="tel" placeholder="+56912345678" [(ngModel)]="phone"></ion-input>
           </div>
         </div>
 
@@ -111,11 +90,7 @@
           <ion-label class="section-label">Correo electrónico</ion-label>
           <div class="custom-input">
             <ion-icon name="mail-outline" class="prefix-icon"></ion-icon>
-            <ion-input
-              type="email"
-              placeholder="ejemplo@gmail.com"
-              [(ngModel)]="email">
-            </ion-input>
+            <ion-input type="email" placeholder="ejemplo@gmail.com" [(ngModel)]="email"></ion-input>
           </div>
         </div>
 
@@ -157,24 +132,24 @@
           expand="block"
           shape="round"
           class="submit-btn"
-          (click)="registrarse()"
+          (click)="register()"
           [disabled]="loading">
           <ion-icon slot="start" name="person-add-outline"></ion-icon>
           {{ loading ? 'Creando cuenta…' : 'Crear cuenta' }}
         </ion-button>
       </div>
 
-      <!-- Separador -->
+      <!-- Divider -->
       <div class="divider">
-        <span>o accede directo</span>
+        <span>o continuar directamente</span>
       </div>
 
-      <!-- Botón emergencia S.O.S -->
+      <!-- Emergency button -->
       <ion-button
         expand="block"
         shape="round"
         class="emergency-btn"
-        (click)="ingresarEmergencia()"
+        (click)="enterEmergency()"
         [disabled]="loadingEmergencia">
         <ion-icon slot="start" name="warning-outline"></ion-icon>
         {{ loadingEmergencia ? 'Conectando…' : 'Reportar emergencia ahora' }}
@@ -182,7 +157,7 @@
 
     </div>
 
-    <p class="footer-text">FireWatch © 2026 · Sistema de Alerta Comunitaria</p>
+    <p class="footer-text">FireWatch © 2026 · Sistema de Alertas Comunitario</p>
   </div>
 
 </ion-content>

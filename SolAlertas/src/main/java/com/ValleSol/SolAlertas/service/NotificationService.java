@@ -28,28 +28,43 @@ public class NotificationService {
     }
 
     /**
-     * Procesa y persiste una alerta para todos los usuarios notificables.
-     * Canal único: EMAIL. El tipo (Evacuación, Emergencia, etc.) determina
-     * solo la clasificación de la alerta, no el canal.
+     * Processes and persists an alert for all notifiable users.
+     * Channels are determined by canalEmail and canalPush flags in the request.
+     * If neither is selected, email is used as default.
      */
-    public void procesarAlerta(AlertaRequestDTO request) {
-        List<UserAlertRequestDTO> usuarios = authClient.getUsersForAlerts();
-        GeneradorAlerta generador = factory.obtenerGenerador(request.getTipo());
+    public void processAlert(AlertaRequestDTO request) {
+        List<UserAlertRequestDTO> users = authClient.getUsersForAlerts();
+        GeneradorAlerta generator = factory.getGenerator(request.getTipo());
 
-        // UUID compartido por todas las notificaciones de este envío
-        UUID despachoId = UUID.randomUUID();
+        // Shared UUID for all notifications belonging to this dispatch
+        UUID dispatchId = UUID.randomUUID();
 
-        for (UserAlertRequestDTO user : usuarios) {
+        // Determine canal label
+        boolean useEmail = request.isCanalEmail();
+        boolean usePush  = request.isCanalPush();
+        if (!useEmail && !usePush) useEmail = true; // fallback
+
+        String canal;
+        if (useEmail && usePush) {
+            canal = "EMAIL+PUSH";
+        } else if (usePush) {
+            canal = "PUSH";
+        } else {
+            canal = "EMAIL";
+        }
+
+        for (UserAlertRequestDTO user : users) {
             String email = user.getEmail();
 
             if (email != null && !email.isBlank()) {
-                Notificacion alerta = generador.generarAlerta(request.getMensaje(), email);
-                alerta.setDespachoId(despachoId);
-                alerta.setReporteId(request.getReporteId());
-                alerta.setEstadoEnvio("ENVIADO");
-                alerta.setUsuarioId(user.getId() != null ? UUID.fromString(user.getId()) : null);
-                alerta.setFechaEnvio(LocalDateTime.now());
-                repository.save(alerta);
+                Notificacion alert = generator.generarAlerta(request.getMensaje(), email);
+                alert.setDespachoId(dispatchId);
+                alert.setReporteId(request.getReporteId());
+                alert.setEstadoEnvio("ENVIADO");
+                alert.setCanal(canal);
+                alert.setUsuarioId(user.getId() != null ? UUID.fromString(user.getId()) : null);
+                alert.setFechaEnvio(LocalDateTime.now());
+                repository.save(alert);
             }
         }
     }

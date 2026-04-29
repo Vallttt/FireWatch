@@ -7,6 +7,10 @@ public class AlertaRequestDTO {
     private UUID reporteId;
     private String mensaje;
     private String tipo;
+    /** Send via email channel (default true) */
+    private boolean canalEmail = true;
+    /** Send as push notification (default false) */
+    private boolean canalPush = false;
 
     public AlertaRequestDTO() {
     }
@@ -33,5 +37,21 @@ public class AlertaRequestDTO {
 
     public void setTipo(String tipo) {
         this.tipo = tipo;
+    }
+
+    public boolean isCanalEmail() {
+        return canalEmail;
+    }
+
+    public void setCanalEmail(boolean canalEmail) {
+        this.canalEmail = canalEmail;
+    }
+
+    public boolean isCanalPush() {
+        return canalPush;
+    }
+
+    public void setCanalPush(boolean canalPush) {
+        this.canalPush = canalPush;
     }
 }

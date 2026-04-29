@@ -1,10 +1,10 @@
 package com.vallesol.bff.config;
 
 /**
- * CORS se maneja en el API Gateway (CorsWebFilter).
- * El BFF es un servicio interno — solo recibe llamadas del Gateway,
- * nunca directamente del navegador, por lo que no necesita CORS propio.
+ * CORS is handled by the API Gateway (CorsWebFilter bean).
+ * The BFF is an internal service — it only receives calls from the Gateway,
+ * never directly from the browser, so it does not need its own CORS configuration.
  */
 public class CorsConfig {
-    // Sin configuración CORS — el Gateway es el único punto de entrada externo.
+    // No CORS configuration — the Gateway is the only external entry point.
 }

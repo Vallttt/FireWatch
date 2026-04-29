@@ -9,8 +9,8 @@ import java.util.Map;
 
 /**
  * BFF Proxy → Geo Service
- * Recibe requests del frontend (via Gateway) y las reenvía al microservicio de Geolocalización.
- * El frontend llama /api/mapa/**, el BFF traduce a las rutas del Geo Service.
+ * Receives requests from the frontend (via Gateway) and forwards them to the Geolocation microservice.
+ * The frontend calls /api/mapa/**, the BFF translates to the Geo Service routes.
  */
 @RestController
 @RequestMapping("/api/mapa")
@@ -19,128 +19,128 @@ public class GeoProxyController {
     @Autowired
     private GeoClient geoClient;
 
-    /* ===== DATOS DEL MAPA ===== */
-    @GetMapping("/api/map-data")
+    /* ===== MAP DATA ===== */
+    @GetMapping("/map-data")
     public ResponseEntity<?> getMapData() {
         try {
             return ResponseEntity.ok(geoClient.getMapData());
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 
-    /* ===== BRIGADAS ===== */
-    @GetMapping("/api/brigades")
+    /* ===== BRIGADES ===== */
+    @GetMapping("/brigades")
     public ResponseEntity<?> getBrigades() {
         try {
             return ResponseEntity.ok(geoClient.getBrigades());
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 
-    @PostMapping("/api/brigades")
+    @PostMapping("/brigades")
     public ResponseEntity<?> createBrigade(@RequestBody Map<String, Object> body) {
         try {
             return ResponseEntity.ok(geoClient.createBrigade(body));
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 
-    @GetMapping("/api/brigades/{id}")
+    @GetMapping("/brigades/{id}")
     public ResponseEntity<?> getBrigade(@PathVariable String id) {
         try {
             return ResponseEntity.ok(geoClient.getBrigade(id));
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 
-    @PutMapping("/api/brigades/{id}")
+    @PutMapping("/brigades/{id}")
     public ResponseEntity<?> updateBrigade(@PathVariable String id, @RequestBody Map<String, Object> body) {
         try {
             return ResponseEntity.ok(geoClient.updateBrigade(id, body));
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 
-    @DeleteMapping("/api/brigades/{id}")
+    @DeleteMapping("/brigades/{id}")
     public ResponseEntity<?> deleteBrigade(@PathVariable String id) {
         try {
             return ResponseEntity.ok(geoClient.deleteBrigade(id));
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 
-    /* ===== REPORTES MAPEADOS ===== */
-    @GetMapping("/api/mapped-reports")
+    /* ===== MAPPED REPORTS ===== */
+    @GetMapping("/mapped-reports")
     public ResponseEntity<?> getMappedReports() {
         try {
             return ResponseEntity.ok(geoClient.getMappedReports());
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 
-    @PostMapping("/api/mapped-reports")
+    @PostMapping("/mapped-reports")
     public ResponseEntity<?> createMappedReport(@RequestBody Map<String, Object> body) {
         try {
             return ResponseEntity.ok(geoClient.createMappedReport(body));
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 
-    @PutMapping("/api/mapped-reports/{id}")
+    @PutMapping("/mapped-reports/{id}")
     public ResponseEntity<?> updateMappedReport(@PathVariable String id, @RequestBody Map<String, Object> body) {
         try {
             return ResponseEntity.ok(geoClient.updateMappedReport(id, body));
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 
-    @DeleteMapping("/api/mapped-reports/{id}")
+    @DeleteMapping("/mapped-reports/{id}")
     public ResponseEntity<?> deleteMappedReport(@PathVariable String id) {
         try {
             return ResponseEntity.ok(geoClient.deleteMappedReport(id));
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 
-    /* ===== ZONAS ===== */
-    @GetMapping("/api/zones")
+    /* ===== ZONES ===== */
+    @GetMapping("/zones")
     public ResponseEntity<?> getZones() {
         try {
             return ResponseEntity.ok(geoClient.getZones());
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 
-    /* ===== rutas de evacuación ===== */
-    @GetMapping("/api/evacroute")
+    /* ===== EVACUATION ROUTES ===== */
+    @GetMapping("/evacroute")
     public ResponseEntity<?> getEvacuationRoutes() {
         try {
             return ResponseEntity.ok(geoClient.getEvacuationRoutes());
         } catch (Exception e) {
             return ResponseEntity.status(503)
-                    .body(Map.of("error", "Geo Service no disponible", "message", e.getMessage()));
+                    .body(Map.of("error", "Geo Service unavailable", "message", e.getMessage()));
         }
     }
 }

@@ -30,10 +30,22 @@ export interface ReporteResponse {
   longitude: number;
   latitude: number;
   severity: SeverityLevel;
+  /** Number of media files attached (0 = none). */
+  mediaCount: number;
 }
 
 export interface ReportStatusUpdate {
   estado: ReportStatus;
+}
+
+/** A single photo or video attached to a report (base64 data-URL). */
+export interface ReporteMediaItem {
+  id: string;
+  filename: string;
+  contentType: string;
+  /** data-URL e.g. "data:image/jpeg;base64,/9j/..." */
+  data: string;
+  fechaSubida: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -64,5 +76,17 @@ export class ReportService {
 
   eliminarReporte(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  /** Upload files attached to a report (multipart/form-data). */
+  subirMedia(reporteId: string, files: File[]): Observable<ReporteMediaItem[]> {
+    const form = new FormData();
+    files.forEach(f => form.append('files', f));
+    return this.http.post<ReporteMediaItem[]>(`${this.baseUrl}/${reporteId}/media`, form);
+  }
+
+  /** Retrieve all media for a report as base64 data-URLs. */
+  obtenerMedia(reporteId: string): Observable<ReporteMediaItem[]> {
+    return this.http.get<ReporteMediaItem[]>(`${this.baseUrl}/${reporteId}/media`);
   }
 }

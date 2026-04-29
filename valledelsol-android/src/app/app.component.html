@@ -17,14 +17,14 @@
       <ion-content>
         <ion-list lines="none">
 
-          <!-- Dashboard (solo admin, oculto en emergencia) -->
+          <!-- Dashboard (solo admin, oculto en modo emergencia) -->
           <ion-menu-toggle auto-hide="false" *ngIf="isAdmin && !isEmergencyMode">
             <ion-item
               routerLink="/dashboard"
               routerDirection="root"
               routerLinkActive="selected">
               <ion-icon slot="start" name="grid-outline"></ion-icon>
-              <ion-label>Dashboard</ion-label>
+              <ion-label>Panel</ion-label>
             </ion-item>
           </ion-menu-toggle>
 
@@ -50,7 +50,7 @@
             </ion-item>
           </ion-menu-toggle>
 
-          <!-- Alertas (solo admin, oculto en emergencia) -->
+          <!-- Alertas (solo admin, oculto en modo emergencia) -->
           <ion-menu-toggle auto-hide="false" *ngIf="isAdmin && !isEmergencyMode">
             <ion-item
               routerLink="/alertas"
@@ -61,13 +61,13 @@
             </ion-item>
           </ion-menu-toggle>
 
-          <!-- Separador -->
+          <!-- Divider -->
           <div style="height: 1px; background-color: #eaeaea; margin: 15px 20px;"></div>
 
-          <!-- Tema oscuro -->
+          <!-- Modo nocturno -->
           <ion-item>
             <ion-icon slot="start" name="moon-outline" color="dark"></ion-icon>
-            <ion-label>Tema Noche</ion-label>
+            <ion-label>Modo nocturno</ion-label>
             <ion-toggle
               slot="end"
               color="dark"
@@ -79,11 +79,11 @@
 
       <!-- CERRAR SESIÓN -->
       <div style="padding: 0px 15px; margin-top: 20px;">
-            <ion-button expand="block" shape="round" color="danger" fill="solid" (click)="cerrarSesion()">
-              <ion-icon slot="start" name="log-out-outline"></ion-icon>
-              CERRAR SESIÓN
-            </ion-button>
-          </div>
+        <ion-button expand="block" shape="round" color="danger" fill="solid" (click)="logout()">
+          <ion-icon slot="start" name="log-out-outline"></ion-icon>
+          CERRAR SESIÓN
+        </ion-button>
+      </div>
 
       <ion-footer class="ion-no-border">
         <p class="footer-text">FireWatch © 2026</p>

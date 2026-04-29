@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * Feign Client → Geo Service (:8082)
- * El BFF reenvía operaciones de mapa, brigadas, zonas y reportes mapeados.
+ * The BFF forwards map, brigade, zone, and mapped-report operations.
  */
 @FeignClient(name = "ms-geo", url = "${ms.geo.url}")
 public interface GeoClient {

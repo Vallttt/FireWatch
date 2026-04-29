@@ -19,7 +19,9 @@ public class ReporteResponseDTO {
     private Double longitude;
     private Double latitude;
     private SeverityLevel severity;
-    
+    /** Number of media files attached to this report (0 = none). */
+    private int mediaCount;
+
     public ReporteResponseDTO() {
     }
 
@@ -101,5 +103,13 @@ public class ReporteResponseDTO {
 
     public void setSeverity(SeverityLevel severity) {
         this.severity = severity;
+    }
+
+    public int getMediaCount() {
+        return mediaCount;
+    }
+
+    public void setMediaCount(int mediaCount) {
+        this.mediaCount = mediaCount;
     }
 }

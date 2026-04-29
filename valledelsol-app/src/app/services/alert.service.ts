@@ -10,6 +10,7 @@ export interface AlertaRequest {
   reporteId?: string;
   mensaje: string;
   tipo: string;
+  canalEmail?: boolean;
 }
 
 export interface Notificacion {

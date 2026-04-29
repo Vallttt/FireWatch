@@ -10,6 +10,8 @@ export interface AlertaRequest {
   reporteId?: string;
   mensaje: string;
   tipo: string;
+  canalEmail?: boolean;
+  canalPush?: boolean;
 }
 
 export interface Notificacion {
@@ -19,6 +21,7 @@ export interface Notificacion {
   fechaEnvio: string;
   destinatario: string;
   estadoEnvio: string;
+  canal?: string;
   reporteId?: string;
   usuarioId?: string;
 }

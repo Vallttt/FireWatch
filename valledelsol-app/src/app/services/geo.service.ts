@@ -100,56 +100,56 @@ export class GeoService {
 
   /* ----------  MAP DATA (all-in-one)  ---------- */
   getMapData(): Observable<MapDataResponse> {
-    return this.http.get<ApiResponse<MapDataResponse>>(`${this.baseUrl}/api/map-data`)
+    return this.http.get<ApiResponse<MapDataResponse>>(`${this.baseUrl}/map-data`)
       .pipe(map(r => r.data));
   }
 
   /* ----------  BRIGADES  ---------- */
   getBrigades(): Observable<BrigadeResponse[]> {
-    return this.http.get<ApiResponse<BrigadeResponse[]>>(`${this.baseUrl}/api/brigades`)
+    return this.http.get<ApiResponse<BrigadeResponse[]>>(`${this.baseUrl}/brigades`)
       .pipe(map(r => r.data));
   }
 
   createBrigade(body: BrigadeRequest): Observable<BrigadeResponse> {
-    return this.http.post<ApiResponse<BrigadeResponse>>(`${this.baseUrl}/api/brigades`, body)
+    return this.http.post<ApiResponse<BrigadeResponse>>(`${this.baseUrl}/brigades`, body)
       .pipe(map(r => r.data));
   }
 
   updateBrigade(id: string, body: BrigadeRequest): Observable<BrigadeResponse> {
-    return this.http.put<ApiResponse<BrigadeResponse>>(`${this.baseUrl}/api/brigades/${id}`, body)
+    return this.http.put<ApiResponse<BrigadeResponse>>(`${this.baseUrl}/brigades/${id}`, body)
       .pipe(map(r => r.data));
   }
 
   deleteBrigade(id: string): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/api/brigades/${id}`)
+    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/brigades/${id}`)
       .pipe(map(r => r.data));
   }
 
   /* ----------  MAPPED REPORTS  ---------- */
   getMappedReports(): Observable<MappedReportResponse[]> {
-    return this.http.get<ApiResponse<MappedReportResponse[]>>(`${this.baseUrl}/api/mapped-reports`)
+    return this.http.get<ApiResponse<MappedReportResponse[]>>(`${this.baseUrl}/mapped-reports`)
       .pipe(map(r => r.data));
   }
 
   createMappedReport(body: MappedReportRequest): Observable<MappedReportResponse> {
-    return this.http.post<ApiResponse<MappedReportResponse>>(`${this.baseUrl}/api/mapped-reports`, body)
+    return this.http.post<ApiResponse<MappedReportResponse>>(`${this.baseUrl}/mapped-reports`, body)
       .pipe(map(r => r.data));
   }
 
   deleteMappedReport(id: string): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/api/mapped-reports/${id}`)
+    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/mapped-reports/${id}`)
       .pipe(map(r => r.data));
   }
 
   /* ----------  ZONES  ---------- */
   getZones(): Observable<ZoneResponse[]> {
-    return this.http.get<ApiResponse<ZoneResponse[]>>(`${this.baseUrl}/api/zones`)
+    return this.http.get<ApiResponse<ZoneResponse[]>>(`${this.baseUrl}/zones`)
       .pipe(map(r => r.data));
   }
 
   /* ----------  EVACUATION ROUTES  ---------- */
   getEvacuationRoutes(): Observable<EvacuationResponse[]> {
-    return this.http.get<ApiResponse<EvacuationResponse[]>>(`${this.baseUrl}/api/evacroute`)
+    return this.http.get<ApiResponse<EvacuationResponse[]>>(`${this.baseUrl}/evacroute`)
       .pipe(map(r => r.data));
   }
 }

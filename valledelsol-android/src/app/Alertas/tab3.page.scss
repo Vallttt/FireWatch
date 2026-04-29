@@ -20,6 +20,40 @@
 
 .status-pill ion-icon { font-size: 10px; }
 
+/* ── End column: badges apilados + botón eliminar ─────────────── */
+.end-col {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+}
+
+.canal-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.canal-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.canal-badge {
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+
+  ion-icon { font-size: 10px; }
+}
+
 /* ==========================================================================
    BOTÓN ENVIAR (latido sutil mientras espera)
    ========================================================================== */

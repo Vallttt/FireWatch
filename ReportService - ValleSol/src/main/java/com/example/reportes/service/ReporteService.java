@@ -20,31 +20,29 @@ import com.example.reportes.repository.ReporteRepository;
 @Service
 public class ReporteService {
 
-   
     @Autowired
     private ReporteRepository reporteRepository;
+
+    @Autowired
+    private ReporteMediaService mediaService;
+
     private final GeoService geoService;
     private final AlertService alertasService;
 
-
     public ReporteService(GeoService geoService, AlertService alertasService) {
         this.geoService = geoService;
-
         this.alertasService = alertasService;
     }
 
     public ReporteResponseDTO crearReporte(ReporteRequestDTO request) {
 
-        // Manejo de anonimato
+        // Handle anonymous users
         if (request.getUsuarioReportante() == null || request.getUsuarioReportante().isEmpty()) {
             request.setUsuarioReportante("Anonimo");
         }
 
         Reporte reporte = new Reporte();
-
-        // Usuario (puede ser null)
         reporte.setUsuarioId(request.getUsuarioId());
-
         reporte.setUsuarioReportante(request.getUsuarioReportante());
         reporte.setDescripcion(request.getDescripcion());
         reporte.setZoneId(request.getZoneId());
@@ -54,10 +52,9 @@ public class ReporteService {
         reporte.setFechaIncidente(LocalDateTime.now());
         reporte.setEstado(ReportStatus.ACTIVE);
 
-        // 1. Guardar reporte
         Reporte guardado = reporteRepository.save(reporte);
 
-        // 2. Mandar a GEO (no falla el reporte si Geo no responde)
+        // Forward to Geo Service (non-fatal)
         try {
             MappedReportRequestDTO geoRequest = new MappedReportRequestDTO();
             geoRequest.setExternalReportId(guardado.getId());
@@ -67,72 +64,53 @@ public class ReporteService {
             geoRequest.setLongitude(request.getLongitude());
             geoRequest.setReportedAt(guardado.getFechaIncidente());
             geoRequest.setZoneId(request.getZoneId());
-
             geoService.crearMappedReport(geoRequest);
         } catch (Exception e) {
-            System.out.println("Error enviando reporte a Geo Service: " + e.getMessage());
+            System.out.println("Error sending report to Geo Service: " + e.getMessage());
         }
 
-        // 3. Mandar a ALERTAS 
+        // Forward to Alert Service (non-fatal)
         try {
             AlertRequestDTO alerta = new AlertRequestDTO();
             alerta.setReporteId(guardado.getId());
             alerta.setMensaje("Nuevo reporte: " + guardado.getDescripcion());
-            alerta.setTipo("EMAIL"); // después puedes hacerlo dinámico
-
+            alerta.setTipo("EMAIL");
             alertasService.enviarAlerta(alerta);
-
         } catch (Exception e) {
-            System.out.println("Error enviando alerta: " + e.getMessage());
+            System.out.println("Error sending alert: " + e.getMessage());
         }
 
         return convertir(guardado);
     }
 
     public List<ReporteResponseDTO> listarReportes() {
-
         List<Reporte> lista = reporteRepository.findAll();
         List<ReporteResponseDTO> respuesta = new ArrayList<>();
-
-        for (int i = 0; i < lista.size(); i++) {
-            respuesta.add(convertir(lista.get(i)));
+        for (Reporte r : lista) {
+            respuesta.add(convertir(r));
         }
-
         return respuesta;
     }
 
     public ReporteResponseDTO obtenerPorId(UUID id) {
-
-        Reporte reporte = reporteRepository
-                .findById(id).orElse(null);
-
-        if (reporte == null) {
-            throw new RuntimeException("Reporte no encontrado");
-        }
-
+        Reporte reporte = reporteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reporte no encontrado"));
         return convertir(reporte);
     }
 
-    //cambio de update de estado por PATCH, ademas no recibe parametro sino un request
     public ReporteResponseDTO actualizarEstado(UUID id, ReportStatusUpdateDTO request) {
-
-        Reporte reporte = reporteRepository.findById(id).orElse(null);
-
-        if (reporte == null) {
-            throw new RuntimeException("Reporte no encontrado");
-        } else {
-            reporte.setEstado(request.getEstado());
-        }
-
-        Reporte actualizado = reporteRepository.save(reporte);
-
-        return convertir(actualizado);
+        Reporte reporte = reporteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reporte no encontrado"));
+        reporte.setEstado(request.getEstado());
+        return convertir(reporteRepository.save(reporte));
     }
 
     public void eliminarReporte(UUID id) {
         if (!reporteRepository.existsById(id)) {
             throw new RuntimeException("Reporte no encontrado");
         }
+        // Cascade-delete attached media first
+        mediaService.eliminarMediaDeReporte(id);
         reporteRepository.deleteById(id);
     }
 
@@ -143,9 +121,7 @@ public class ReporteService {
     }
 
     private ReporteResponseDTO convertir(Reporte reporte) {
-
         ReporteResponseDTO dto = new ReporteResponseDTO();
-
         dto.setId(reporte.getId());
         dto.setUsuarioId(reporte.getUsuarioId());
         dto.setUsuarioReportante(reporte.getUsuarioReportante());
@@ -156,11 +132,7 @@ public class ReporteService {
         dto.setLongitude(reporte.getLongitude());
         dto.setSeverity(reporte.getSeverity());
         dto.setZoneId(reporte.getZoneId());
-
+        dto.setMediaCount(mediaService.contarMedia(reporte.getId()));
         return dto;
     }
-    
-
-        
-
 }

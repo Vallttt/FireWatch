@@ -80,7 +80,7 @@ export class AppComponent {
     document.body.classList.toggle('dark', shouldAdd);
   }
 
-  cerrarSesion() {
+  logout() {
     this.authService.logout();
     window.location.href = '/login';
   }

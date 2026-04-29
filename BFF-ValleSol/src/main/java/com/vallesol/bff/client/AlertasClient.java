@@ -8,20 +8,20 @@ import java.util.Map;
 
 /**
  * Feign Client → SolAlertas (:8083)
- * El BFF reenvía operaciones de alertas y notificaciones.
+ * The BFF forwards alert and notification operations.
  */
 @FeignClient(name = "ms-alertas", url = "${ms.alertas.url}")
 public interface AlertasClient {
 
     @PostMapping("/api/alertas/enviar")
-    String enviarAlerta(@RequestBody Map<String, Object> body);
+    String sendAlert(@RequestBody Map<String, Object> body);
 
     @GetMapping("/api/alertas")
-    List<Map<String, Object>> historialAlertas();
+    List<Map<String, Object>> getAlertHistory();
 
     @GetMapping("/api/alertas/conteo")
-    Integer obtenerTotalAlertas();
+    Integer getTotalAlerts();
 
     @DeleteMapping("/api/alertas/{id}")
-    void eliminarAlerta(@PathVariable("id") String id);
+    void deleteAlert(@PathVariable("id") String id);
 }
