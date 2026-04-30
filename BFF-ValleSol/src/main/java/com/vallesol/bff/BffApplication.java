@@ -13,7 +13,9 @@ public class BffApplication {
         SpringApplication.run(BffApplication.class, args);
     }
 
-    /** Used by ReportesProxyController to forward multipart uploads to the Report Service. */
+    /**
+    * Usado por ReportesProxyController para reenviar cargas multipart al Servicio de Reportes.
+    */
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();

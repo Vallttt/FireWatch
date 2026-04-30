@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Stores binary media (photos / videos) attached to a report.
- * The file content is kept as LONGBLOB in MySQL.
+ * guarda binary media (fotos / videos) adjuntos a un reporte.
+ * el contenido se guarda como LONGBLOB en MySQL.
  */
 @Entity
 @Table(name = "reporte_media")

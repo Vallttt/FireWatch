@@ -28,21 +28,21 @@ public class NotificationService {
     }
 
     /**
-     * Processes and persists an alert for all notifiable users.
-     * Channels are determined by canalEmail and canalPush flags in the request.
-     * If neither is selected, email is used as default.
-     */
+ * Procesa y persiste una alerta para todos los usuarios notificables.
+ * Los canales se determinan por los flags canalEmail y canalPush en la solicitud.
+ * Si ninguno está seleccionado, se utiliza email por defecto.
+ */
     public void processAlert(AlertaRequestDTO request) {
         List<UserAlertRequestDTO> users = authClient.getUsersForAlerts();
         GeneradorAlerta generator = factory.getGenerator(request.getTipo());
 
-        // Shared UUID for all notifications belonging to this dispatch
+        //  UUID compartido para todas las notificaciones que pertenecen a este despacho
         UUID dispatchId = UUID.randomUUID();
 
-        // Determine canal label
+        // determinar canales a usar (EMAIL, PUSH, o ambos) según los flags en la solicitud
         boolean useEmail = request.isCanalEmail();
         boolean usePush  = request.isCanalPush();
-        if (!useEmail && !usePush) useEmail = true; // fallback
+        if (!useEmail && !usePush) useEmail = true; // valor por defecto si no se especifica ningún canal
 
         String canal;
         if (useEmail && usePush) {

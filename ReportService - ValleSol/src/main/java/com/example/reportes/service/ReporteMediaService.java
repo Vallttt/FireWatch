@@ -22,7 +22,7 @@ public class ReporteMediaService {
     private ReporteMediaRepository mediaRepository;
 
     // ------------------------------------------------------------------ //
-    //  Save
+    //  guardar
     // ------------------------------------------------------------------ //
 
     public List<ReporteMediaResponseDTO> guardarMedia(UUID reporteId, MultipartFile[] files) {
@@ -56,7 +56,7 @@ public class ReporteMediaService {
     }
 
     // ------------------------------------------------------------------ //
-    //  Read
+    //  leer
     // ------------------------------------------------------------------ //
 
     public List<ReporteMediaResponseDTO> obtenerMedia(UUID reporteId) {
@@ -73,7 +73,7 @@ public class ReporteMediaService {
     }
 
     // ------------------------------------------------------------------ //
-    //  Delete
+    //  borrar
     // ------------------------------------------------------------------ //
 
     @Transactional
@@ -82,7 +82,7 @@ public class ReporteMediaService {
     }
 
     // ------------------------------------------------------------------ //
-    //  Mapping
+    //  Mapear ReporteMedia -> ReporteMediaResponseDTO
     // ------------------------------------------------------------------ //
 
     private ReporteMediaResponseDTO toDTO(ReporteMedia media) {
@@ -90,7 +90,8 @@ public class ReporteMediaService {
         dto.setId(media.getId());
         dto.setFilename(media.getFilename());
         dto.setContentType(media.getContentType());
-        // Encode as a data-URL so the browser can display it directly
+    
+        // codificar como una data-URL para que el navegador pueda mostrarlo directamente
         String base64 = Base64.getEncoder().encodeToString(media.getDatos());
         dto.setData("data:" + media.getContentType() + ";base64," + base64);
         dto.setFechaSubida(media.getFechaSubida());

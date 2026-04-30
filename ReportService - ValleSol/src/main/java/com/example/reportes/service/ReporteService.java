@@ -69,7 +69,8 @@ public class ReporteService {
             System.out.println("Error sending report to Geo Service: " + e.getMessage());
         }
 
-        // Forward to Alert Service (non-fatal)
+        
+        // enviar a servicio de alerta (no fatal)
         try {
             AlertRequestDTO alerta = new AlertRequestDTO();
             alerta.setReporteId(guardado.getId());
@@ -109,7 +110,7 @@ public class ReporteService {
         if (!reporteRepository.existsById(id)) {
             throw new RuntimeException("Reporte no encontrado");
         }
-        // Cascade-delete attached media first
+        // Cascade-borrar attached media first
         mediaService.eliminarMediaDeReporte(id);
         reporteRepository.deleteById(id);
     }

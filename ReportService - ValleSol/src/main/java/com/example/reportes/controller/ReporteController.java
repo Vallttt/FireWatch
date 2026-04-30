@@ -39,7 +39,7 @@ public class ReporteController {
         return reporteService.listarReportes();
     }
 
-    /** Active fire count used by the BFF dashboard — must be before /{id}. */
+    /** Contar focos activos. */
     @GetMapping("/focos-activos")
     public int contarFocosActivos() {
         return reporteService.contarFocosActivos();
@@ -64,12 +64,12 @@ public class ReporteController {
     }
 
     // ------------------------------------------------------------------ //
-    //  Media (photos / videos attached to a report)
+    //  Media (fotos/videos)
     // ------------------------------------------------------------------ //
 
     /**
-     * Upload one or more files for a report.
-     * Content-Type: multipart/form-data, field name: "files"
+     * Subir media (fotos/videos) para un reporte.
+     * tipo de contenido: multipart/form-data, nombre: "files"
      */
     @PostMapping("/{id}/media")
     public List<ReporteMediaResponseDTO> subirMedia(
@@ -79,7 +79,7 @@ public class ReporteController {
     }
 
     /**
-     * Returns all media attached to a report as base64 data-URLs.
+     * Devolver todos los medios adjuntos a un reporte como URLs de datos base64.
      */
     @GetMapping("/{id}/media")
     public List<ReporteMediaResponseDTO> obtenerMedia(@PathVariable UUID id) {

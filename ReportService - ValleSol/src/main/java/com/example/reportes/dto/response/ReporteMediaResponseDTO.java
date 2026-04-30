@@ -4,15 +4,15 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Carries a single media attachment (photo / video) as a base64 data-URL
- * so the frontend can render it directly without an extra request.
+ * lleva a single media attachment (foto / video) como base64 data-URL
+ * para que el frontend lo pueda renderizar directamente sin una solicitud adicional.
  */
 public class ReporteMediaResponseDTO {
 
     private UUID id;
     private String filename;
     private String contentType;
-    /** Base64-encoded file content (e.g. "data:image/jpeg;base64,/9j/4AAQ...") */
+    /** Base64-encoded contenido del archivo (e.g. "data:image/jpeg;base64,/9j/4AAQ...") */
     private String data;
     private LocalDateTime fechaSubida;
 

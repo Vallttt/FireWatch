@@ -13,8 +13,8 @@ public class GeneradorEmail implements GeneradorAlerta {
 
         emailAlert.setTipoAlerta("EMAIL");
 
-        // Format simulating a formal email subject
-        emailAlert.setMensaje("Subject: [Municipal Disaster Valle del Sol] - " + mensaje);
+        // formato simulado de mensaje de correo electrónico: "Asunto: [Municipal Valle del Sol] - {mensaje}"
+        emailAlert.setMensaje("Asunto: [Municipalidad Valle del Sol] - " + mensaje);
         emailAlert.setDestinatario(destinatario);
 
         return emailAlert;

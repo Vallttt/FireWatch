@@ -3,8 +3,8 @@ package com.ValleSol.SolAlertas.service;
 import org.springframework.stereotype.Component;
 
 /**
- * Factory for alert generators.
- * Single channel: EMAIL for all alert types.
+ * Fábrica de generadores de alertas.
+ * Canal único: EMAIL para todos los tipos de alertas.
  */
 @Component
 public class AlertaFactory {

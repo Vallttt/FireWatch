@@ -7,9 +7,9 @@ public class AlertaRequestDTO {
     private UUID reporteId;
     private String mensaje;
     private String tipo;
-    /** Send via email channel (default true) */
+    /** Enviar a través del canal de correo electrónico (por defecto true) */
     private boolean canalEmail = true;
-    /** Send as push notification (default false) */
+    /** Enviar como notificación push (por defecto false) */
     private boolean canalPush = false;
 
     public AlertaRequestDTO() {

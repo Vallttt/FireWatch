@@ -26,7 +26,7 @@ public class Notificacion {
     private String destinatario;
     private String mensaje;
     private String estadoEnvio;
-    /** Delivery channel: "EMAIL", "PUSH", or "EMAIL+PUSH" */
+    /** canal de delivery: "EMAIL", "PUSH", or "EMAIL+PUSH" */
     private String canal;
     private LocalDateTime fechaEnvio;
 

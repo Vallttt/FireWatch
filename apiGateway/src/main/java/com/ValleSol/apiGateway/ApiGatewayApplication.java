@@ -22,11 +22,11 @@ public class ApiGatewayApplication {
         SpringApplication.run(ApiGatewayApplication.class, args);
     }
 
-    /**
-     * Global CORS — accepts any origin (web, Capacitor Android/iOS, AVD emulator).
-     * Required so that the Capacitor WebView (origin http://localhost) can make
-     * cross-origin requests to the gateway at http://10.0.2.2:8000.
-     */
+   /**
+ * CORS global — acepta cualquier origen (web, Capacitor Android/iOS, emulador AVD).
+ * Necesario para que el WebView de Capacitor (origen http://localhost) pueda realizar
+ * solicitudes de origen cruzado al gateway en http://10.0.2.2:8000.
+ */
     @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration config = new CorsConfiguration();
@@ -43,9 +43,9 @@ public class ApiGatewayApplication {
     }
 
     /**
-     * SINGLE ENTRY POINT.
-     * All frontend traffic passes through the API Gateway to the BFF.
-     * The BFF orchestrates calls to the microservices.
+     * PUNTO DE ENTRADA ÚNICO.
+     * Todo el tráfico del frontend pasa a través del API Gateway al BFF.
+     * El BFF orquesta las llamadas a los microservicios.
      *
      * Frontend (:8100) → API Gateway (:8000) → BFF (:8001) → Microservices
      */

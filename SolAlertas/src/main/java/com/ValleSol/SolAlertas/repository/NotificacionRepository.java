@@ -12,6 +12,8 @@ import java.util.UUID;
 @Repository
 public interface NotificacionRepository extends JpaRepository<Notificacion, UUID> {
 
+
+    /// Devuelve solo la notificación más reciente por cada despacho (agrupando por despachoId).
     @Query(value = """
         SELECT n.*
         FROM notificaciones n

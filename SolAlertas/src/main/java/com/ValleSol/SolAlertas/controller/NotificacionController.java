@@ -52,9 +52,9 @@ public class NotificacionController {
     }
 
     /**
-     * Returns the total number of registered alerts.
-     * Used by the BFF for the dashboard.
-     */
+ * Devuelve el número total de alertas registradas.
+ * Utilizado por el BFF para el dashboard.
+ */
     @GetMapping("/conteo")
     public int alertCount() {
         return (int) repository.count();
@@ -67,7 +67,7 @@ public class NotificacionController {
         if (notif == null) return ResponseEntity.notFound().build();
 
         if (notif.getDespachoId() != null) {
-            // Delete all notifications belonging to the same dispatch
+            // Eliminar todas las notificaciones que pertenecen al mismo despacho
             repository.deleteByDespachoId(notif.getDespachoId());
         } else {
             repository.deleteById(id);

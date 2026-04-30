@@ -19,7 +19,7 @@ public class ReporteResponseDTO {
     private Double longitude;
     private Double latitude;
     private SeverityLevel severity;
-    /** Number of media files attached to this report (0 = none). */
+    /** numero de medios adjuntos (0 = ninguno). */
     private int mediaCount;
 
     public ReporteResponseDTO() {
