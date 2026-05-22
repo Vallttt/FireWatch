@@ -1,0 +1,73 @@
+<ion-app>
+  <ion-split-pane contentId="main-content" [disabled]="isLoginPage">
+
+    <ion-menu contentId="main-content" type="overlay" *ngIf="!isLoginPage">
+      <ion-header class="ion-no-border">
+        <ion-toolbar>
+          <div class="logo-container">
+            <ion-icon name="flame" class="logo-icon"></ion-icon>
+            <div>
+              <h2 class="logo-title">FireWatch</h2>
+              <p class="logo-subtitle">Municipalidad Valle del Sol</p>
+            </div>
+          </div>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content>
+        <ion-list lines="none">
+
+          <ion-menu-toggle auto-hide="false" *ngIf="isAdmin && !isEmergencyMode">
+            <ion-item routerLink="/dashboard" routerDirection="root" routerLinkActive="selected">
+              <ion-icon slot="start" name="grid-outline"></ion-icon>
+              <ion-label>Panel</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+
+          <ion-menu-toggle auto-hide="false">
+            <ion-item routerLink="/reportar" routerDirection="root" routerLinkActive="selected">
+              <ion-icon slot="start" name="document-text-outline"></ion-icon>
+              <ion-label>Reportar</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+
+          <ion-menu-toggle auto-hide="false" *ngIf="!isEmergencyMode">
+            <ion-item routerLink="/mapa" routerDirection="root" routerLinkActive="selected">
+              <ion-icon slot="start" name="map-outline"></ion-icon>
+              <ion-label>Mapa</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+
+          <ion-menu-toggle auto-hide="false" *ngIf="isAdmin && !isEmergencyMode">
+            <ion-item routerLink="/alertas" routerDirection="root" routerLinkActive="selected">
+              <ion-icon slot="start" name="notifications-outline"></ion-icon>
+              <ion-label>Alertas</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+
+          <div style="height: 1px; background-color: #eaeaea; margin: 15px 20px;"></div>
+
+          <ion-item>
+            <ion-icon slot="start" name="moon-outline" color="dark"></ion-icon>
+            <ion-label>Modo nocturno</ion-label>
+            <ion-toggle slot="end" color="dark" (ionChange)="toggleDarkMode($event)"></ion-toggle>
+          </ion-item>
+        </ion-list>
+      </ion-content>
+
+      <div style="padding: 0px 15px; margin-top: 20px;">
+        <ion-button expand="block" shape="round" color="danger" fill="solid" (click)="logout()">
+          <ion-icon slot="start" name="log-out-outline"></ion-icon>
+          CERRAR SESIÓN
+        </ion-button>
+      </div>
+
+      <ion-footer class="ion-no-border">
+        <p class="footer-text">FireWatch © 2026</p>
+      </ion-footer>
+    </ion-menu>
+
+    <ion-router-outlet id="main-content"></ion-router-outlet>
+
+  </ion-split-pane>
+</ion-app>

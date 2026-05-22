@@ -1,0 +1,163 @@
+<ion-content [fullscreen]="true" class="login-content">
+
+  <div class="login-wrapper">
+
+    <!-- bloque de marca -->
+    <div class="brand-block">
+      <div class="brand-icon">
+        <ion-icon name="flame"></ion-icon>
+      </div>
+      <h1 class="brand-title">FireWatch</h1>
+      <p class="brand-subtitle">Municipalidad Valle del Sol</p>
+    </div>
+
+    <!-- iniciar sesión card -->
+    <div class="login-card">
+
+      <ion-segment
+        [value]="modo"
+        class="custom-segment mode-segment"
+        (ionChange)="switchMode($event.detail.value)">
+        <ion-segment-button value="login">
+          <ion-label>Iniciar sesión</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="register">
+          <ion-label>Registrarse</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+
+      <!-- iniciar sesión -->
+      <div class="form-block" *ngIf="modo === 'login'">
+
+        <div class="input-section">
+          <ion-label class="section-label">Correo electrónico</ion-label>
+          <div class="custom-input">
+            <ion-icon name="mail-outline" class="prefix-icon"></ion-icon>
+            <ion-input type="email" placeholder="ejemplo@gmail.com" [(ngModel)]="email"></ion-input>
+          </div>
+        </div>
+
+        <div class="input-section">
+          <ion-label class="section-label">Contraseña</ion-label>
+          <div class="custom-input">
+            <ion-icon name="lock-closed-outline" class="prefix-icon"></ion-icon>
+            <ion-input
+              [type]="showPassword ? 'text' : 'password'"
+              placeholder="••••••••"
+              [(ngModel)]="password">
+            </ion-input>
+            <ion-icon
+              [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+              class="suffix-icon"
+              (click)="togglePassword()">
+            </ion-icon>
+          </div>
+        </div>
+
+        <ion-button
+          expand="block"
+          shape="round"
+          class="submit-btn"
+          (click)="login()"
+          [disabled]="loading">
+          <ion-icon slot="start" name="log-in-outline"></ion-icon>
+          {{ loading ? 'Verificando…' : 'Iniciar sesión' }}
+        </ion-button>
+
+        <p class="form-help">¿Olvidaste tu contraseña?</p>
+      </div>
+
+      <!-- registrarse -->
+      <div class="form-block" *ngIf="modo === 'register'">
+
+        <div class="input-section">
+          <ion-label class="section-label">Nombre completo</ion-label>
+          <div class="custom-input">
+            <ion-icon name="person-outline" class="prefix-icon"></ion-icon>
+            <ion-input type="text" placeholder="Ej: Juan Pérez" [(ngModel)]="nombre"></ion-input>
+          </div>
+        </div>
+
+        <div class="input-section">
+          <ion-label class="section-label">Número de teléfono</ion-label>
+          <div class="custom-input">
+            <ion-icon name="call-outline" class="prefix-icon"></ion-icon>
+            <ion-input type="tel" placeholder="+56912345678" [(ngModel)]="phone"></ion-input>
+          </div>
+        </div>
+
+        <div class="input-section">
+          <ion-label class="section-label">Correo electrónico</ion-label>
+          <div class="custom-input">
+            <ion-icon name="mail-outline" class="prefix-icon"></ion-icon>
+            <ion-input type="email" placeholder="ejemplo@gmail.com" [(ngModel)]="email"></ion-input>
+          </div>
+        </div>
+
+        <div class="input-section">
+          <ion-label class="section-label">Contraseña</ion-label>
+          <div class="custom-input">
+            <ion-icon name="lock-closed-outline" class="prefix-icon"></ion-icon>
+            <ion-input
+              [type]="showPassword ? 'text' : 'password'"
+              placeholder="••••••••"
+              [(ngModel)]="password">
+            </ion-input>
+            <ion-icon
+              [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+              class="suffix-icon"
+              (click)="togglePassword()">
+            </ion-icon>
+          </div>
+        </div>
+
+        <div class="input-section">
+          <ion-label class="section-label">Confirmar contraseña</ion-label>
+          <div class="custom-input">
+            <ion-icon name="lock-closed-outline" class="prefix-icon"></ion-icon>
+            <ion-input
+              [type]="showConfirmPassword ? 'text' : 'password'"
+              placeholder="••••••••"
+              [(ngModel)]="confirmPassword">
+            </ion-input>
+            <ion-icon
+              [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"
+              class="suffix-icon"
+              (click)="toggleConfirmPassword()">
+            </ion-icon>
+          </div>
+        </div>
+
+        <ion-button
+          expand="block"
+          shape="round"
+          class="submit-btn"
+          (click)="register()"
+          [disabled]="loading">
+          <ion-icon slot="start" name="person-add-outline"></ion-icon>
+          {{ loading ? 'Creando cuenta…' : 'Crear cuenta' }}
+        </ion-button>
+      </div>
+
+      <!-- Divisor -->
+      <div class="divider">
+        <span>o continuar directamente</span>
+      </div>
+
+      <!-- botón de emergencia -->
+      <ion-button
+        expand="block"
+        shape="round"
+        class="emergency-btn"
+        (click)="enterEmergency()"
+        [disabled]="loadingEmergencia">
+        <ion-icon slot="start" name="warning-outline"></ion-icon>
+        {{ loadingEmergencia ? 'Conectando…' : 'Reportar emergencia ahora' }}
+      </ion-button>
+
+    </div>
+
+    <p class="footer-text">FireWatch © 2026 · Sistema de Alertas Comunitario</p>
+  </div>
+
+</ion-content>

@@ -1,0 +1,198 @@
+services:
+
+  # ============================================================
+  # BASE DE DATOS — MySQL
+  # ============================================================
+  mysql-db:
+    image: mysql:8.0
+    container_name: valledelsol-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - red-municipalidad
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p123456"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ============================================================
+  # MICROSERVICIO — Auth Service (:8080)
+  # ============================================================
+  auth-app:
+    build:
+      context: ./authservice-valleSol
+      dockerfile: Dockerfile
+    container_name: valledelsol-auth
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/auth_vallesol_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # MICROSERVICIO — Report Service (:8081)
+  # ============================================================
+  report-app:
+    build:
+      context: ./ReportService - ValleSol
+      dockerfile: Dockerfile
+    container_name: valledelsol-reportes
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/report_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - GEO_SERVICE_URL=http://geo-app:8082
+      - ALERTAS_SERVICE_URL=http://alertas-app:8083
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # MICROSERVICIO — Geo Service (:8082)
+  # ============================================================
+  geo-app:
+    build:
+      context: ./Geo Service
+      dockerfile: Dockerfile
+    container_name: valledelsol-geo
+    ports:
+      - "8082:8082"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/geo_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # MICROSERVICIO — SolAlertas (:8083)
+  # ============================================================
+  alertas-app:
+    build:
+      context: ./SolAlertas
+      dockerfile: Dockerfile
+    container_name: valledelsol-alertas
+    ports:
+      - "8083:8083"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/alert_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - AUTH_SERVICE_URL=http://auth-app:8080
+      - GEO_SERVICE_URL=http://geo-app:8082
+      - REPORTES_SERVICE_URL=http://report-app:8081
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # BFF — Orquestador (:8001)
+  # ============================================================
+  bff-app:
+    build:
+      context: ./BFF-ValleSol
+      dockerfile: Dockerfile
+    container_name: valledelsol-bff
+    ports:
+      - "8001:8001"
+    depends_on:
+      - auth-app
+      - report-app
+      - geo-app
+      - alertas-app
+    environment:
+      - MS_AUTH_URL=http://auth-app:8080
+      - MS_REPORTES_URL=http://report-app:8081
+      - MS_GEO_URL=http://geo-app:8082
+      - MS_ALERTAS_URL=http://alertas-app:8083
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # API GATEWAY (:8000) — Única puerta de entrada
+  # ============================================================
+  gateway-app:
+    build:
+      context: ./apiGateway
+      dockerfile: Dockerfile
+    container_name: valledelsol-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - bff-app
+    environment:
+      - BFF_URL=http://bff-app:8001
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # FRONTEND WEB — Angular/Ionic + Nginx (:8100)
+  # ============================================================
+  frontend-app:
+    build:
+      context: ./valledelsol-app
+      dockerfile: Dockerfile
+    container_name: valledelsol-frontend
+    ports:
+      - "8100:80"
+    depends_on:
+      - gateway-app
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # FRONTEND ANDROID — App móvil servida via Nginx (:8101)
+  # Misma app que el APK pero accesible como web para pruebas.
+  # En producción real el APK se instala directamente en el dispositivo.
+  # ============================================================
+  android-app:
+    build:
+      context: ./valledelsol-android
+      dockerfile: Dockerfile
+    container_name: valledelsol-android
+    ports:
+      - "8101:80"
+    depends_on:
+      - gateway-app
+    networks:
+      - red-municipalidad
+
+networks:
+  red-municipalidad:
+    driver: bridge
+
+volumes:
+  mysql-data:

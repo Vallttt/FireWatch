@@ -1,0 +1,210 @@
+/* ==========================================================================
+   LOGIN PAGE  ·  estilos específicos
+   (la mayoría del look viene del sistema de diseño global)
+   ========================================================================== */
+
+.login-content {
+  --background: linear-gradient(160deg, #FFF5F5 0%, #FAF7F7 50%, #FFE8EA 100%);
+}
+
+.login-wrapper {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 22px 28px 22px;
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   BRAND BLOCK
+   ========================================================================== */
+.brand-block {
+  text-align: center;
+  margin-bottom: 28px;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.brand-icon {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 16px auto;
+  border-radius: 24px;
+  background: var(--red-gradient-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 18px 38px rgba(220, 31, 38, 0.40),
+              0 0 0 6px rgba(255, 255, 255, 0.95),
+              0 0 0 8px rgba(220, 31, 38, 0.18);
+}
+
+.brand-icon ion-icon {
+  font-size: 42px;
+  color: #ffffff;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
+}
+
+.brand-title {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.6px;
+  background: var(--red-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.brand-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vds-text-soft);
+  letter-spacing: 0.2px;
+}
+
+/* ==========================================================================
+   LOGIN CARD
+   ========================================================================== */
+.login-card {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 26px 22px 28px 22px;
+  box-shadow: 0 20px 60px rgba(139, 0, 0, 0.12),
+              0 0 0 1px rgba(220, 31, 38, 0.06);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.6s ease both;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--red-gradient);
+}
+
+.mode-segment {
+  margin-bottom: 24px;
+}
+
+.form-block { animation: fadeInUp 0.4s ease both; }
+
+/* Texto de ayuda */
+.form-help {
+  text-align: center;
+  font-size: 12px;
+  color: var(--vds-text-soft);
+  margin: 16px 0 0 0;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.form-help:hover { color: var(--vds-red-500); }
+
+/* ==========================================================================
+   DIVIDER
+   ========================================================================== */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 16px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg,
+              transparent,
+              rgba(139, 0, 0, 0.18),
+              transparent);
+}
+
+.divider span {
+  font-size: 11px;
+  color: var(--vds-text-soft);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+/* ==========================================================================
+   BOTÓN EMERGENCIA (mismo estilo que Ingresar)
+   ========================================================================== */
+.emergency-btn {
+  --background: var(--red-gradient-deep);
+  --background-hover: var(--red-gradient-vivid);
+  --background-activated: var(--red-gradient-soft);
+  --color: #ffffff;
+  --box-shadow: var(--red-glow);
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  font-size: 14px;
+  height: 48px;
+  transition: all 0.3s ease;
+}
+
+.emergency-btn:hover { transform: translateY(-2px); }
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.footer-text {
+  text-align: center;
+  font-size: 11px;
+  color: var(--vds-text-mute);
+  margin: 24px 0 0 0;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* ==========================================================================
+   MODO OSCURO
+   ========================================================================== */
+:host-context(body.dark) {
+
+  .login-content {
+    --background: linear-gradient(160deg, #060306 0%, #110608 50%, #1A0A0E 100%);
+  }
+
+  .brand-icon {
+    box-shadow: 0 18px 38px rgba(255, 77, 94, 0.5),
+                0 0 0 6px rgba(26, 10, 14, 0.95),
+                0 0 0 8px rgba(255, 77, 94, 0.25);
+  }
+
+  .brand-title {
+    background: linear-gradient(135deg, #FFFFFF 0%, #FF4D5E 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .brand-subtitle { color: #E8D5D7; }
+
+  .login-card {
+    background: #2A1418;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7),
+                0 0 0 1px rgba(255, 77, 94, 0.18);
+  }
+
+  .form-help { color: #E8D5D7; }
+  .form-help:hover { color: #FF4D5E; }
+
+  .footer-text { color: #8B5358; }
+
+  .emergency-btn {
+    --background: var(--red-gradient-deep);
+    --background-hover: var(--red-gradient-vivid);
+    --color: #ffffff;
+  }
+}

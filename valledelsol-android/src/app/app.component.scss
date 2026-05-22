@@ -1,0 +1,188 @@
+/* ==========================================================================
+   MENÚ LATERAL · Red Gradient Modern UI
+   ========================================================================== */
+ion-menu {
+  --background: #ffffff;
+  border-right: 1px solid rgba(139, 0, 0, 0.06);
+}
+
+ion-menu ion-content {
+  --background: linear-gradient(180deg, #ffffff 0%, #fff5f5 100%);
+}
+
+/* --- LOGO --- */
+.logo-container {
+  display: flex;
+  align-items: center;
+  padding: 22px 18px;
+  gap: 14px;
+  background: linear-gradient(135deg, #4A0000 0%, #8B0000 50%, #DC1F26 100%);
+  border-bottom-right-radius: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.logo-container::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -30%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 77, 94, 0.35) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.logo-icon {
+  font-size: 34px;
+  color: #ffffff;
+  filter: drop-shadow(0 4px 12px rgba(255, 77, 94, 0.55));
+  z-index: 1;
+}
+
+.logo-title {
+  margin: 0;
+  font-weight: 800;
+  font-size: 19px;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  z-index: 1;
+}
+
+.logo-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 500;
+  z-index: 1;
+}
+
+/* --- LISTA DE NAVEGACIÓN --- */
+ion-list {
+  background: transparent !important;
+  padding: 24px 14px;
+}
+
+ion-item {
+  --background: transparent;
+  --background-hover: rgba(220, 31, 38, 0.06);
+  --color: #4A2A2D;
+  --border-radius: 14px;
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  --min-height: 48px;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 14px;
+  transition: all 0.25s ease;
+}
+
+ion-item ion-icon {
+  font-size: 20px;
+  color: #8B5358;
+  transition: color 0.25s ease;
+}
+
+/* Hover sutil */
+ion-item:hover {
+  --color: #DC1F26;
+}
+ion-item:hover ion-icon {
+  color: #DC1F26;
+}
+
+/* --- ÍTEM ACTIVO --- */
+ion-item.selected {
+  --background: linear-gradient(135deg, #8B0000 0%, #DC1F26 50%, #FF4D5E 100%);
+  --color: #ffffff;
+  box-shadow: 0 8px 22px rgba(220, 31, 38, 0.35);
+  transform: translateX(2px);
+}
+
+ion-item.selected ion-icon {
+  color: #ffffff;
+}
+
+/* --- TOGGLE TEMA --- */
+ion-item ion-toggle {
+  --background-checked: #DC1F26;
+  --handle-background-checked: #ffffff;
+}
+
+/* --- PIE DE PÁGINA --- */
+ion-footer {
+  background: transparent;
+}
+
+.footer-text {
+  text-align: center;
+  font-size: 10px;
+  color: #B89599;
+  padding: 14px;
+  margin: 0;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* ==========================================================================
+   MODO OSCURO  ·  Menú lateral
+   ========================================================================== */
+:host-context(body.dark) {
+
+  ion-menu {
+    --background: #0E0508;
+    border-right: 1px solid rgba(255, 77, 94, 0.18);
+  }
+
+  ion-menu ion-content {
+    --background: linear-gradient(180deg, #0E0508 0%, #1A0A0E 100%);
+  }
+
+  /* Header del menú: gradiente más profundo */
+  .logo-container {
+    background: linear-gradient(135deg, #1A0508 0%, #4A0000 50%, #8B0000 100%);
+  }
+
+  .logo-icon {
+    color: #FF4D5E;
+    filter: drop-shadow(0 4px 14px rgba(255, 77, 94, 0.7));
+  }
+
+  /* Items de menú: texto blanco, fondo transparente */
+  ion-item {
+    --background: transparent;
+    --background-hover: rgba(255, 77, 94, 0.12);
+    --color: #FFFFFF;
+  }
+
+  ion-item ion-icon {
+    color: #FF4D5E !important;
+    filter: drop-shadow(0 0 8px rgba(255, 77, 94, 0.4));
+  }
+
+  ion-item:hover {
+    --color: #FF4D5E;
+  }
+
+  /* Item activo en dark: gradiente más vivo */
+  ion-item.selected {
+    --background: linear-gradient(135deg, #4A0000 0%, #DC1F26 50%, #FF4D5E 100%);
+    --color: #FFFFFF;
+    box-shadow: 0 10px 26px rgba(255, 77, 94, 0.4);
+  }
+
+  ion-item.selected ion-icon {
+    color: #FFFFFF !important;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
+  }
+
+  /* Toggle del modo oscuro */
+  ion-item ion-toggle {
+    --background-checked: #FF4D5E;
+  }
+
+  .footer-text {
+    color: #8B5358;
+  }
+}

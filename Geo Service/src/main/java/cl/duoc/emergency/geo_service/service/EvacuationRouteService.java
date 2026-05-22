@@ -1,0 +1,167 @@
+package cl.duoc.emergency.geo_service.service;
+
+import cl.duoc.emergency.geo_service.dto.request.EvacuationRouteRequestDTO;
+import cl.duoc.emergency.geo_service.dto.response.EvacuationResponseDTO;
+import cl.duoc.emergency.geo_service.enums.ZoneType;
+import cl.duoc.emergency.geo_service.model.EvacuationRoute;
+import cl.duoc.emergency.geo_service.model.Zone;
+import cl.duoc.emergency.geo_service.repository.EvacuationRouteRepository;
+import cl.duoc.emergency.geo_service.repository.ZonesRepository;
+import lombok.AllArgsConstructor;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.io.geojson.GeoJsonReader;
+import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Service
+@AllArgsConstructor
+public class EvacuationRouteService {
+    private final EvacuationRouteRepository evacuationRouteRepository;
+    private final ZonesRepository zonesRepository;
+    private final ModelMapper modelMapper;
+
+    public EvacuationResponseDTO createEvacuationRoute(
+            EvacuationRouteRequestDTO evacuationRouteRequestDTO){
+
+        Zone zone = zoneExistsValidation(evacuationRouteRequestDTO);
+
+        if (zone.getZoneType() != ZoneType.OPERATIONAL) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Las rutas solo pueden asignarse a zonas operativas"
+            );
+        }
+
+        Geometry zoneGeometry = geoJsonToGeometry(zone.getGeoJson());
+        Geometry routeGeometry = geoJsonToGeometry(evacuationRouteRequestDTO.getGeoJson());
+
+        if (!"LineString".equalsIgnoreCase(routeGeometry.getGeometryType())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La ruta debe ser un GeoJSON de tipo LineString"
+            );
+        }
+
+        if (!zoneGeometry.contains(routeGeometry)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La ruta debe estar dentro de la zona asignada"
+            );
+        }
+
+        EvacuationRoute evacuationRoute = new EvacuationRoute();
+        evacuationRoute.setName(evacuationRouteRequestDTO.getName());
+        evacuationRoute.setDescription(evacuationRouteRequestDTO.getDescription());
+        evacuationRoute.setGeoJson(evacuationRouteRequestDTO.getGeoJson());
+        evacuationRoute.setZone(zone);
+        evacuationRoute.setActive(true);
+
+        return mapToResponse(evacuationRouteRepository.save(evacuationRoute));
+
+    }
+
+    public List<EvacuationResponseDTO> findAll(){
+        return evacuationRouteRepository.findAll().stream().map(
+                EvacuationRoute -> {
+                    return modelMapper.map(EvacuationRoute, EvacuationResponseDTO.class);
+                }
+        ).toList();
+    }
+
+    public EvacuationResponseDTO findById(UUID id){
+        EvacuationRoute route = evacuationRouteRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "La ruta no existe"
+                ));
+
+
+        return mapToResponse(route);
+    }
+
+    public EvacuationResponseDTO update(EvacuationRouteRequestDTO evacuationRouteRequestDTO, UUID id){
+        EvacuationRoute rute = evacuationRouteRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                "La Ruta no existe"
+        ));
+
+        Zone zone = zoneExistsValidation(evacuationRouteRequestDTO);
+
+        if (zone.getZoneType() != ZoneType.OPERATIONAL) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Las rutas solo pueden asignarse a zonas operativas"
+            );
+        }
+
+        Geometry zoneGeometry = geoJsonToGeometry(zone.getGeoJson());
+        Geometry routeGeometry = geoJsonToGeometry(evacuationRouteRequestDTO.getGeoJson());
+
+        if (!"LineString".equalsIgnoreCase(routeGeometry.getGeometryType())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La ruta debe ser un GeoJSON de tipo LineString"
+            );
+        }
+
+        if (!zoneGeometry.contains(routeGeometry)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La ruta debe estar dentro de la zona asignada"
+            );
+        }
+
+        rute.setName(evacuationRouteRequestDTO.getName());
+        rute.setDescription(evacuationRouteRequestDTO.getDescription());
+        rute.setGeoJson(evacuationRouteRequestDTO.getGeoJson());
+        rute.setZone(zone);
+
+
+        return mapToResponse(evacuationRouteRepository.save(rute));
+    }
+
+    public void deleteById(UUID id) {
+        if (!evacuationRouteRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "La ruta no existe");
+        }
+
+        evacuationRouteRepository.deleteById(id);
+    }
+
+    private Geometry geoJsonToGeometry(String geoJson) {
+        try {
+            GeoJsonReader reader = new GeoJsonReader();
+            return reader.read(geoJson);
+        } catch (Exception e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "GeoJSON inválido"
+            );
+        }
+    }
+
+    private EvacuationResponseDTO mapToResponse(EvacuationRoute route) {
+        EvacuationResponseDTO response = modelMapper.map(route, EvacuationResponseDTO.class);
+        response.setZoneId(route.getZone().getId());
+        return response;
+    }
+
+    private Zone zoneExistsValidation(EvacuationRouteRequestDTO requestDTO){
+
+        return zonesRepository.findById(requestDTO.getZoneId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "La zona no existe"
+                ));
+    }
+
+
+
+}

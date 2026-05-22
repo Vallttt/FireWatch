@@ -1,0 +1,78 @@
+/* ==========================================================================
+   ALERTAS  ·  estilos específicos
+   (los estilos base de tarjetas, segments e inputs vienen del global)
+   ========================================================================== */
+
+/* ==========================================================================
+   STATUS PILL (header)
+   ========================================================================== */
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2BA84A;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.status-pill ion-icon { font-size: 10px; }
+
+/* ── End column: badges apilados + botón eliminar ─────────────── */
+.end-col {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+}
+
+.canal-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.canal-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.canal-badge {
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+
+  ion-icon { font-size: 10px; }
+}
+
+/* ==========================================================================
+   BOTÓN ENVIAR (latido sutil mientras espera)
+   ========================================================================== */
+.submit-btn {
+  animation: pulseRed 2.6s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   HISTORIAL
+   ========================================================================== */
+.fecha-alerta {
+  font-size: 11px;
+  color: var(--ion-color-medium);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   MODO OSCURO
+   ========================================================================== */
+:host-context(body.dark) {
+  .status-pill { color: #4ADE80; }
+}

@@ -1,0 +1,391 @@
+<ion-header class="ion-no-border" [class.header-hidden]="headerHidden">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Reportar Emergencia</ion-title>
+    <ion-buttons slot="end" class="status-pill danger"></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content
+  [fullscreen]="true"
+  [scrollEvents]="true"
+  (ionScroll)="onContentScroll($event)">
+
+  <!-- 1. MAPA INTERACTIVO -->
+  <ion-card class="geo-card">
+    <ion-card-content class="ion-no-padding">
+
+      <div class="map-title-row">
+        <div class="card-title-container">
+          <ion-icon name="location-outline"></ion-icon>
+          <ion-card-title>Ubicación</ion-card-title>
+        </div>
+        <button type="button" class="locate-btn-box" (click)="getMyLocation()">
+          <ion-icon name="navigate"></ion-icon>
+          <span>Centrar</span>
+        </button>
+      </div>
+
+      <p class="map-hint">
+        Arrastra el marcador para indicar la ubicación del incidente
+      </p>
+
+      <div class="report-map-wrapper">
+        <div id="reportMap" class="report-map"></div>
+      </div>
+
+    </ion-card-content>
+  </ion-card>
+
+  <!-- 2. PLANTILLAS -->
+  <ion-card class="main-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="apps-outline"></ion-icon>
+        <ion-card-title>Plantillas de reporte</ion-card-title>
+      </div>
+      <p class="subtitle">Selecciona una plantilla para comenzar</p>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-segment
+        [(ngModel)]="clasificacionInicial"
+        class="custom-segment"
+        (ionChange)="useTemplate($event.detail.value)">
+
+        <ion-segment-button value="Forestal">
+          <ion-label>Forestal</ion-label>
+        </ion-segment-button>
+
+        <ion-segment-button value="Estructural">
+          <ion-label>Estructural</ion-label>
+        </ion-segment-button>
+
+        <ion-segment-button value="Urbano">
+          <ion-label>Urbano</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- 3. DESCRIPCIÓN -->
+  <ion-card class="main-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="list-outline"></ion-icon>
+        <ion-card-title>Descripción del incidente</ion-card-title>
+      </div>
+    </ion-card-header>
+
+    <ion-card-content>
+
+      <div class="input-section">
+        <ion-label class="section-label">Tipo de incidente</ion-label>
+        <div class="custom-input">
+          <ion-icon name="flame-outline" class="prefix-icon"></ion-icon>
+          <select class="native-select" [(ngModel)]="tipoDesc">
+            <option value="" disabled selected>Selecciona una opción</option>
+            <option value="FORESTAL">Forestal</option>
+            <option value="ESTRUCTURAL">Estructural</option>
+            <option value="URBANO">Urbano</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-section">
+        <ion-label class="section-label">Nivel de severidad</ion-label>
+        <ion-segment [(ngModel)]="severidad" class="custom-segment" (ionChange)="onSeverityChange()">
+          <ion-segment-button value="baja">
+            <ion-label>Baja</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="media">
+            <ion-label>Media</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="alta">
+            <ion-label>Alta</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+
+      <div class="input-section">
+        <ion-label class="section-label">Observaciones del ciudadano</ion-label>
+        <div class="custom-textarea">
+          <ion-textarea
+            rows="4"
+            placeholder="Describe el incidente o selecciona una clasificación inicial."
+            [(ngModel)]="descripcion">
+          </ion-textarea>
+        </div>
+      </div>
+
+      <!-- 4. ADJUNTAR FOTOS Y VIDEOS -->
+      <div class="input-section">
+        <ion-label class="section-label">Fotos y videos</ion-label>
+
+        <!-- Botón subir archivos (web: solo file picker) -->
+        <div class="media-action-row">
+          <label class="media-upload-btn" for="fileUploadWeb">
+            <ion-icon name="image-outline"></ion-icon>
+            <span>Subir archivos</span>
+          </label>
+          <input
+            id="fileUploadWeb"
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            hidden
+            (change)="onFilesSelected($event)">
+
+          <span class="media-counter" *ngIf="selectedFiles.length > 0">
+            {{ selectedFiles.length }} / 5
+          </span>
+        </div>
+
+        <!-- Grid de previsualizaciones -->
+        <div class="media-preview-grid" *ngIf="filePreviews.length > 0">
+          <div
+            class="media-preview-item"
+            *ngFor="let preview of filePreviews; let i = index">
+
+            <img
+              *ngIf="preview.type === 'image'"
+              [src]="preview.url"
+              [alt]="preview.name"
+              class="preview-img">
+
+            <div *ngIf="preview.type === 'video'" class="preview-video-thumb">
+              <ion-icon name="videocam-outline"></ion-icon>
+              <span class="video-name">{{ preview.name }}</span>
+            </div>
+
+            <button
+              type="button"
+              class="remove-media-btn"
+              (click)="removeFile(i)">
+              <ion-icon name="close-circle"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <p class="media-hint" *ngIf="selectedFiles.length < 5">
+          Máximo 5 archivos · hasta 20 MB cada uno
+        </p>
+      </div>
+
+      <ion-button
+        expand="block"
+        shape="round"
+        class="submit-btn"
+        (click)="submitReport()">
+        <ion-icon slot="start" name="paper-plane-outline"></ion-icon>
+        Enviar reporte
+      </ion-button>
+
+    </ion-card-content>
+  </ion-card>
+
+  <!-- 5. HISTORIAL (admin) -->
+  <ion-card *ngIf="isAdmin" class="history-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="time-outline"></ion-icon>
+        <ion-card-title>Historial de reportes</ion-card-title>
+      </div>
+      <p class="subtitle">Toca un reporte para ver los detalles</p>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-list lines="none" class="history-list" *ngIf="historialReportes.length > 0; else noReports">
+        <ion-item
+          *ngFor="let reporte of historialReportes"
+          class="history-item clickable-item"
+          (click)="openReporteDetalle(reporte)">
+
+          <div class="history-icon-bg" slot="start">
+            <ion-icon name="flame-outline"></ion-icon>
+          </div>
+
+          <ion-label>
+            <h2>{{ reporte.descripcion }}</h2>
+            <p>{{ reporte.usuarioReportante }}</p>
+            <p class="history-meta">
+              <span class="severity-tag" [ngClass]="mapSeverityLabel(reporte.severity)">
+                {{ mapSeverityLabel(reporte.severity) }}
+              </span>
+              {{ formatDate(reporte.fechaIncidente) }}
+            </p>
+          </ion-label>
+
+          <div slot="end" class="item-end-actions">
+            <span class="media-badge" *ngIf="reporte.mediaCount > 0">
+              <ion-icon name="images-outline"></ion-icon>
+              <span>{{ reporte.mediaCount }}</span>
+            </span>
+            <button
+              type="button"
+              class="delete-btn"
+              (click)="$event.stopPropagation(); deleteReport(reporte)">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </div>
+        </ion-item>
+      </ion-list>
+
+      <ng-template #noReports>
+        <div class="empty-state">
+          <p>No se han enviado reportes aún.</p>
+        </div>
+      </ng-template>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ============================================================ -->
+  <!--  MODAL DE DETALLE DEL REPORTE                               -->
+  <!-- ============================================================ -->
+  <div class="detail-overlay" *ngIf="reporteSeleccionado" (click)="closeReporteDetalle()">
+    <div class="detail-panel" (click)="$event.stopPropagation()">
+
+      <!-- Encabezado -->
+      <div class="detail-header">
+        <h3 class="detail-title">Detalle del reporte</h3>
+        <button class="detail-close-btn" type="button" (click)="closeReporteDetalle()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <!-- Cuerpo con scroll -->
+      <div class="detail-body">
+
+        <!-- Información del reporte -->
+        <div class="detail-info-block">
+          <div class="detail-field">
+            <span class="detail-label">Descripción</span>
+            <span class="detail-value">{{ reporteSeleccionado.descripcion }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Reportado por</span>
+            <span class="detail-value">{{ reporteSeleccionado.usuarioReportante }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Fecha</span>
+            <span class="detail-value">{{ formatDate(reporteSeleccionado.fechaIncidente) }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Severidad</span>
+            <span class="severity-tag" [ngClass]="mapSeverityLabel(reporteSeleccionado.severity)">
+              {{ mapSeverityLabel(reporteSeleccionado.severity) }}
+            </span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Estado</span>
+            <span class="detail-value">{{ reporteSeleccionado.estado }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Coordenadas</span>
+            <span class="detail-value">
+              {{ reporteSeleccionado.latitude | number:'1.4-4' }},
+              {{ reporteSeleccionado.longitude | number:'1.4-4' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Sección de archivos adjuntos -->
+        <div class="detail-media-section">
+          <h4 class="detail-media-title">
+            <ion-icon name="images-outline"></ion-icon>
+            Archivos adjuntos
+          </h4>
+
+          <div *ngIf="cargandoMedia" class="media-loading">
+            <p>Cargando archivos...</p>
+          </div>
+
+          <div
+            *ngIf="!cargandoMedia && reporteSeleccionado.mediaCount === 0"
+            class="no-media">
+            <p>Sin archivos adjuntos</p>
+          </div>
+
+          <div *ngIf="!cargandoMedia && mediaDelReporte.length > 0" class="detail-media-grid">
+            <div
+              *ngFor="let item of mediaDelReporte; let i = index"
+              class="detail-media-thumb"
+              (click)="openLightbox(i)">
+
+              <img
+                *ngIf="item.contentType.startsWith('image/')"
+                [src]="item.data"
+                [alt]="item.filename">
+
+              <div *ngIf="item.contentType.startsWith('video/')" class="detail-video-thumb">
+                <ion-icon name="videocam-outline"></ion-icon>
+              </div>
+
+              <div class="thumb-overlay">
+                <ion-icon name="eye-outline"></ion-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="detail-actions">
+          <button
+            type="button"
+            class="detail-delete-btn"
+            (click)="deleteReport(reporteSeleccionado)">
+            <ion-icon name="trash-outline"></ion-icon>
+            Eliminar reporte
+          </button>
+        </div>
+
+      </div><!-- /detalle del reporte -->
+    </div><!-- /detalle del panel -->
+  </div><!-- /detalle del overlay -->
+
+  <!-- ============================================================ -->
+  <!--  LIGHTBOX                                                   -->
+  <!-- ============================================================ -->
+  <div class="lightbox-overlay" *ngIf="lightboxIndex >= 0" (click)="closeLightbox()">
+
+    <button class="lightbox-close" type="button" (click)="closeLightbox()">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+
+    <span class="lightbox-counter">{{ lightboxIndex + 1 }} / {{ mediaDelReporte.length }}</span>
+
+    <div class="lightbox-content" (click)="$event.stopPropagation()">
+      <ng-container *ngIf="mediaDelReporte[lightboxIndex] as item">
+        <img
+          *ngIf="item.contentType.startsWith('image/')"
+          [src]="item.data"
+          [alt]="item.filename">
+        <video
+          *ngIf="item.contentType.startsWith('video/')"
+          [src]="item.data"
+          controls
+          autoplay></video>
+      </ng-container>
+    </div>
+
+    <button
+      class="lightbox-nav prev"
+      type="button"
+      *ngIf="lightboxIndex > 0"
+      (click)="$event.stopPropagation(); prevMedia()">
+      <ion-icon name="chevron-back-outline"></ion-icon>
+    </button>
+
+    <button
+      class="lightbox-nav next"
+      type="button"
+      *ngIf="lightboxIndex < mediaDelReporte.length - 1"
+      (click)="$event.stopPropagation(); nextMedia()">
+      <ion-icon name="chevron-forward-outline"></ion-icon>
+    </button>
+
+  </div><!-- /lightbox-overlay -->
+
+</ion-content>

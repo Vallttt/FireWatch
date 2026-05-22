@@ -1,0 +1,7 @@
+{
+  "name": "valledelsol-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

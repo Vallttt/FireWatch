@@ -1,0 +1,44 @@
+/* ==========================================================================
+   ALERTAS  ·  estilos específicos
+   (los estilos base de tarjetas, segments e inputs vienen del global)
+   ========================================================================== */
+
+/* ==========================================================================
+   STATUS PILL (header)
+   ========================================================================== */
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2BA84A;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.status-pill ion-icon { font-size: 10px; }
+
+/* ==========================================================================
+   BOTÓN ENVIAR (latido sutil mientras espera)
+   ========================================================================== */
+.submit-btn {
+  animation: pulseRed 2.6s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   HISTORIAL
+   ========================================================================== */
+.fecha-alerta {
+  font-size: 11px;
+  color: var(--ion-color-medium);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   MODO OSCURO
+   ========================================================================== */
+:host-context(body.dark) {
+  .status-pill { color: #4ADE80; }
+}
