@@ -1,6 +1,7 @@
-package com.privdata.authservice.repository;
+package com.valledelsol.userservice.repository;
 
-import com.privdata.authservice.model.User;
+
+import com.valledelsol.userservice.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

@@ -1,14 +1,16 @@
-package com.privdata.authservice.model;
+package com.valledelsol.userservice.model;
 
-import com.privdata.authservice.enums.UserRole;
-import com.privdata.authservice.enums.UserStatus;
+import com.valledelsol.userservice.enums.UserRole;
+import com.valledelsol.userservice.enums.UserStatus;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Entity

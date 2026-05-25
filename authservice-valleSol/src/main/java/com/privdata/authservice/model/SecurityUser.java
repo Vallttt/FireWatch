@@ -1,5 +1,6 @@
 package com.privdata.authservice.model;
 
+import com.privdata.authservice.dto.response.UserAuthResponseDTO;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,13 +10,13 @@ import java.util.Collections;
 
 public class SecurityUser implements UserDetails {
 
-    private final User user;
+    private final UserAuthResponseDTO user;
 
-    public SecurityUser(User user) {
+    public SecurityUser(UserAuthResponseDTO user) {
         this.user = user;
     }
 
-    public User getUser() {
+    public UserAuthResponseDTO getUser() {
         return user;
     }
 

@@ -1,6 +1,6 @@
 package com.privdata.authservice.config;
 
-import com.privdata.authservice.repository.UserRepository;
+import com.privdata.authservice.client.UserClient;
 import com.privdata.authservice.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -12,23 +12,27 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.client.RestClient;
 
 @Configuration
 @RequiredArgsConstructor
 public class SecurityBeansConfig {
 
-    private final UserRepository userRepository;
 
     @Bean
-    public UserDetailsService userDetailsService() {
-        return new CustomUserDetailsService(userRepository);
+    public UserDetailsService userDetailsService(UserClient userClient) {
+        return new CustomUserDetailsService(userClient);
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider() {
+    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService,
+                                                         PasswordEncoder passwordEncoder) {
+
         DaoAuthenticationProvider provider =
-                new DaoAuthenticationProvider(userDetailsService());
-        provider.setPasswordEncoder(passwordEncoder());
+                new DaoAuthenticationProvider(userDetailsService);
+
+        provider.setPasswordEncoder(passwordEncoder);
+
         return provider;
     }
 
@@ -40,5 +44,10 @@ public class SecurityBeansConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public RestClient restClient() {
+        return RestClient.create();
     }
 }

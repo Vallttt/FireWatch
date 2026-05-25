@@ -1,4 +1,4 @@
-package com.privdata.authservice.dto.response;
+package com.valledelsol.userservice.dto.response;
 
 import lombok.Data;
 

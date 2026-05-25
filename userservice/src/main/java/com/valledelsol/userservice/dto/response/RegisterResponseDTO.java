@@ -1,7 +1,7 @@
-package com.privdata.authservice.dto.response;
+package com.valledelsol.userservice.dto.response;
 
-import com.privdata.authservice.enums.UserRole;
-import com.privdata.authservice.enums.UserStatus;
+import com.valledelsol.userservice.enums.UserRole;
+import com.valledelsol.userservice.enums.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
