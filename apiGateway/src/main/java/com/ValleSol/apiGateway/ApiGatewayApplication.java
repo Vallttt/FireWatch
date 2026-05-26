@@ -53,9 +53,13 @@ public class ApiGatewayApplication {
     public RouteLocator routeLocator(RouteLocatorBuilder builder) {
         return builder.routes()
 
-                // 1. Authentication → BFF → Auth Service
+                // 1. Authentication → BFF → Auth -> login
                 .route("bff-auth", r -> r
                         .path("/auth/**")
+                        .uri(bffUrl))
+                // user -> register
+                .route("bff-users",r -> r
+                        .path("/api/users/**")
                         .uri(bffUrl))
 
                 // 2. Reports → BFF → Report Service

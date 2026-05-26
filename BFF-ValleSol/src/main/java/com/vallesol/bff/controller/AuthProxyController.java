@@ -38,24 +38,24 @@ public class AuthProxyController {
         }
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, Object> body) {
-        try {
-            Map<String, Object> response = authClient.register(body);
-            return ResponseEntity.ok(response);
-        } catch (FeignException e) {
-            int status = e.status();
-            String message;
-            if (status == 400) {
-                message = "The email is already registered";
-            } else {
-                message = "Authentication service error";
-            }
-            return ResponseEntity.status(status)
-                    .body(Map.of("message", message));
-        } catch (Exception e) {
-            return ResponseEntity.status(503)
-                    .body(Map.of("error", "Auth Service unavailable", "message", e.getMessage()));
-        }
-    }
+//    @PostMapping("/register")
+//    public ResponseEntity<?> register(@RequestBody Map<String, Object> body) {
+//        try {
+//            Map<String, Object> response = authClient.register(body);
+//            return ResponseEntity.ok(response);
+//        } catch (FeignException e) {
+//            int status = e.status();
+//            String message;
+//            if (status == 400) {
+//                message = "The email is already registered";
+//            } else {
+//                message = "Authentication service error";
+//            }
+//            return ResponseEntity.status(status)
+//                    .body(Map.of("message", message));
+//        } catch (Exception e) {
+//            return ResponseEntity.status(503)
+//                    .body(Map.of("error", "Auth Service unavailable", "message", e.getMessage()));
+//        }
+//    }
 }

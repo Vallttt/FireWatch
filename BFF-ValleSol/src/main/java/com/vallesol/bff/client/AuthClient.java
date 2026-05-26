@@ -16,6 +16,6 @@ public interface AuthClient {
     @PostMapping("/auth/login")
     Map<String, Object> login(@RequestBody Map<String, Object> body);
 
-    @PostMapping("/auth/register")
-    Map<String, Object> register(@RequestBody Map<String, Object> body);
+//    @PostMapping("/auth/register")
+//    Map<String, Object> register(@RequestBody Map<String, Object> body);
 }
