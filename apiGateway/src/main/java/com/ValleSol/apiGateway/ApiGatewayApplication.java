@@ -73,8 +73,13 @@ public class ApiGatewayApplication {
                         .uri(bffUrl))
 
                 // 4. Map / Geo → BFF → Geo Service
-                .route("bff-mapa", r -> r
-                        .path("/api/mapa/**")
+                .route("bff-geo", r -> r
+                        .path("/api/mapa-data/**")
+                        .uri(bffUrl))
+
+                // 4. Map / Geo → BFF → Zone Service
+                .route("bff-zone", r -> r
+                        .path("/api/zones/**")
                         .uri(bffUrl))
 
                 // 5. Dashboard → BFF (local orchestration)

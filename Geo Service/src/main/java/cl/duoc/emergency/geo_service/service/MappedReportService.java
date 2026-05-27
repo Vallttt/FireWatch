@@ -1,11 +1,10 @@
 package cl.duoc.emergency.geo_service.service;
 
+import cl.duoc.emergency.geo_service.client.ZoneClient;
 import cl.duoc.emergency.geo_service.dto.request.MappedReportRequestDTO;
 import cl.duoc.emergency.geo_service.dto.response.MappedReportResponseDTO;
 import cl.duoc.emergency.geo_service.model.MappedReport;
-import cl.duoc.emergency.geo_service.model.Zone;
 import cl.duoc.emergency.geo_service.repository.MappedReportRepository;
-import cl.duoc.emergency.geo_service.repository.ZonesRepository;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -21,16 +20,12 @@ import java.util.UUID;
 public class MappedReportService {
 
     private final MappedReportRepository mappedReportRepository;
-    private final ZonesRepository zonesRepository;
+    private final ZoneClient zoneClient;
     private final ModelMapper modelMapper;
 
     public MappedReportResponseDTO createMappedReport(MappedReportRequestDTO mappedReportRequestDTO) {
-        // Zona es opcional — un reporte puede no tener zona asignada
-        Zone zone = null;
-        if (mappedReportRequestDTO.getZoneId() != null) {
-            zone = zonesRepository.findById(mappedReportRequestDTO.getZoneId())
-                    .orElse(null);
-        }
+
+        validateBrigadeZone(mappedReportRequestDTO.getZoneId());
 
         MappedReport mappedReport = new MappedReport();
         mappedReport.setExternalReportId(mappedReportRequestDTO.getExternalReportId());
@@ -40,7 +35,7 @@ public class MappedReportService {
         mappedReport.setLongitude(mappedReportRequestDTO.getLongitude());
         mappedReport.setReportedAt(mappedReportRequestDTO.getReportedAt());
         mappedReport.setLastSyncAt(LocalDateTime.now());
-        mappedReport.setZone(zone);
+        mappedReport.setZoneId(mappedReportRequestDTO.getZoneId());
 
         MappedReport savedMappedReport = mappedReportRepository.save(mappedReport);
 
@@ -71,11 +66,7 @@ public class MappedReportService {
                         "El reporte mapeado no existe"
                 ));
 
-        Zone zone = null;
-        if (mappedReportRequestDTO.getZoneId() != null) {
-            zone = zonesRepository.findById(mappedReportRequestDTO.getZoneId())
-                    .orElse(null);
-        }
+        validateBrigadeZone(mappedReportRequestDTO.getZoneId());
 
         mappedReport.setExternalReportId(mappedReportRequestDTO.getExternalReportId());
         mappedReport.setReportStatus(mappedReportRequestDTO.getReportStatus());
@@ -84,7 +75,7 @@ public class MappedReportService {
         mappedReport.setLongitude(mappedReportRequestDTO.getLongitude());
         mappedReport.setReportedAt(mappedReportRequestDTO.getReportedAt());
         mappedReport.setLastSyncAt(LocalDateTime.now());
-        mappedReport.setZone(zone);
+        mappedReport.setZoneId(mappedReportRequestDTO.getZoneId());
 
         MappedReport updatedMappedReport = mappedReportRepository.save(mappedReport);
 
@@ -103,10 +94,17 @@ public class MappedReportService {
     }
 
     private MappedReportResponseDTO mapToResponse(MappedReport mappedReport) {
-        MappedReportResponseDTO response = modelMapper.map(mappedReport, MappedReportResponseDTO.class);
-        if (mappedReport.getZone() != null) {
-            response.setZoneId(mappedReport.getZone().getId());
+
+        return modelMapper.map(mappedReport, MappedReportResponseDTO.class);
+    }
+
+    private void validateBrigadeZone(UUID zoneId) {
+
+        if (zoneId != null && !zoneClient.existsById(zoneId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La zona indicada no existe"
+            );
         }
-        return response;
     }
 }

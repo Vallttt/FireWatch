@@ -38,9 +38,6 @@ public class MappedReport {
     private LocalDateTime reportedAt;
     @Column(name = "last_sync_at", nullable = false)
     private LocalDateTime lastSyncAt;//ver en logica, ejemplo: mappedReport.setLastSyncAt(LocalDateTime.now());
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "zone_id")
-    @JsonIgnoreProperties({"evacuationRoutes", "brigades", "mappedReports"})
-    private Zone zone;
+    @Column(name = "zone_id")
+    private UUID zoneId;
 }

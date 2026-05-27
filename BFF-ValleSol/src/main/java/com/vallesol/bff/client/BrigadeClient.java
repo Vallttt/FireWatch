@@ -1,35 +1,31 @@
 package com.vallesol.bff.client;
 
 import com.vallesol.bff.dtos.request.BrigadeMapDTO;
-import com.vallesol.bff.dtos.request.MappedReportMapDTO;
 import com.vallesol.bff.dtos.response.ApiResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-public class GeoClient {
+public class BrigadeClient {
 
-    @Value("${services.geo.url}")
-    private String geoServiceUrl;
+    @Value("${services.brigade.url}")
+    private String brigadeServiceUrl;
 
     private final RestClient restClient;
 
-    public List<MappedReportMapDTO> findAllMappedReports() {
+    public List<BrigadeMapDTO> findAllBrigades() {
 
-        ApiResponseDTO<List<MappedReportMapDTO>> response =
+        ApiResponseDTO<List<BrigadeMapDTO>> response =
                 restClient.get()
-                .uri(geoServiceUrl + "/api/geo")
-                .retrieve()
-                .body(new ParameterizedTypeReference<>() {});
+                    .uri(brigadeServiceUrl + "/api/brigades")
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {});
 
         return response.getData();
     }
