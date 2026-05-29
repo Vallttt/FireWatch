@@ -4,54 +4,57 @@ Sistema distribuido basado en microservicios orientado a la gestión de incendio
 
 La plataforma permite:
 
-- Reportar focos de incendio en tiempo real
-- Visualizar incidentes en mapas interactivos
-- Administrar brigadas y zonas operacionales
-- Generar alertas automáticas
-- Centralizar la autenticación mediante JWT
-- Orquestar servicios mediante API Gateway y BFF
-- Desplegar toda la arquitectura mediante Docker Compose
+- Reportar focos de incendio en tiempo real.
+- Visualizar incidentes en mapas interactivos.
+- Administrar brigadas y zonas operacionales.
+- Gestionar rutas de evacuación.
+- Generar alertas automáticas.
+- Centralizar la autenticación mediante JWT.
+- Orquestar servicios mediante API Gateway y BFF.
+- Desplegar toda la arquitectura mediante Docker Compose.
+- Coordinar recursos de emergencia en tiempo real.
 
 ---
 
 # 📌 Tabla de Contenidos
 
-- [Arquitectura General](#-arquitectura-general)
-- [Microservicios](#-microservicios)
-- [Tecnologías Utilizadas](#-tecnologías-utilizadas)
-- [Arquitectura de Comunicación](#-arquitectura-de-comunicación)
-- [Estructura del Proyecto](#-estructura-del-proyecto)
-- [Puertos del Sistema](#-puertos-del-sistema)
-- [Variables de Entorno](#-variables-de-entorno)
-- [Ejecución con Docker](#-ejecución-con-docker)
-- [Flujo de Autenticación JWT](#-flujo-de-autenticación-jwt)
-- [Patrones Arquitectónicos Aplicados](#-patrones-arquitectónicos-aplicados)
-- [Frontend](#-frontend)
-- [Base de Datos](#-base-de-datos)
-- [Endpoints Principales](#-endpoints-principales)
-- [Escalabilidad](#-escalabilidad)
-- [Estado Actual del Proyecto](#-estado-actual-del-proyecto)
-- [Equipo de Desarrollo](#-equipo-de-desarrollo)
+- Arquitectura General
+- Microservicios
+- Tecnologías Utilizadas
+- Arquitectura de Comunicación
+- Estructura del Proyecto
+- Puertos del Sistema
+- Variables de Entorno
+- Ejecución con Docker
+- Flujo de Autenticación JWT
+- Patrones Arquitectónicos Aplicados
+- Frontend
+- Base de Datos
+- Endpoints Principales
+- Escalabilidad
+- Estado Actual del Proyecto
+- Equipo de Desarrollo
 
 ---
 
 # 🏗 Arquitectura General
 
-La plataforma utiliza una arquitectura basada en microservicios, donde cada servicio posee responsabilidades claramente separadas y su propia base de datos.
+La plataforma utiliza una arquitectura basada en microservicios, donde cada servicio posee responsabilidades claramente separadas y persistencia desacoplada.
 
 ```text
-Frontend (Angular/Ionic)
-        │
-        ▼
-API Gateway (Spring Cloud Gateway)
-        │
-        ▼
-BFF - Backend For Frontend
-        │
- ┌──────┼───────────────┬──────────────┬──────────────┐
- ▼      ▼               ▼              ▼              ▼
-Auth  User           Report         Geo           Alert
-Svc   Svc            Svc            Svc            Svc
+Frontend Web / Android
+            │
+            ▼
+      API Gateway
+            │
+            ▼
+             BFF
+            │
+ ┌──────────┼──────────┬──────────┬──────────┬──────────┬──────────┐
+ ▼          ▼          ▼          ▼          ▼          ▼          ▼
+
+Auth      User      Report     Alert      Geo       Zone     Brigade
+Service   Service   Service    Service    Service   Service  Service
 ```
 
 ---
@@ -62,17 +65,17 @@ Svc   Svc            Svc            Svc            Svc
 
 Responsable de:
 
-- Login
-- Validación JWT
-- Seguridad
-- Autenticación
+- Login.
+- Validación JWT.
+- Seguridad.
+- Autenticación.
 
 ### Funcionalidades
 
-- Generación de tokens JWT
-- Validación de credenciales
-- Protección de endpoints
-- Integración REST con `user-service`
+- Generación de tokens JWT.
+- Validación de credenciales.
+- Protección de endpoints.
+- Integración REST con user-service.
 
 ---
 
@@ -80,17 +83,17 @@ Responsable de:
 
 Responsable de:
 
-- Registro de usuarios
-- Gestión de usuarios
-- Estados de usuario
-- Roles
+- Registro de usuarios.
+- Gestión de usuarios.
+- Roles.
+- Estados de usuario.
 
 ### Funcionalidades
 
-- Registro
-- Consulta de usuarios
-- Usuarios notificables
-- Endpoint interno para autenticación
+- Registro.
+- Consulta de usuarios.
+- Usuarios notificables.
+- Endpoint interno para autenticación.
 
 ---
 
@@ -98,16 +101,17 @@ Responsable de:
 
 Responsable de:
 
-- Gestión de reportes de incendio
-- Historial de incidentes
-- Estados de reportes
+- Gestión de reportes de incendios.
+- Historial de incidentes.
+- Estados de reportes.
 
 ### Funcionalidades
 
-- Crear reportes
-- Listar reportes
-- Actualizar estado
-- Relación geográfica con zonas
+- Crear reportes.
+- Listar reportes.
+- Actualizar estados.
+- Estadísticas operacionales.
+- Integración con alertas.
 
 ---
 
@@ -115,9 +119,15 @@ Responsable de:
 
 Responsable de:
 
-- Coordenadas
-- Reportes geolocalizados
-- Lógica geográfica base
+- Reportes georreferenciados.
+- Coordenadas.
+- Información para visualización cartográfica.
+
+### Funcionalidades
+
+- Gestión de Mapped Reports.
+- Integración con report-service.
+- Información geográfica para mapas.
 
 ---
 
@@ -125,10 +135,17 @@ Responsable de:
 
 Responsable de:
 
-- Zonas MAIN y OPERATIONAL
-- Polígonos GeoJSON
-- Rutas de evacuación
-- Validación espacial
+- Administración de zonas operativas.
+- Gestión de polígonos GeoJSON.
+- Rutas de evacuación.
+
+### Funcionalidades
+
+- Creación de zonas MAIN.
+- Creación de zonas OPERATIONAL.
+- Validación espacial.
+- Administración de rutas de evacuación.
+- Relaciones internas con EvacuationRoute.
 
 ---
 
@@ -136,10 +153,15 @@ Responsable de:
 
 Responsable de:
 
-- Brigadas
-- Asignación operacional
-- Estado de brigadas
-- Relación brigada ↔ zona
+- Administración de brigadas.
+- Asignación territorial.
+
+### Funcionalidades
+
+- Crear brigadas.
+- Actualizar estado operativo.
+- Asociar brigadas a zonas.
+- Control operacional de recursos.
 
 ---
 
@@ -147,64 +169,72 @@ Responsable de:
 
 Responsable de:
 
-- Alertas automáticas
-- Notificaciones
-- Registro histórico
-- Mensajería de emergencia
+- Alertas automáticas.
+- Notificaciones.
+- Registro histórico.
+
+### Funcionalidades
+
+- Generación de alertas.
+- Asociación a reportes.
+- Historial de eventos.
 
 ---
 
-## 🧠 BFF - Backend For Frontend
+## 🧠 bff-service
 
-Responsable de:
+Backend For Frontend encargado de consolidar información para el cliente.
 
-- Orquestación de respuestas
-- Comunicación optimizada con frontend
-- Consolidación de información
+### Funcionalidades
+
+- Dashboard centralizado.
+- Consolidación de datos.
+- MapData.
+- Orquestación de llamadas.
 
 ### Ejemplo
 
 ```text
-Dashboard
-→ consulta report-service
+MapData
+→ consulta zone-service
+→ consulta brigade-service
 → consulta geo-service
-→ consulta alert-service
 → retorna respuesta unificada
 ```
 
 ---
 
-## 🚪 API Gateway
+## 🚪 api-gateway
 
 Punto único de entrada del sistema.
 
-Responsable de:
+### Funcionalidades
 
-- Routing
-- CORS
-- Seguridad
-- Validación JWT
-- Logging
+- Routing.
+- CORS.
+- Seguridad.
+- Integración con BFF.
+- Escalabilidad futura.
 
 ---
 
 # ⚙ Tecnologías Utilizadas
 
 | Tecnología | Uso |
-|---|---|
+|------------|-----|
 | Java 21 | Backend |
 | Spring Boot 3 | Microservicios |
-| Spring Cloud Gateway | API Gateway |
 | Spring Security | Seguridad |
 | JWT | Autenticación |
 | Spring Data JPA | Persistencia |
 | Hibernate | ORM |
+| RestClient | Comunicación entre servicios |
 | MySQL 8 | Base de datos |
 | Docker | Contenedores |
 | Docker Compose | Orquestación |
 | Angular 17 | Frontend |
-| Ionic 7 | Frontend móvil/web |
-| Leaflet.js | Mapas |
+| Ionic 7 | Frontend móvil |
+| Leaflet | Mapas |
 | Nginx | Hosting frontend |
 | Git/GitHub | Versionamiento |
 
@@ -218,29 +248,41 @@ Responsable de:
 Frontend
 → API Gateway
 → BFF
-→ Microservicios internos
+→ Microservicios
 ```
 
-## Ejemplo Login
+## Login
 
 ```text
 Frontend
 → Gateway
 → BFF
-→ auth-service
-→ user-service
+→ Auth Service
+→ User Service
 → JWT
-→ respuesta
+→ Respuesta
 ```
 
-## Ejemplo Registro
+## Registro
 
 ```text
 Frontend
 → Gateway
 → BFF
-→ user-service
+→ User Service
 → MySQL
+```
+
+## Mapa
+
+```text
+Frontend
+→ Gateway
+→ BFF
+→ Zone Service
+→ Brigade Service
+→ Geo Service
+→ Respuesta consolidada
 ```
 
 ---
@@ -248,20 +290,23 @@ Frontend
 # 📁 Estructura del Proyecto
 
 ```text
-ms-alertas-valledelsol-main/
+valledelsol-platform/
 │
-├── authservice-valleSol/
-├── userservice/
-├── reportservice/
-├── geoservice/
-├── zoneservice/
-├── brigadeservice/
-├── alertservice/
-├── BFF-ValleSol/
-├── gatewayservice/
-├── frontend/
-├── android-app/
+├── api-gateway/
+├── auth-service/
+├── bff-service/
+├── brigade-service/
+├── geo-service/
+├── report-service/
+├── alert-service/
+├── user-service/
+├── zone-service/
+│
+├── frontend-web/
+├── frontend-android/
+│
 ├── docker-compose.yml
+├── init-db.sql
 └── README.md
 ```
 
@@ -270,24 +315,23 @@ ms-alertas-valledelsol-main/
 # 🌐 Puertos del Sistema
 
 | Servicio | Puerto |
-|---|---|
+|-----------|---------|
 | API Gateway | 8000 |
 | BFF | 8001 |
-| report-service | 8081 |
-| geo-service | 8082 |
-| auth-service | 8080 |
-| user-service | 8084 |
-| zone-service | 8085 |
-| brigade-service | 8086 |
+| Auth Service | 8080 |
+| Report Service | 8081 |
+| Geo Service | 8082 |
+| Alert Service | 8083 |
+| User Service | 8084 |
+| Zone Service | 8085 |
+| Brigade Service | 8086 |
 | MySQL | 3307 |
-| Frontend | 8100 |
-| Android Frontend | 8101 |
+| Frontend Web | 8100 |
+| Frontend Android | 8101 |
 
 ---
 
 # 🔑 Variables de Entorno
-
-## Ejemplo
 
 ```properties
 SPRING_DATASOURCE_URL
@@ -297,28 +341,40 @@ SPRING_DATASOURCE_PASSWORD
 MS_AUTH_URL
 MS_USER_URL
 MS_REPORTES_URL
-MS_GEO_URL
 MS_ALERTAS_URL
+MS_GEO_URL
+MS_ZONE_URL
+MS_BRIGADE_URL
 ```
 
 ---
 
 # 🐳 Ejecución con Docker
 
-## Construcción
+## Levantar entorno completo
 
 ```bash
 docker compose up --build
 ```
 
-## Levantar servicios específicos
+## Detener entorno
+
+```bash
+docker compose down
+```
+
+## Reconstruir servicios individuales
 
 ```bash
 docker compose up --build auth-app
-```
-
-```bash
 docker compose up --build user-app
+docker compose up --build report-app
+docker compose up --build geo-app
+docker compose up --build zone-app
+docker compose up --build brigade-app
+docker compose up --build alertas-app
+docker compose up --build bff-app
+docker compose up --build gateway-app
 ```
 
 ---
@@ -340,7 +396,7 @@ POST /api/auth/login
 }
 ```
 
-## Uso del Token
+### Uso
 
 ```http
 Authorization: Bearer <token>
@@ -352,51 +408,44 @@ Authorization: Bearer <token>
 
 ## Repository Pattern
 
-Separación de lógica de persistencia mediante `JpaRepository`.
-
----
+Persistencia desacoplada mediante JpaRepository.
 
 ## Database per Service
 
-Cada microservicio posee:
-
-- Base de datos independiente
-- Persistencia independiente
-- Escalabilidad independiente
-
----
-
-## Factory Method
-
-Utilizado para:
-
-- Tipos de alerta
-- Tipos de incendio
-
----
+Cada microservicio mantiene su propio esquema de persistencia.
 
 ## Backend For Frontend (BFF)
 
-Optimización de respuestas hacia frontend.
+Optimización de respuestas para Frontend.
+
+## API Gateway Pattern
+
+Punto único de entrada para el sistema.
+
+## Microservices Architecture
+
+Separación de dominios funcionales independientes.
 
 ---
 
 # 📱 Frontend
 
-Frontend desarrollado con:
+Desarrollado con:
 
-- Ionic Framework 7
-- Angular 17
+- Ionic Framework 7.
+- Angular 17.
 
-## Funcionalidades
+### Funcionalidades
 
-- Login
-- Registro
-- Reporte de incendios
-- Mapa interactivo
-- Dashboard administrativo
-- Visualización de brigadas
-- Alertas activas
+- Login.
+- Registro.
+- Creación de reportes.
+- Visualización de incendios.
+- Mapa interactivo.
+- Dashboard administrativo.
+- Administración de brigadas.
+- Administración de alertas.
+- Visualización de zonas operativas.
 
 ---
 
@@ -405,14 +454,14 @@ Frontend desarrollado con:
 ## Esquemas
 
 | Base de Datos | Servicio |
-|---|---|
+|---------------|-----------|
 | auth_vallesol_db | auth-service |
 | user_db | user-service |
 | report_db | report-service |
 | geo_db | geo-service |
 | zone_db | zone-service |
 | brigade_db | brigade-service |
-| alertas_db | alert-service |
+| alert_db | alert-service |
 
 ---
 
@@ -422,35 +471,29 @@ Frontend desarrollado con:
 
 ```http
 POST /api/auth/login
+POST /api/auth/register
 ```
-
----
 
 ## Usuarios
 
 ```http
-POST /api/users/register
+GET /api/users
 GET /api/users/notificables
+GET /api/users/internal
 ```
-
----
 
 ## Reportes
 
 ```http
-POST /api/reportes
 GET /api/reportes
+POST /api/reportes
 ```
-
----
 
 ## Geo
 
 ```http
-GET /api/geo/mapa
+GET /api/geo/reports/mapped
 ```
-
----
 
 ## Zonas
 
@@ -459,13 +502,23 @@ GET /api/zones
 POST /api/zones
 ```
 
----
-
 ## Brigadas
 
 ```http
 GET /api/brigades
 POST /api/brigades
+```
+
+## Dashboard
+
+```http
+GET /api/dashboard/stats
+```
+
+## Mapa Consolidado
+
+```http
+GET /api/map/data
 ```
 
 ---
@@ -474,11 +527,13 @@ POST /api/brigades
 
 La arquitectura permite:
 
-- Escalar servicios individualmente
-- Tolerancia parcial a fallos
-- Separación de dominios
-- Mantenibilidad
-- Despliegue independiente
+- Escalado independiente por servicio.
+- Tolerancia parcial a fallos.
+- Despliegues independientes.
+- Mantenibilidad.
+- Separación de dominios.
+- Evolución independiente de cada componente.
+- Incorporación de nuevos microservicios sin afectar los existentes.
 
 ---
 
@@ -486,22 +541,30 @@ La arquitectura permite:
 
 ## ✅ Implementado
 
-- Arquitectura base
-- API Gateway
-- BFF
-- JWT
-- Docker Compose
-- Frontend Ionic/Angular
-- Comunicación REST entre microservicios
-- Separación `auth-service` ↔ `user-service`
+- Arquitectura de microservicios.
+- API Gateway.
+- BFF.
+- JWT Authentication.
+- Docker Compose.
+- Frontend Ionic/Angular.
+- Comunicación REST entre microservicios.
+- Separación auth-service ↔ user-service.
+- Separación geo-service ↔ zone-service ↔ brigade-service.
+- Dashboard centralizado.
+- Consolidación MapData.
+- Gestión de zonas operativas.
+- Gestión de brigadas.
+- Gestión de rutas de evacuación.
 
-## 🚧 En desarrollo
+## 🚧 En Desarrollo
 
-- División completa de `geo-service`
-- Alertas automáticas avanzadas
-- Dashboard táctico
-- Métricas y monitoreo
-- Escalamiento horizontal
+- Asignación automática de brigadas.
+- Alertas avanzadas.
+- Dashboard táctico avanzado.
+- Observabilidad.
+- Métricas operacionales.
+- Escalamiento horizontal.
+- Integración con servicios externos de emergencia.
 
 ---
 
@@ -509,14 +572,15 @@ La arquitectura permite:
 
 - Felipe Bravo
 - Valentina Pino Norambuena
-- Willfred Vinet
+- Wilfred Vinet
 
 ---
 
 # 📚 Referencia Académica
 
-Proyecto desarrollado para la asignatura:
+Proyecto desarrollado para:
 
 ```text
 Desarrollo FullStack III — DSY1106
+Duoc UC
 ```
