@@ -23,6 +23,24 @@ services:
       start_period: 90s
 
   # ============================================================
+  # SERVICE REGISTRY — Eureka Server (:8761)
+  # ============================================================
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: valledelsol-eureka
+    ports:
+      - "8761:8761"
+    networks:
+      - red-municipalidad
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8761/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # ============================================================
   # MICROSERVICIO — Auth Service (:8080)
   # ============================================================
   auth-app:
@@ -125,6 +143,7 @@ services:
       - red-municipalidad
 
   # ============================================================
+<<<<<<< HEAD
   # MICROSERVICIO — Zone Service (:8085)
   # ============================================================
   zone-app:
@@ -175,6 +194,9 @@ services:
 
   # ============================================================
   # MICROSERVICIO — SolAlertas (:8083)
+=======
+  # MICROSERVICIO — Alert Service (:8083)
+>>>>>>> 2008e67 (separacion de SolAlertas en alert-service y notification-service con Eureka)
   # ============================================================
   alertas-app:
     build:
@@ -186,6 +208,8 @@ services:
     depends_on:
       mysql-db:
         condition: service_healthy
+      eureka-server:
+        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/alert_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
@@ -193,9 +217,36 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - red-municipalidad
+
+  # ============================================================
+  # MICROSERVICIO — Notification Service (:8084)
+  # ============================================================
+  notification-app:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: valledelsol-notificaciones
+    ports:
+      - "8084:8084"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      auth-app:
+        condition: service_started
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/notification_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - AUTH_SERVICE_URL=http://auth-app:8080
-      - GEO_SERVICE_URL=http://geo-app:8082
-      - REPORTES_SERVICE_URL=http://report-app:8081
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
     networks:
       - red-municipalidad
 
@@ -210,6 +261,7 @@ services:
     ports:
       - "8001:8001"
     depends_on:
+<<<<<<< HEAD
       - auth-app
       - report-app
       - geo-app
@@ -217,14 +269,32 @@ services:
       - user-app
       - zone-app
       - brigade-app
+=======
+      eureka-server:
+        condition: service_healthy
+      auth-app:
+        condition: service_started
+      report-app:
+        condition: service_started
+      geo-app:
+        condition: service_started
+      alertas-app:
+        condition: service_started
+      notification-app:
+        condition: service_started
+>>>>>>> 2008e67 (separacion de SolAlertas en alert-service y notification-service con Eureka)
     environment:
       - MS_AUTH_URL=http://auth-app:8080
       - MS_REPORTES_URL=http://report-app:8081
       - MS_GEO_URL=http://geo-app:8082
+<<<<<<< HEAD
       - MS_ALERTAS_URL=http://alertas-app:8083
       - MS_USER_URL=http://user-app:8084
       - MS_ZONE_URL=http://zone-app:8085
       - MS_BRIGADE_URL=http://brigade-app:8086
+=======
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+>>>>>>> 2008e67 (separacion de SolAlertas en alert-service y notification-service con Eureka)
     networks:
       - red-municipalidad
 
@@ -262,8 +332,6 @@ services:
 
   # ============================================================
   # FRONTEND ANDROID — App móvil servida via Nginx (:8101)
-  # Misma app que el APK pero accesible como web para pruebas.
-  # En producción real el APK se instala directamente en el dispositivo.
   # ============================================================
   android-app:
     build:

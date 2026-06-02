@@ -1,27 +1,21 @@
 package com.vallesol.bff.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
-import java.util.List;
 import java.util.Map;
 
 /**
- * Feign Client → SolAlertas (:8083)
- * The BFF forwards alert and notification operations.
+ * Feign Client → alert-service (registered in Eureka as "alert-service").
+ *
+ * Responsibility: trigger alert creation only.
+ * History, count, and delete operations are handled by NotificacionesClient
+ * because those records live in notification-service.
  */
-@FeignClient(name = "ms-alertas", url = "${ms.alertas.url}")
+@FeignClient(name = "alert-service")
 public interface AlertasClient {
 
     @PostMapping("/api/alertas/enviar")
     String sendAlert(@RequestBody Map<String, Object> body);
-
-    @GetMapping("/api/alertas")
-    List<Map<String, Object>> getAlertHistory();
-
-    @GetMapping("/api/alertas/conteo")
-    Integer getTotalAlerts();
-
-    @DeleteMapping("/api/alertas/{id}")
-    void deleteAlert(@PathVariable("id") String id);
 }

@@ -28,6 +28,11 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-openfeign</artifactId>
 		</dependency>
+		<!-- Eureka Client — allows Feign to discover alert-service and notification-service -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+		</dependency>
 		<!-- Apache HttpClient 5: necesario para que Feign soporte el método PATCH.
 		     El cliente HTTP por defecto (HttpURLConnection) NO soporta PATCH y lanza
 		     java.net.ProtocolException: Invalid HTTP method: PATCH -->
