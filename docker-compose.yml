@@ -143,7 +143,6 @@ services:
       - red-municipalidad
 
   # ============================================================
-<<<<<<< HEAD
   # MICROSERVICIO — Zone Service (:8085)
   # ============================================================
   zone-app:
@@ -194,9 +193,7 @@ services:
 
   # ============================================================
   # MICROSERVICIO — SolAlertas (:8083)
-=======
   # MICROSERVICIO — Alert Service (:8083)
->>>>>>> 2008e67 (separacion de SolAlertas en alert-service y notification-service con Eureka)
   # ============================================================
   alertas-app:
     build:
@@ -261,7 +258,6 @@ services:
     ports:
       - "8001:8001"
     depends_on:
-<<<<<<< HEAD
       - auth-app
       - report-app
       - geo-app
@@ -269,32 +265,14 @@ services:
       - user-app
       - zone-app
       - brigade-app
-=======
-      eureka-server:
-        condition: service_healthy
-      auth-app:
-        condition: service_started
-      report-app:
-        condition: service_started
-      geo-app:
-        condition: service_started
-      alertas-app:
-        condition: service_started
-      notification-app:
-        condition: service_started
->>>>>>> 2008e67 (separacion de SolAlertas en alert-service y notification-service con Eureka)
     environment:
       - MS_AUTH_URL=http://auth-app:8080
       - MS_REPORTES_URL=http://report-app:8081
       - MS_GEO_URL=http://geo-app:8082
-<<<<<<< HEAD
       - MS_ALERTAS_URL=http://alertas-app:8083
       - MS_USER_URL=http://user-app:8084
       - MS_ZONE_URL=http://zone-app:8085
       - MS_BRIGADE_URL=http://brigade-app:8086
-=======
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
->>>>>>> 2008e67 (separacion de SolAlertas en alert-service y notification-service con Eureka)
     networks:
       - red-municipalidad
 

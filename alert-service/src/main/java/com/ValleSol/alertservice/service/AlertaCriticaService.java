@@ -9,19 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-/**
- * Handles critical zone and high-priority emergency alerts.
- *
- * Critical alerts are characterized by:
- *  - NivelEmergencia.CRITICO
- *  - Both email and push channels forced active
- *  - Target: BRIGADAS_Y_ADMINISTRADORES (field teams + command)
- *
- * Typical triggers:
- *  - A geographic zone is flagged as critical (from geo-service)
- *  - An operator manually escalates an existing alert
- *  - Automatic escalation based on fire count thresholds
- */
+
 @Service
 public class AlertaCriticaService {
 
@@ -31,12 +19,6 @@ public class AlertaCriticaService {
         this.alertaService = alertaService;
     }
 
-    /**
-     * Emits a critical zone alert.
-     *
-     * @param descripcion human-readable description of the critical situation
-     * @param reporteId   optional originating report ID (may be null)
-     */
     public void emitirAlertaZonaCritica(String descripcion, UUID reporteId) {
         AlertaRequestDTO request = buildCriticalRequest(
                 TipoAlerta.ZONA_CRITICA,
@@ -46,12 +28,6 @@ public class AlertaCriticaService {
         alertaService.procesarAlerta(request);
     }
 
-    /**
-     * Emits an emergency escalation alert (e.g., multiple concurrent fires).
-     *
-     * @param descripcion   situation summary
-     * @param reporteId     optional originating report
-     */
     public void emitirEmergenciaMaxima(String descripcion, UUID reporteId) {
         AlertaRequestDTO request = buildCriticalRequest(
                 TipoAlerta.INCENDIO,
@@ -61,7 +37,7 @@ public class AlertaCriticaService {
         alertaService.procesarAlerta(request);
     }
 
-    // ─── helpers ────────────────────────────────────────────────────────────
+  
 
     private AlertaRequestDTO buildCriticalRequest(TipoAlerta tipo, String mensaje, UUID reporteId) {
         AlertaRequestDTO req = new AlertaRequestDTO();

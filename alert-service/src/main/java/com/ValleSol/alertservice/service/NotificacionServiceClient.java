@@ -8,12 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * HTTP client: alert-service → notification-service.
- *
- * Uses a @LoadBalanced RestTemplate so Spring Cloud + Eureka resolve
- * the logical name "notification-service" to the actual host:port at runtime.
- */
+
 @Service
 public class NotificacionServiceClient {
 
@@ -25,14 +20,7 @@ public class NotificacionServiceClient {
         this.restTemplate = restTemplate;
     }
 
-    /**
-     * Forwards the enriched alert event to notification-service.
-     * Includes all classification fields so notification-service can
-     * apply the correct generator and audience filter.
-     *
-     * @param request    original (classifier-enriched) alert request
-     * @param despachoId shared UUID grouping all resulting notifications
-     */
+
     public void enviarNotificaciones(AlertaRequestDTO request, UUID despachoId) {
         String url = NOTIFICATION_BASE + "/api/notificaciones/enviar";
 
@@ -50,7 +38,6 @@ public class NotificacionServiceClient {
         try {
             restTemplate.postForEntity(url, payload, Void.class);
         } catch (Exception e) {
-            // Non-fatal: Alerta is already persisted; notification-service may be temporarily down
             System.err.println("[alert-service] Warning — notification-service unreachable: " + e.getMessage());
         }
     }
