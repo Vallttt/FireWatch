@@ -35,4 +35,6 @@ public class UserController {
     public ResponseEntity<UserAuthResponseDTO> findByEmailForAuth(@RequestParam String email) {
         return ResponseEntity.ok(userService.findByEmailForAuth(email));
     }
+
+
 }

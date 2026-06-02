@@ -21,4 +21,6 @@ public class UserClient {
                 .retrieve()
                 .body(UserAuthResponseDTO.class);
     }
+
+    
 }
