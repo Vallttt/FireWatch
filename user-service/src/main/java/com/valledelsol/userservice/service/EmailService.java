@@ -38,7 +38,7 @@ public class EmailService {
 
             helper.setTo(to);
             helper.setFrom("w.vinet.h@gmail.com", "FireWatch - Municipalidad Valle del Sol");
-            helper.setSubject("Código de recuperación - PrivData");
+            helper.setSubject("Código de recuperación - FireWatch");
 
             String html = """
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 24px; background-color: #ffffff;">
