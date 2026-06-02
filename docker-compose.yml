@@ -192,7 +192,6 @@ services:
       - red-municipalidad
 
   # ============================================================
-  # MICROSERVICIO — SolAlertas (:8083)
   # MICROSERVICIO — Alert Service (:8083)
   # ============================================================
   alertas-app:
@@ -219,7 +218,7 @@ services:
       - red-municipalidad
 
   # ============================================================
-  # MICROSERVICIO — Notification Service (:8084)
+  # MICROSERVICIO — Notification Service (:8090)
   # ============================================================
   notification-app:
     build:
@@ -227,7 +226,7 @@ services:
       dockerfile: Dockerfile
     container_name: valledelsol-notificaciones
     ports:
-      - "8084:8084"
+      - "8090:8090"
     depends_on:
       mysql-db:
         condition: service_healthy
@@ -258,21 +257,32 @@ services:
     ports:
       - "8001:8001"
     depends_on:
-      - auth-app
-      - report-app
-      - geo-app
-      - alertas-app
-      - user-app
-      - zone-app
-      - brigade-app
+      eureka-server:
+        condition: service_healthy
+      auth-app:
+        condition: service_started
+      report-app:
+        condition: service_started
+      geo-app:
+        condition: service_started
+      alertas-app:
+        condition: service_started
+      notification-app:
+        condition: service_started
+      user-app:
+        condition: service_started
+      zone-app:
+        condition: service_started
+      brigade-app:
+        condition: service_started
     environment:
       - MS_AUTH_URL=http://auth-app:8080
       - MS_REPORTES_URL=http://report-app:8081
       - MS_GEO_URL=http://geo-app:8082
-      - MS_ALERTAS_URL=http://alertas-app:8083
       - MS_USER_URL=http://user-app:8084
       - MS_ZONE_URL=http://zone-app:8085
       - MS_BRIGADE_URL=http://brigade-app:8086
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
     networks:
       - red-municipalidad
 
