@@ -94,6 +94,9 @@ Responsable de:
 - Consulta de usuarios.
 - Usuarios notificables.
 - Endpoint interno para autenticación.
+- Recuperación de contraseña.
+- Envío de correos de recuperación.
+- Gestión de códigos temporales.
 
 ---
 
@@ -237,6 +240,8 @@ Punto único de entrada del sistema.
 | Leaflet | Mapas |
 | Nginx | Hosting frontend |
 | Git/GitHub | Versionamiento |
+| Brevo SMTP | Correos transaccionales |
+| Jakarta Mail | Envío de correos HTML |
 
 ---
 
@@ -338,6 +343,9 @@ SPRING_DATASOURCE_URL
 SPRING_DATASOURCE_USERNAME
 SPRING_DATASOURCE_PASSWORD
 
+BREVO_SMTP_USER
+BREVO_SMTP_KEY
+
 MS_AUTH_URL
 MS_USER_URL
 MS_REPORTES_URL
@@ -402,6 +410,78 @@ POST /api/auth/login
 Authorization: Bearer <token>
 ```
 
+---
+---
+# 🔐 Recuperación de Contraseña
+
+El sistema permite a los usuarios restablecer su contraseña mediante un código de verificación enviado por correo electrónico.
+
+La funcionalidad se encuentra implementada en el **user-service** e integrada con **Brevo SMTP** para el envío de correos transaccionales.
+
+## Flujo de Recuperación
+
+### Solicitud de Código
+
+```text
+Frontend
+→ API Gateway
+→ BFF
+→ User Service
+→ Brevo SMTP
+→ Correo Electrónico
+```
+
+### Restablecimiento
+
+```text
+Usuario
+→ Ingresa código recibido
+→ User Service valida código
+→ Actualiza contraseña
+→ Confirmación
+```
+
+## Funcionalidades
+
+- Solicitud de recuperación de contraseña.
+- Generación automática de código temporal.
+- Envío de correo HTML personalizado.
+- Validación de código de recuperación.
+- Restablecimiento seguro de contraseña.
+- Expiración automática de códigos.
+- Integración SMTP mediante Brevo.
+
+## Endpoints
+
+### Solicitar Código
+
+```http
+POST /api/auth/password/forgot
+```
+
+Body:
+
+```json
+{
+  "email": "usuario@correo.com"
+}
+```
+
+### Restablecer Contraseña
+
+```http
+POST /api/auth/password/reset
+```
+
+Body:
+
+```json
+{
+  "email": "usuario@correo.com",
+  "code": "123456",
+  "newPassword": "NuevaPassword123*"
+}
+```
 ---
 
 # 🧱 Patrones Arquitectónicos Aplicados
@@ -482,6 +562,13 @@ GET /api/users/notificables
 GET /api/users/internal
 ```
 
+## Recuperación de Contraseña
+
+```http
+POST /api/auth/password/forgot
+POST /api/auth/password/reset
+```
+
 ## Reportes
 
 ```http
@@ -536,6 +623,28 @@ La arquitectura permite:
 - Incorporación de nuevos microservicios sin afectar los existentes.
 
 ---
+# 👥 Usuarios de Prueba
+
+Para facilitar las demostraciones y pruebas del sistema, el proyecto incorpora usuarios semilla cargados automáticamente durante el inicio del entorno.
+
+## Administrador
+
+```text
+Email: admin@valledelsol.cl
+Password: Admin123*
+Rol: ADMIN
+```
+
+## Usuario
+
+```text
+Email: w.vinet.h@gmail.com
+Password: User123*
+Rol: USER
+```
+
+Estos usuarios son utilizados para pruebas académicas y demostraciones funcionales del sistema.
+---
 
 # 🚧 Estado Actual del Proyecto
 
@@ -555,6 +664,11 @@ La arquitectura permite:
 - Gestión de zonas operativas.
 - Gestión de brigadas.
 - Gestión de rutas de evacuación.
+- Recuperación de contraseña mediante correo electrónico.
+- Integración SMTP con Brevo.
+- Correos HTML personalizados FireWatch.
+- Usuarios semilla para demostración.
+- Códigos temporales de recuperación.
 
 ## 🚧 En Desarrollo
 
@@ -571,7 +685,7 @@ La arquitectura permite:
 # 👨‍💻 Equipo de Desarrollo
 
 - Felipe Bravo
-- Valentina Pino Norambuena
+- Valentina Pino 
 - Wilfred Vinet
 
 ---
