@@ -9,14 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-/**
- * BFF Proxy for alert and notification operations.
- *
- * The frontend always talks to /api/alertas/* — the BFF transparently routes:
- *   POST /enviar   → alert-service      (creates the Alerta + triggers notification fan-out)
- *   GET  /         → notification-service (notification history, one row per dispatch)
- *   DEL  /{id}     → notification-service (deletes a full dispatch group)
- */
+
 @RestController
 @RequestMapping("/api/alertas")
 public class AlertasProxyController {
@@ -27,7 +20,7 @@ public class AlertasProxyController {
     @Autowired
     private NotificacionesClient notificacionesClient;
 
-    /** Triggers alert creation in alert-service. */
+   
     @PostMapping("/enviar")
     public ResponseEntity<?> sendAlert(@RequestBody Map<String, Object> body) {
         try {
@@ -39,7 +32,7 @@ public class AlertasProxyController {
         }
     }
 
-    /** Returns notification history from notification-service. */
+    
     @GetMapping
     public ResponseEntity<?> alertHistory() {
         try {
@@ -51,7 +44,7 @@ public class AlertasProxyController {
         }
     }
 
-    /** Deletes a notification dispatch group from notification-service. */
+    
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAlert(@PathVariable String id) {
         try {

@@ -8,12 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Feign Client → notification-service (registered in Eureka as "notification-service").
- *
- * Handles notification history, count, and deletion.
- * The BFF exposes these under /api/alertas/* so the frontend needs no changes.
- */
+
 @FeignClient(name = "notification-service")
 public interface NotificacionesClient {
 

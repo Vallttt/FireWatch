@@ -8,12 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-/**
- * BFF Proxy → Auth Service
- * Receives requests from the frontend (via Gateway) and forwards them to the Auth microservice.
- * Forwards the real HTTP status code from the Auth Service (401, 400, etc.) so the frontend
- * can display appropriate error messages.
- */
+
 @RestController
 @RequestMapping("/auth")
 public class AuthProxyController {
@@ -27,7 +22,7 @@ public class AuthProxyController {
             Map<String, Object> response = authClient.login(body);
             return ResponseEntity.ok(response);
         } catch (FeignException e) {
-            // Auth Service returns 401/403 for incorrect credentials
+        
             int status = e.status();
             String message = "Incorrect email or password";
             return ResponseEntity.status(401)

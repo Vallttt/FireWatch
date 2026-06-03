@@ -15,21 +15,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 
-/**
- * API Gateway — JWT Security Configuration
- *
- * Validates Bearer tokens on every request except the explicitly public paths.
- * The same HMAC-SHA256 secret used by auth-service to sign tokens is used here
- * to verify them, avoiding any round-trip call to auth-service at runtime.
- *
- * Public paths (no token required):
- *   /auth/**                — login
- *   /api/users/register     — user registration
- *   /api/auth/password/**   — password forgot / reset
- *   OPTIONS /**             — CORS preflight requests
- *
- * All other requests must carry a valid Authorization: Bearer <token> header.
- */
+
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
@@ -42,15 +28,15 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeExchange(auth -> auth
-                        // CORS preflight — always allow
+                       
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Public authentication endpoints
+                        
                         .pathMatchers("/auth/**").permitAll()
-                        // Public registration
+                     
                         .pathMatchers("/api/users/register").permitAll()
-                        // Password recovery flow
+                       
                         .pathMatchers("/api/auth/password/**").permitAll()
-                        // Every other request needs a valid JWT
+                       
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -59,10 +45,7 @@ public class SecurityConfig {
                 .build();
     }
 
-    /**
-     * Builds a reactive JWT decoder using the same HMAC-SHA256 secret as auth-service.
-     * No network call is made — validation is done locally with the shared secret.
-     */
+
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
         byte[] keyBytes = Base64.getDecoder().decode(secretKey);

@@ -6,10 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Feign Client → Report Service (:8081)
- * The BFF forwards emergency report operations.
- */
+
 @FeignClient(name = "ms-reportes", url = "${ms.reportes.url}")
 public interface ReportesClient {
 
