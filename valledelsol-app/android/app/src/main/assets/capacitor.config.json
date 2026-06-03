@@ -1,8 +1,0 @@
-{
-	"appId": "com.vallesol.app",
-	"appName": "Valle del Sol",
-	"webDir": "www",
-	"android": {
-		"allowMixedContent": true
-	}
-}

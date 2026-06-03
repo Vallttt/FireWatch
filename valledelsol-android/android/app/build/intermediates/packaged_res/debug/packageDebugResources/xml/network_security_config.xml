@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <!-- Emulador AVD apunta a 10.0.2.2 (localhost del PC) -->
-        <domain includeSubdomains="true">10.0.2.2</domain>
-        <!-- Para dispositivo físico: agrega la IP de tu PC en la red local -->
-        <!-- <domain includeSubdomains="true">192.168.X.X</domain> -->
-    </domain-config>
-</network-security-config>
