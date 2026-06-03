@@ -243,6 +243,9 @@ services:
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - AUTH_SERVICE_URL=http://auth-app:8080
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - BREVO_SMTP_USER=${BREVO_SMTP_USER}
+      - BREVO_SMTP_KEY=${BREVO_SMTP_KEY}
+      - MAIL_FROM=w.vinet.h@gmail.com
     networks:
       - red-municipalidad
 
