@@ -300,6 +300,7 @@ services:
       - bff-app
     environment:
       - BFF_URL=http://bff-app:8001
+      - JWT_SECRET_KEY=VGhpc0lzQVN1cGVyU2VjcmV0S2V5Rm9ySldUQXV0aFNlcnZpY2UxMjM0NTY=
     networks:
       - red-municipalidad
 
