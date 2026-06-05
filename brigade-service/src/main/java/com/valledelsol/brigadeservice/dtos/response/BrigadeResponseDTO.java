@@ -14,6 +14,8 @@ public class BrigadeResponseDTO {
     private BrigadeStatus status;
     private Double latitude;
     private Double longitude;
+    private Boolean isActive;
     private UUID zoneId;
     private String zoneName;
+
 }

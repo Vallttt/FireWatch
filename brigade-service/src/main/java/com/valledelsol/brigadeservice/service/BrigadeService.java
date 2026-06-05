@@ -3,6 +3,7 @@ package com.valledelsol.brigadeservice.service;
 
 import com.valledelsol.brigadeservice.client.ZoneClient;
 import com.valledelsol.brigadeservice.dtos.request.BrigadeRequestDTO;
+import com.valledelsol.brigadeservice.dtos.request.ZoneResponseDTO;
 import com.valledelsol.brigadeservice.dtos.response.BrigadeResponseDTO;
 import com.valledelsol.brigadeservice.model.Brigade;
 import com.valledelsol.brigadeservice.repository.BrigadeRepository;
@@ -29,7 +30,11 @@ public class BrigadeService {
 
     public BrigadeResponseDTO createBrigade(BrigadeRequestDTO brigadeRequestDTO) {
 
-        validateBrigadeZone(brigadeRequestDTO.getZoneId());
+        validateBrigadeInsideZone(
+                brigadeRequestDTO.getZoneId(),
+                brigadeRequestDTO.getLatitude(),
+                brigadeRequestDTO.getLongitude()
+        );
 
 
         Brigade brigade = new Brigade();
@@ -66,7 +71,11 @@ public class BrigadeService {
                         "La brigada no existe"
                 ));
 
-        validateBrigadeZone(brigadeRequestDTO.getZoneId());
+        validateBrigadeInsideZone(
+                brigadeRequestDTO.getZoneId(),
+                brigadeRequestDTO.getLatitude(),
+                brigadeRequestDTO.getLongitude()
+        );
 
         brigade.setName(brigadeRequestDTO.getName());
         brigade.setInstitution(brigadeRequestDTO.getInstitution());
@@ -81,30 +90,60 @@ public class BrigadeService {
     }
 
     public void deleteById(UUID id) {
-        if (!brigadeRepository.existsById(id)) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "La brigada no existe"
-            );
-        }
+        Brigade brigade = brigadeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "La brigada no existe"
+                ));
 
-        brigadeRepository.deleteById(id);
+        brigade.setIsActive(false);
+        brigadeRepository.save(brigade);
     }
 
     private BrigadeResponseDTO mapToResponse(Brigade brigade) {
 
-        return modelMapper.map(brigade, BrigadeResponseDTO.class);
+        BrigadeResponseDTO response = modelMapper.map(brigade, BrigadeResponseDTO.class);
+
+        if (brigade.getZoneId() != null) {
+            ZoneResponseDTO zone = zoneClient.findById(brigade.getZoneId());
+
+            response.setZoneId(zone.getId());
+            response.setZoneName(zone.getName());
+        }
+
+        return response;
     }
 
 
 
 
-    private void validateBrigadeZone(UUID zoneId) {
+    private void validateBrigadeInsideZone(UUID zoneId, Double latitude, Double longitude) {
+        ZoneResponseDTO zone = zoneClient.findById(zoneId);
 
-        if (zoneId != null && !zoneClient.existsById(zoneId)) {
+        Geometry zoneGeometry = geoJsonToGeometry(zone.getGeoJson());
+
+        GeometryFactory geometryFactory = new GeometryFactory();
+
+        Point brigadePoint = geometryFactory.createPoint(
+                new Coordinate(longitude, latitude)
+        );
+
+        if (!zoneGeometry.contains(brigadePoint)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "La zona indicada no existe"
+                    "La brigada debe estar dentro de la zona asignada"
+            );
+        }
+    }
+
+    private Geometry geoJsonToGeometry(String geoJson) {
+        try {
+            GeoJsonReader reader = new GeoJsonReader();
+            return reader.read(geoJson);
+        } catch (Exception e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "GeoJSON inválido"
             );
         }
     }

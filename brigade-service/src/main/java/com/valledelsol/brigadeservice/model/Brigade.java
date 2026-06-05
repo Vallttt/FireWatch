@@ -40,4 +40,6 @@ public class Brigade {
     private LocalDateTime updatedAt;
     @Column(name = "zone_id")
     private UUID zoneId;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 }
