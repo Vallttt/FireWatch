@@ -1,4 +1,4 @@
-package com.valledelsol.brigadeservice.enums;
+package com.vallesol.bff.enums;
 
 public enum BrigadeStatus {
     AVAILABLE,

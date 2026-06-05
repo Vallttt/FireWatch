@@ -19,7 +19,7 @@ public class MapDataService {
 
         return new MapDataResponseDTO(
                 zoneClient.getAllZones(),
-                brigadeClient.findAllBrigades(),
+                brigadeClient.getAllBrigades(),
                 geoClient.findAllMappedReports()
         );
     }

@@ -23,12 +23,12 @@ public class ZoneProxyController {
         return ResponseEntity.ok(zoneClient.getAllZones());
     }
 
-    @GetMapping
+    @GetMapping("/operational")
     public ResponseEntity<List<ZoneResponseDTO>> getAllZonesOperational() {
         return ResponseEntity.ok(zoneClient.getAllZonesOperational());
     }
 
-    @GetMapping
+    @GetMapping("/active")
     public ResponseEntity<List<ZoneResponseDTO>> getAllZonesActives() {
         return ResponseEntity.ok(zoneClient.getAllZonesActives());
     }

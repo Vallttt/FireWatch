@@ -1,6 +1,6 @@
-package com.valledelsol.brigadeservice.dtos.request;
+package com.vallesol.bff.dtos.request;
 
-import com.valledelsol.brigadeservice.enums.BrigadeStatus;
+import com.vallesol.bff.enums.BrigadeStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

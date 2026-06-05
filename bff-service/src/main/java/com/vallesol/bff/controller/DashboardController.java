@@ -33,7 +33,7 @@ public class DashboardController {
             int brigades = 0;
 
             try {
-                brigades = (int) brigadeClient.findAllBrigades()
+                brigades = (int) brigadeClient.getAllBrigades()
                         .stream()
                         .filter(brigade -> "DEPLOYED".equals(brigade.getStatus()))
                         .count();
