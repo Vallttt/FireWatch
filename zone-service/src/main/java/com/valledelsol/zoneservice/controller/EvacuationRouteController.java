@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("api/evacroute")
+@RequestMapping("/api/evacuation-routes")
 @AllArgsConstructor
 public class EvacuationRouteController {
     private final EvacuationRouteService evacuationRouteService;
@@ -51,6 +51,23 @@ public class EvacuationRouteController {
         EvacuationResponseDTO rute = evacuationRouteService.findById(id);
 
         ApiResponseDTO<EvacuationResponseDTO> responseDTO = new ApiResponseDTO<>(true, "La ruta se cargo correctamente", rute);
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    @GetMapping("/zone/{zoneId}")
+    public ResponseEntity<ApiResponseDTO<List<EvacuationResponseDTO>>> findByZoneId(
+            @PathVariable UUID zoneId) {
+
+        List<EvacuationResponseDTO> routes =
+                evacuationRouteService.findByZoneId(zoneId);
+
+        ApiResponseDTO<List<EvacuationResponseDTO>> responseDTO =
+                new ApiResponseDTO<>(
+                        true,
+                        "Rutas de evacuación de la zona cargadas correctamente",
+                        routes
+                );
 
         return ResponseEntity.ok(responseDTO);
     }

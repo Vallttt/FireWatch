@@ -1,6 +1,6 @@
-package com.valledelsol.zoneservice.dtos.response;
+package com.vallesol.bff.dtos.response;
 
-import com.valledelsol.zoneservice.enums.ZoneType;
+import com.vallesol.bff.enums.ZoneType;
 import lombok.Data;
 
 import java.util.UUID;

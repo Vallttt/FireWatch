@@ -82,10 +82,16 @@ public class ApiGatewayApplication {
                         .path("/api/zones/**")
                         .uri(bffUrl))
 
+                // . Map / Brigades → BFF → Brigades Service
+                .route("bff-brigades", r -> r
+                        .path("/api/brigades/**")
+                        .uri(bffUrl))
+
                 // 5. Dashboard → BFF (local orchestration)
                 .route("bff-dashboard", r -> r
                         .path("/api/dashboard/**")
                         .uri(bffUrl))
+
 
                 .build();
     }

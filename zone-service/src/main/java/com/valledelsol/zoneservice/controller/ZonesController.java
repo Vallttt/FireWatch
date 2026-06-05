@@ -55,6 +55,26 @@ public class ZonesController {
         return ResponseEntity.ok(responseDTO);
     }
 
+    @GetMapping("/operational")
+    public ResponseEntity<ApiResponseDTO<List<ZoneResponseDTO>>> findOperationalZones(){
+        List<ZoneResponseDTO> zone = zonesService.findOperationalZones();
+
+        ApiResponseDTO<List<ZoneResponseDTO>> responseDTO =
+                new ApiResponseDTO<>(true, "Zonas operacionales encontradas con éxito", zone);
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<ApiResponseDTO<List<ZoneResponseDTO>>> findActiveZones(){
+        List<ZoneResponseDTO> zone = zonesService.findActiveZones();
+
+        ApiResponseDTO<List<ZoneResponseDTO>> responseDTO =
+                new ApiResponseDTO<>(true, "Zonas activas encontradas con éxito", zone);
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponseDTO<ZoneResponseDTO>> createZone(
             @Valid @RequestBody ZoneRequestDTO zoneRequestDTO) {

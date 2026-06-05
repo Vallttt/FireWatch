@@ -67,12 +67,11 @@ public class EvacuationRouteService {
 
     }
 
-    public List<EvacuationResponseDTO> findAll(){
-        return evacuationRouteRepository.findAll().stream().map(
-                EvacuationRoute -> {
-                    return modelMapper.map(EvacuationRoute, EvacuationResponseDTO.class);
-                }
-        ).toList();
+    public List<EvacuationResponseDTO> findAll() {
+        return evacuationRouteRepository.findByIsActiveTrue()
+                .stream()
+                .map(evacuationRoute -> modelMapper.map(evacuationRoute, EvacuationResponseDTO.class))
+                .toList();
     }
 
     public EvacuationResponseDTO findById(UUID id){
@@ -82,8 +81,22 @@ public class EvacuationRouteService {
                         "La ruta no existe"
                 ));
 
+        if (!route.isActive()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "La ruta no existe o está inactiva"
+            );
+        }
+
 
         return mapToResponse(route);
+    }
+
+    public List<EvacuationResponseDTO> findByZoneId(UUID zoneId) {
+        return evacuationRouteRepository.findByZoneIdAndIsActiveTrue(zoneId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     public EvacuationResponseDTO update(EvacuationRouteRequestDTO evacuationRouteRequestDTO, UUID id){
@@ -129,11 +142,15 @@ public class EvacuationRouteService {
     }
 
     public void deleteById(UUID id) {
-        if (!evacuationRouteRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "La ruta no existe");
-        }
 
-        evacuationRouteRepository.deleteById(id);
+        EvacuationRoute route = evacuationRouteRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "La ruta no existe"
+                ));
+
+        route.setActive(false);
+        evacuationRouteRepository.save(route);
     }
 
     private Geometry geoJsonToGeometry(String geoJson) {

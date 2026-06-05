@@ -74,20 +74,25 @@ public class ZonesService {
     }
 
     public List<ZoneResponseDTO> findAll(){
-        return zonesRepository.findAll().stream().map(
-                zone -> {
-                    return modelMapper.map(zone, ZoneResponseDTO.class);
-                }
-                ).toList();
+        return zonesRepository.findByIsActiveTrue()
+                .stream()
+                .map(zone -> modelMapper.map(zone, ZoneResponseDTO.class))
+                .toList();
     }
 
     public ZoneResponseDTO findById(UUID id){
-        Optional<Zone> optionalZone = zonesRepository.findById(id);
-        if (optionalZone.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"La zona no existe");
-        }
+        Zone zone = zonesRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "La zona no existe"
+                ));
 
-        Zone zone = optionalZone.get();
+        if (!Boolean.TRUE.equals(zone.getIsActive())) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "La zona no existe o se encuentra inactiva"
+            );
+        }
 
         return modelMapper.map(zone, ZoneResponseDTO.class);
 
@@ -103,11 +108,31 @@ public class ZonesService {
     return modelMapper.map(mainZone, ZoneResponseDTO.class);
     }
 
+    public List<ZoneResponseDTO> findOperationalZones() {
+        return zonesRepository.findByZoneTypeAndIsActiveTrue(ZoneType.OPERATIONAL)
+                .stream()
+                .map(zone -> modelMapper.map(zone, ZoneResponseDTO.class))
+                .toList();
+    }
+
+    public List<ZoneResponseDTO> findActiveZones() {
+        return zonesRepository.findByIsActiveTrue()
+                .stream()
+                .map(zone -> modelMapper.map(zone, ZoneResponseDTO.class))
+                .toList();
+    }
+
     public void deleteById(UUID id){
-        if (!zonesRepository.existsById(id)){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"La zona no existe");
-        }
-        zonesRepository.deleteById(id);
+        Zone zone = zonesRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "La zona no existe"
+                ));
+
+
+        //borrado logico
+        zone.setIsActive(false);
+        zonesRepository.save(zone);
 
     }
 

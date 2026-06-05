@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class MapDataResponseDTO {
 
-    private List<ZoneMapDTO> zones;
+    private List<ZoneResponseDTO> zones;
     private List<BrigadeMapDTO> routes;
     private List<MappedReportMapDTO> reports;
 }

@@ -4,7 +4,6 @@ import com.vallesol.bff.client.BrigadeClient;
 import com.vallesol.bff.client.GeoClient;
 import com.vallesol.bff.client.ZoneClient;
 import com.vallesol.bff.dtos.response.MapDataResponseDTO;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +18,7 @@ public class MapDataService {
     public MapDataResponseDTO getMapData() {
 
         return new MapDataResponseDTO(
-                zoneClient.findAllZones(),
+                zoneClient.getAllZones(),
                 brigadeClient.findAllBrigades(),
                 geoClient.findAllMappedReports()
         );
