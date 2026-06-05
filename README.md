@@ -127,8 +127,16 @@ Responsable de:
 
 Responsable de:
 
-- Reportes georreferenciados.
-- Coordenadas para visualización cartográfica.
+- Consolidación de datos georreferenciados.
+- Reportes mapeados.
+- Integración con zone-service.
+- Integración con brigade-service.
+- Construcción de respuestas MapData para el frontend.
+
+### Estado actual
+
+- Funcionalidad operativa.
+- Pendiente optimización y consolidación final del modelo cartográfico.
 
 ---
 
@@ -136,9 +144,32 @@ Responsable de:
 
 Responsable de:
 
-- Administración de zonas operativas.
-- Polígonos GeoJSON.
-- Rutas de evacuación.
+- CRUD completo de zonas.
+- Soporte GeoJSON para polígonos.
+- Zona principal (MAIN) única.
+- Zonas operacionales (OPERATIONAL).
+- Validación geoespacial de pertenencia.
+- CRUD completo de rutas de evacuación.
+- Validación de rutas dentro de zonas operacionales.
+- Soft delete.
+
+```http
+GET    /api/zones/main
+GET    /api/zones/operational
+GET    /api/zones/active
+GET    /api/zones/{id}
+POST   /api/zones
+PUT    /api/zones/{id}
+DELETE /api/zones/{id}
+```
+```http
+GET    /api/evacuation-routes
+GET    /api/evacuation-routes/{id}
+GET    /api/evacuation-routes/zone/{zoneId}
+POST   /api/evacuation-routes
+PUT    /api/evacuation-routes/{id}
+DELETE /api/evacuation-routes/{id}
+```
 
 ---
 
@@ -146,8 +177,21 @@ Responsable de:
 
 Responsable de:
 
-- Administración de brigadas.
-- Asignación territorial y estado operativo.
+- CRUD completo de brigadas.
+- Asociación a zonas operacionales.
+- Validación geoespacial de ubicación.
+- Impide asignar brigadas fuera de una zona.
+- Impide asignar brigadas a zonas MAIN.
+- Soft delete.
+- Estado operativo de brigadas.
+
+```http
+GET    /api/brigades
+GET    /api/brigades/{id}
+POST   /api/brigades
+PUT    /api/brigades/{id}
+DELETE /api/brigades/{id}
+```
 
 ---
 
@@ -727,6 +771,13 @@ Desarrollado con Ionic 7 + Angular 17.
 - Usuarios semilla para demostración.
 - Frontend web y Android (APK Capacitor).
 - Docker Compose con orden de arranque correcto.
+- CRUD completo de zonas.
+- CRUD completo de rutas de evacuación.
+- CRUD completo de brigadas.
+- Validaciones geoespaciales mediante JTS.
+- Separación geo-service / zone-service / brigade-service.
+- Integración BFF ↔ Zone Service.
+- Integración BFF ↔ Brigade Service.
 
 ## 🚧 En Desarrollo
 
@@ -736,6 +787,12 @@ Desarrollado con Ionic 7 + Angular 17.
 - Dashboard táctico avanzado con timeline de eventos.
 - Observabilidad y métricas operacionales.
 - Escalamiento horizontal de servicios críticos.
+- Registro dinámico completo mediante Eureka.
+- Autorización por roles en API Gateway.
+- Administración de zonas desde interfaz gráfica.
+- Creación interactiva de polígonos sobre mapa.
+- Dashboard táctico avanzado.
+- Asignación automática de brigadas.
 
 ---
 
