@@ -4,8 +4,6 @@ package com.example.reportes.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.example.reportes.enums.ReportStatus;
-import com.example.reportes.enums.SeverityLevel;
 import jakarta.persistence.*;
 
 @Entity
@@ -19,13 +17,10 @@ public class Reporte {
     private String usuarioReportante;
     private LocalDateTime fechaIncidente;
     private String descripcion;
-    @Enumerated(EnumType.STRING) // Para almacenar el estado como texto en la base de datos
-    private ReportStatus estado;
 
     private UUID zoneId;
     private Double longitude;
     private Double latitude;
-    private SeverityLevel severity;
     
     
     public Reporte() {
@@ -90,14 +85,6 @@ public class Reporte {
         this.userId = userId;
     }
 
-    public ReportStatus getEstado() {
-        return estado;
-    }
-
-    public void setEstado(ReportStatus estado) {
-        this.estado = estado;
-    }
-
     public UUID getZoneId() {
         return zoneId;
     }
@@ -120,13 +107,5 @@ public class Reporte {
 
     public void setLatitude(Double latitude) {
         this.latitude = latitude;
-    }
-
-    public SeverityLevel getSeverity() {
-        return severity;
-    }
-
-    public void setSeverity(SeverityLevel severity) {
-        this.severity = severity;
     }
 }

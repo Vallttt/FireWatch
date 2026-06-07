@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.UUID;
 
 import com.example.reportes.dto.request.AlertRequestDTO;
+import com.example.reportes.dto.request.IncidenteRequestDTO;
 import com.example.reportes.dto.request.MappedReportRequestDTO;
-import com.example.reportes.dto.request.ReportStatusUpdateDTO;
 import com.example.reportes.enums.ReportStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,15 +23,17 @@ public class ReporteService {
     @Autowired
     private ReporteRepository reporteRepository;
 
-    @Autowired
-    private ReporteMediaService mediaService;
-
     private final GeoService geoService;
     private final AlertService alertasService;
+    private final IncidentService incidentService;
+    private final EvidenceService evidenceService;
 
-    public ReporteService(GeoService geoService, AlertService alertasService) {
+    public ReporteService(GeoService geoService, AlertService alertasService,
+                          IncidentService incidentService, EvidenceService evidenceService) {
         this.geoService = geoService;
         this.alertasService = alertasService;
+        this.incidentService = incidentService;
+        this.evidenceService = evidenceService;
     }
 
     public ReporteResponseDTO crearReporte(ReporteRequestDTO request) {
@@ -48,17 +50,25 @@ public class ReporteService {
         reporte.setZoneId(request.getZoneId());
         reporte.setLatitude(request.getLatitude());
         reporte.setLongitude(request.getLongitude());
-        reporte.setSeverity(request.getSeverity());
         reporte.setFechaIncidente(LocalDateTime.now());
-        reporte.setEstado(ReportStatus.ACTIVE);
 
         Reporte guardado = reporteRepository.save(reporte);
+
+        // crear incidente en Incident Service (no fatal)
+        try {
+            IncidenteRequestDTO incidente = new IncidenteRequestDTO();
+            incidente.setReporteId(guardado.getId());
+            incidente.setSeverity(request.getSeverity());
+            incidentService.crearIncidente(incidente);
+        } catch (Exception e) {
+            System.out.println("Error creando incidente: " + e.getMessage());
+        }
 
         // Forward to Geo Service (non-fatal)
         try {
             MappedReportRequestDTO geoRequest = new MappedReportRequestDTO();
             geoRequest.setExternalReportId(guardado.getId());
-            geoRequest.setReportStatus(guardado.getEstado());
+            geoRequest.setReportStatus(ReportStatus.ACTIVE);
             geoRequest.setSeverity(request.getSeverity());
             geoRequest.setLatitude(request.getLatitude());
             geoRequest.setLongitude(request.getLongitude());
@@ -99,26 +109,22 @@ public class ReporteService {
         return convertir(reporte);
     }
 
-    public ReporteResponseDTO actualizarEstado(UUID id, ReportStatusUpdateDTO request) {
-        Reporte reporte = reporteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reporte no encontrado"));
-        reporte.setEstado(request.getEstado());
-        return convertir(reporteRepository.save(reporte));
-    }
-
     public void eliminarReporte(UUID id) {
         if (!reporteRepository.existsById(id)) {
             throw new RuntimeException("Reporte no encontrado");
         }
-        // Cascade-borrar attached media first
-        mediaService.eliminarMediaDeReporte(id);
+        // Cascade-borrar evidencias e incidente asociados (no fatal)
+        try {
+            evidenceService.eliminarPorReporte(id);
+        } catch (Exception e) {
+            System.out.println("Error eliminando evidencias: " + e.getMessage());
+        }
+        try {
+            incidentService.eliminarPorReporte(id);
+        } catch (Exception e) {
+            System.out.println("Error eliminando incidente: " + e.getMessage());
+        }
         reporteRepository.deleteById(id);
-    }
-
-    public int contarFocosActivos() {
-        return (int) reporteRepository.findAll().stream()
-                .filter(r -> r.getEstado() == ReportStatus.ACTIVE)
-                .count();
     }
 
     private ReporteResponseDTO convertir(Reporte reporte) {
@@ -127,13 +133,10 @@ public class ReporteService {
         dto.setUsuarioId(reporte.getUsuarioId());
         dto.setUsuarioReportante(reporte.getUsuarioReportante());
         dto.setDescripcion(reporte.getDescripcion());
-        dto.setEstado(reporte.getEstado());
         dto.setFechaIncidente(reporte.getFechaIncidente());
         dto.setLatitude(reporte.getLatitude());
         dto.setLongitude(reporte.getLongitude());
-        dto.setSeverity(reporte.getSeverity());
         dto.setZoneId(reporte.getZoneId());
-        dto.setMediaCount(mediaService.contarMedia(reporte.getId()));
         return dto;
     }
 }

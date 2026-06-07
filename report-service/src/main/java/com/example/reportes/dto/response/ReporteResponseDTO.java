@@ -1,8 +1,5 @@
 package com.example.reportes.dto.response;
 
-import com.example.reportes.enums.ReportStatus;
-import com.example.reportes.enums.SeverityLevel;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -12,15 +9,11 @@ public class ReporteResponseDTO {
     private UUID usuarioId;
     private String usuarioReportante;
     private String descripcion;
-    private ReportStatus estado;
     private LocalDateTime fechaIncidente;
 
     private UUID zoneId;
     private Double longitude;
     private Double latitude;
-    private SeverityLevel severity;
-    /** numero de medios adjuntos (0 = ninguno). */
-    private int mediaCount;
 
     public ReporteResponseDTO() {
     }
@@ -57,14 +50,6 @@ public class ReporteResponseDTO {
         this.descripcion = descripcion;
     }
 
-    public ReportStatus getEstado() {
-        return estado;
-    }
-
-    public void setEstado(ReportStatus estado) {
-        this.estado = estado;
-    }
-
     public LocalDateTime getFechaIncidente() {
         return fechaIncidente;
     }
@@ -95,21 +80,5 @@ public class ReporteResponseDTO {
 
     public void setLatitude(Double latitude) {
         this.latitude = latitude;
-    }
-
-    public SeverityLevel getSeverity() {
-        return severity;
-    }
-
-    public void setSeverity(SeverityLevel severity) {
-        this.severity = severity;
-    }
-
-    public int getMediaCount() {
-        return mediaCount;
-    }
-
-    public void setMediaCount(int mediaCount) {
-        this.mediaCount = mediaCount;
     }
 }
