@@ -138,7 +138,30 @@ services:
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     networks:
-      - red-municipalidad    
+      - red-municipalidad
+
+  # ============================================================
+  # MICROSERVICIO — Evidence Service (:8088)
+  # ============================================================
+  evidence-app:
+    build:
+      context: ./evidence-service
+      dockerfile: Dockerfile
+    container_name: valledelsol-evidence
+    ports:
+      - "8088:8088"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/evidence_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - red-municipalidad          
 
   # ============================================================
   # MICROSERVICIO — Geo Service (:8082)
