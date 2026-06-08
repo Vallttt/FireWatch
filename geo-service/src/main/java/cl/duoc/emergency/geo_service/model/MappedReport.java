@@ -40,4 +40,6 @@ public class MappedReport {
     private LocalDateTime lastSyncAt;//ver en logica, ejemplo: mappedReport.setLastSyncAt(LocalDateTime.now());
     @Column(name = "zone_id")
     private UUID zoneId;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 }

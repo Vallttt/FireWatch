@@ -46,7 +46,7 @@ public class EmailService {
                         <!-- Encabezado -->
                         <div style="text-align: center; margin-bottom: 24px;">
                             <h1 style="color: #B91C1C; margin-bottom: 5px;">
-                                🔥 FireWatch
+                                    FireWatch
                             </h1>
                             <p style="color: #6B7280; font-size: 14px; margin: 0;">
                                 Municipalidad Valle del Sol
