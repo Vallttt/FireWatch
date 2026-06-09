@@ -55,6 +55,8 @@ services:
         condition: service_healthy
       user-app:
         condition: service_started
+      eureka-server:
+          condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/auth_vallesol_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
@@ -180,6 +182,8 @@ services:
     depends_on:
       mysql-db:
         condition: service_healthy
+      eureka-server:
+          condition: service_healthy
       zone-app:
         condition: service_started
     environment:
@@ -205,6 +209,8 @@ services:
     depends_on:
       mysql-db:
         condition: service_healthy
+      eureka-server:
+          condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/zone_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
@@ -230,6 +236,8 @@ services:
         condition: service_healthy
       zone-app:
         condition: service_started
+      eureka-server:
+          condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/brigade_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
