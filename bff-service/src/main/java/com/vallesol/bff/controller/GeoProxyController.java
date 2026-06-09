@@ -15,8 +15,8 @@ public class GeoProxyController {
 
     private final GeoClient geoClient;
 
-    @GetMapping("/mapped-reports")
-    public ResponseEntity<?> getMappedReports() {
+    @GetMapping()
+    public ResponseEntity<?> getAllMappedReports() {
         return ResponseEntity.ok(geoClient.findAllMappedReports());
     }
 }

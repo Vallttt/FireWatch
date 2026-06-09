@@ -48,6 +48,9 @@ public class User {
     @Column(name = "role", nullable = false)
     private UserRole role;
 
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 

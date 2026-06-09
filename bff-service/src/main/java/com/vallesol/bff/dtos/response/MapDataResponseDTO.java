@@ -13,6 +13,7 @@ import java.util.List;
 public class MapDataResponseDTO {
 
     private List<ZoneResponseDTO> zones;
-    private List<BrigadeResponseDTO> routes;
+    private List<EvacuationResponseDTO> evacuationRoutes;
+    private List<BrigadeResponseDTO> brigades;
     private List<MappedReportMapDTO> reports;
 }

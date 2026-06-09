@@ -49,6 +49,7 @@ public class DataInitializer implements CommandLineRunner {
             String rawPassword,
             String phone,
             UserRole role
+
     ) {
 
         User user = userRepository.findByEmail(email)

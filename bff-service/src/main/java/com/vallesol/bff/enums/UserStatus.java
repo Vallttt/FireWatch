@@ -1,4 +1,4 @@
-package com.valledelsol.userservice.enums;
+package com.vallesol.bff.enums;
 
 public enum UserStatus {
     ACTIVE,
