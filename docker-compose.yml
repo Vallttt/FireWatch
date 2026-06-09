@@ -329,6 +329,7 @@ services:
     environment:
       - MS_AUTH_URL=http://auth-app:8080
       - MS_REPORTES_URL=http://report-app:8081
+      - MS_INCIDENT_URL=http://incident-app:8087
       - MS_GEO_URL=http://geo-app:8082
       - MS_USER_URL=http://user-app:8084
       - MS_ZONE_URL=http://zone-app:8085
