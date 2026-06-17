@@ -1,8 +1,8 @@
 package com.vallesol.bff.controller;
 
 import com.vallesol.bff.client.BrigadeClient;
+import com.vallesol.bff.client.IncidentClient;
 import com.vallesol.bff.client.NotificacionesClient;
-import com.vallesol.bff.client.ReportesClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +17,7 @@ import java.util.Map;
 public class DashboardController {
 
     private final NotificacionesClient notificacionesClient;
-    private final ReportesClient reportesClient;
+    private final IncidentClient incidentClient;
     private final BrigadeClient brigadeClient;
 
     @GetMapping("/stats")
@@ -26,7 +26,8 @@ public class DashboardController {
         Map<String, Object> masterReport = new HashMap<>();
 
         try {
-            int fires = reportesClient.getTotalActiveFires();
+            // Los focos activos ahora viven en incident-service (migrados desde report-service)
+            int fires = incidentClient.getTotalActiveFires();
             // alertasEmitidas = total notifications dispatched (lives in notification-service)
             int alerts = notificacionesClient.getTotalCount();
 

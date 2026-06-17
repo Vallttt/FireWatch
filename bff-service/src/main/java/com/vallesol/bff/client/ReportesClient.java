@@ -19,15 +19,6 @@ public interface ReportesClient {
     @GetMapping("/api/reportes/{id}")
     Map<String, Object> getReport(@PathVariable("id") String id);
 
-    @PatchMapping("/api/reportes/{id}/estado")
-    Map<String, Object> updateStatus(@PathVariable("id") String id, @RequestBody Map<String, Object> body);
-
-    @GetMapping("/api/reportes/focos-activos")
-    Integer getTotalActiveFires();
-
     @DeleteMapping("/api/reportes/{id}")
     void deleteReport(@PathVariable("id") String id);
-
-    @GetMapping("/api/reportes/{id}/media")
-    java.util.List<Map<String, Object>> getMedia(@PathVariable("id") String id);
 }
