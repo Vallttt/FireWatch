@@ -72,7 +72,12 @@ public class ApiGatewayApplication {
                         .path("/api/incidentes/**")
                         .uri(bffUrl))
 
-                // 3. Alerts → BFF → SolAlertas
+                // 2.2 Evidence → BFF → Evidence Service
+                .route("bff-evidencias", r -> r
+                        .path("/api/evidencias/**")
+                        .uri(bffUrl))
+                        
+                        // 3. Alerts → BFF → SolAlertas
                 .route("bff-alertas", r -> r
                         .path("/api/alertas/**")
                         .uri(bffUrl))
