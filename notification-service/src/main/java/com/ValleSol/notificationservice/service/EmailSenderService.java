@@ -25,7 +25,7 @@ public class EmailSenderService {
             helper.setTo(notif.getDestinatario());
             helper.setFrom(from, "FireWatch — Municipalidad Valle del Sol");
             helper.setSubject(buildSubject(notif));
-            helper.setText(notif.getMensaje() != null ? notif.getMensaje() : "", false);
+            helper.setText(buildHtml(notif), true);
 
             mailSender.send(message);
 
@@ -43,5 +43,110 @@ public class EmailSenderService {
             case "ADMIN"   -> "Aviso Administrativo [" + nivel + "] — FireWatch";
             default        -> "Alerta FireWatch [" + nivel + "] — Municipalidad Valle del Sol";
         };
+    }
+
+    private String buildHtml(Notificacion notif) {
+
+        String nivel = notif.getNivelEmergencia() != null
+                ? notif.getNivelEmergencia()
+                : "BAJO";
+
+        String descripcion = notif.getDescripcionReporte() != null
+                ? notif.getDescripcionReporte()
+                : "Sin descripción";
+
+        String reportante = notif.getUsuarioReportante() != null
+                ? notif.getUsuarioReportante()
+                : "No informado";
+
+        String fecha = notif.getFechaReporte() != null
+                ? notif.getFechaReporte().toString()
+                : "No disponible";
+
+        String lat = notif.getLatitude() != null
+                ? String.valueOf(notif.getLatitude())
+                : "-";
+
+        String lon = notif.getLongitude() != null
+                ? String.valueOf(notif.getLongitude())
+                : "-";
+
+        String reporteId = notif.getReporteId() != null
+                ? notif.getReporteId().toString()
+                : "-";
+
+        return """
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color:#f4f6f8; padding:20px;">
+        
+            <div style="max-width:700px; margin:auto; background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                
+                <div style="background:#1f4e79; color:white; padding:20px;">
+                    <h2 style="margin:0;">🚨 FireWatch - Municipalidad Valle del Sol</h2>
+                </div>
+
+                <div style="padding:25px;">
+
+                    <h3 style="color:#d9534f;">
+                        Nuevo Reporte Registrado
+                    </h3>
+
+                    <p>
+                        Se ha generado una nueva alerta dentro del sistema FireWatch.
+                    </p>
+
+                    <table style="width:100%%; border-collapse:collapse;">
+                        <tr>
+                            <td><strong>ID Reporte</strong></td>
+                            <td>%s</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Nivel Emergencia</strong></td>
+                            <td>%s</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Reportante</strong></td>
+                            <td>%s</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fecha</strong></td>
+                            <td>%s</td>
+                        </tr>
+                    </table>
+
+                    <hr/>
+
+                    <h4>Descripción</h4>
+
+                    <p>%s</p>
+
+                    <h4>Ubicación</h4>
+
+                    <ul>
+                        <li><strong>Latitud:</strong> %s</li>
+                        <li><strong>Longitud:</strong> %s</li>
+                    </ul>
+
+                    <hr/>
+
+                    <p style="font-size:12px; color:#666;">
+                        Este correo fue generado automáticamente por el Sistema FireWatch.
+                    </p>
+
+                </div>
+            </div>
+
+        </body>
+        </html>
+        """
+                .formatted(
+                        reporteId,
+                        nivel,
+                        reportante,
+                        fecha,
+                        descripcion,
+                        lat,
+                        lon
+                );
     }
 }

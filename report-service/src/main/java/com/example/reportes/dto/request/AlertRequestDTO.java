@@ -1,37 +1,22 @@
 package com.example.reportes.dto.request;
 
+import lombok.Data;
+
+import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Data
 public class AlertRequestDTO {
 
     private UUID reporteId;
     private String mensaje;
     private String tipo;
 
-    public AlertRequestDTO() {
-    }
-
-    public UUID getReporteId() {
-        return reporteId;
-    }
-
-    public void setReporteId(UUID reporteId) {
-        this.reporteId = reporteId;
-    }
-
-    public String getMensaje() {
-        return mensaje;
-    }
-
-    public void setMensaje(String mensaje) {
-        this.mensaje = mensaje;
-    }
-
-    public String getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
-    }
+    private String descripcionReporte;
+    private String usuarioReportante;
+    private Double latitude;
+    private Double longitude;
+    private UUID zoneId;
+    private LocalDateTime fechaReporte;
+    private String nivelEmergencia;
 }

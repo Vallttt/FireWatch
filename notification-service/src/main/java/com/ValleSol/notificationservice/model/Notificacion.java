@@ -47,4 +47,17 @@ public class Notificacion {
     private String tipoDestinatario;
 
     private LocalDateTime fechaEnvio;
+
+    @Column(columnDefinition = "TEXT")
+    private String descripcionReporte;
+
+    private String usuarioReportante;
+
+    private Double latitude;
+
+    private Double longitude;
+
+    private String zoneName;
+
+    private LocalDateTime fechaReporte;
 }

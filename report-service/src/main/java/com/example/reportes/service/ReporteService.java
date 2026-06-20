@@ -86,6 +86,15 @@ public class ReporteService {
             alerta.setReporteId(guardado.getId());
             alerta.setMensaje("Nuevo reporte: " + guardado.getDescripcion());
             alerta.setTipo("EMAIL");
+
+            alerta.setDescripcionReporte(guardado.getDescripcion());
+            alerta.setUsuarioReportante(guardado.getUsuarioReportante());
+            alerta.setLatitude(guardado.getLatitude());
+            alerta.setLongitude(guardado.getLongitude());
+            alerta.setZoneId(guardado.getZoneId());
+            alerta.setFechaReporte(guardado.getFechaIncidente());
+            alerta.setNivelEmergencia(request.getSeverity() != null ? request.getSeverity().name() : "MEDIUM");
+
             alertasService.enviarAlerta(alerta);
         } catch (Exception e) {
             System.out.println("Error sending alert: " + e.getMessage());

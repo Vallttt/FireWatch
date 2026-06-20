@@ -28,12 +28,24 @@ public class NotificacionController {
     }
 
 
+//    @PostMapping("/enviar")
+//    public ResponseEntity<String> procesarNotificaciones(@RequestBody AlertaEventDTO event) {
+//        notificationService.processNotifications(event);
+//        return ResponseEntity.ok("Notifications dispatched successfully");
+//    }
+
     @PostMapping("/enviar")
-    public ResponseEntity<String> procesarNotificaciones(@RequestBody AlertaEventDTO event) {
+    public ResponseEntity<String> procesarNotificaciones(
+            @RequestBody AlertaEventDTO event) {
+
+        System.out.println("CONTROLLER DESCRIPCION = " + event.getDescripcionReporte());
+        System.out.println("CONTROLLER REPORTANTE  = " + event.getUsuarioReportante());
+        System.out.println("CONTROLLER LAT         = " + event.getLatitude());
+
         notificationService.processNotifications(event);
+
         return ResponseEntity.ok("Notifications dispatched successfully");
     }
-
    
 
     @GetMapping

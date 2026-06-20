@@ -76,7 +76,8 @@ public class NotificacionStrategy {
             TipoDestinatario     tipoDestinatario = resolverTipoDestinatario(user.getRole());
 
             for (GeneradorAlerta gen : generators) {
-                Notificacion notif = gen.generarAlerta(event.getMensaje(), user.getEmail());
+                Notificacion notif =
+                        gen.generarAlerta(event, user.getEmail());
                 notif.setDespachoId(dispatchId);
                 notif.setReporteId(event.getReporteId());
                 notif.setEstadoEnvio("ENVIADO");

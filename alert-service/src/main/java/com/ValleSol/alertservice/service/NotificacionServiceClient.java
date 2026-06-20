@@ -35,7 +35,17 @@ public class NotificacionServiceClient {
         payload.put("canalPush",      request.isCanalPush());
         payload.put("despachoId",     despachoId.toString());
 
+        payload.put("descripcionReporte", request.getDescripcionReporte());
+        payload.put("usuarioReportante", request.getUsuarioReportante());
+        payload.put("latitude", request.getLatitude());
+        payload.put("longitude", request.getLongitude());
+        payload.put("zoneId", request.getZoneId() != null ? request.getZoneId().toString() : null);
+        payload.put("fechaReporte", request.getFechaReporte());
+
         try {
+            System.out.println("========= PAYLOAD ALERTA =========");
+            System.out.println(payload);
+            System.out.println("==================================");
             restTemplate.postForEntity(url, payload, Void.class);
         } catch (Exception e) {
             System.err.println("[alert-service] Warning — notification-service unreachable: " + e.getMessage());

@@ -20,6 +20,15 @@ public class NotificationService {
     }
 
     public void processNotifications(AlertaEventDTO event) {
+
+        System.out.println("========== EVENTO RECIBIDO ==========");
+        System.out.println("Descripcion: " + event.getDescripcionReporte());
+        System.out.println("Reportante : " + event.getUsuarioReportante());
+        System.out.println("Latitud    : " + event.getLatitude());
+        System.out.println("Longitud   : " + event.getLongitude());
+        System.out.println("Fecha      : " + event.getFechaReporte());
+        System.out.println("=====================================");
+
         List<UserDTO> usuarios = userClient.getUsersForAlerts();
 
         UUID dispatchId = event.getDespachoId() != null
