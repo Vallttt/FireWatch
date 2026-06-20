@@ -71,11 +71,12 @@ Service   Service   Service   Service   Service   Service   Service Service
 
                                   │           ▲
                                   └───────────┘
-                               Eureka Discovery
-
                         Eureka Server (:8761)
                      [alert-service registrado]
                    [notification-service registrado]
+                      [report-service registrado]
+                     [incident-service registrado]
+                     [evidence-service registrado]
 ```
 
 ---
@@ -354,8 +355,8 @@ Backend For Frontend encargado de consolidar información para el cliente.
 - Consolidación MapData (zonas, brigadas, reportes georreferenciados).
 - Reconstrucción del reporte completo (`/api/reportes/{id}/completo`): combina el reporte base, 
   su incidente (estado/severidad) y sus evidencias en una sola respuesta.
-- Proxy hacia incident-service (`/api/incidentes`) y evidence-service (`/api/evidencias`).
-- Descubrimiento de `alert-service` y `notification-service` vía Eureka.
+- Proxy hacia incident-service (`/api/incidentes`) y evidence-service (`/api/evidencias`) por nombre lógico vía Eureka.
+- Descubrimiento de `alert-service`, `notification-service`, `incident-service` y `evidence-service` vía Eureka (Feign).
 - Enrutamiento transparente de alertas e historial de notificaciones.
 
 ### Ejemplo MapData
@@ -376,7 +377,7 @@ Registro centralizado de servicios basado en Spring Cloud Netflix Eureka.
 
 ### Funcionalidades
 
-- Registro automático de `alert-service` y `notification-service`.
+- Registro automático de `alert-service`, `notification-service`, `report-service`, `incident-service` y `evidence-service`.
 - Descubrimiento por nombre lógico desde el BFF y entre servicios.
 - Dashboard de monitoreo en `http://localhost:8761`.
 
@@ -386,6 +387,9 @@ Registro centralizado de servicios basado en Spring Cloud Netflix Eureka.
 |---|---|
 | `alert-service` | alert-service (:8083) |
 | `notification-service` | notification-service (:8090) |
+| `report-service` | report-service (:8081) |
+| `incident-service` | incident-service (:8087) |
+| `evidence-service` | evidence-service (:8088) |
 
 ---
 
@@ -485,19 +489,28 @@ Frontend → Gateway → BFF → Zone Service + Brigade Service + Geo Service
 
 # 🔍 Service Discovery con Eureka
 
-`alert-service` y `notification-service` se registran automáticamente en Eureka al iniciar.
+`alert-service`, `notification-service`, `report-service`, `incident-service` y `evidence-service` se registran automáticamente en Eureka al iniciar.
 
-El BFF y `alert-service` los descubren por nombre lógico sin necesidad de IPs ni puertos hardcodeados.
+Los servicios se descubren por nombre lógico sin necesidad de IPs ni puertos hardcodeados, tanto en la comunicación entre microservicios como en el consumo desde el BFF.
 
 ```text
 alert-service (registrado como "alert-service")
     └→ http://notification-service/api/notificaciones/enviar
          ↑ Eureka resuelve "notification-service" → notification-app:8090
 
+report-service (registrado como "report-service")
+    ├→ http://incident-service/api/incidentes        → incident-app:8087
+    └→ http://evidence-service/api/evidencias         → evidence-app:8088
+         ↑ resueltos por RestTemplate con @LoadBalanced
+
 BFF (Feign + Eureka)
-    ├→ @FeignClient(name = "alert-service")       → alertas-app:8083
-    └→ @FeignClient(name = "notification-service") → notification-app:8090
+    ├→ @FeignClient(name = "alert-service")        → alertas-app:8083
+    ├→ @FeignClient(name = "notification-service") → notification-app:8090
+    ├→ @FeignClient(name = "incident-service")     → incident-app:8087
+    └→ @FeignClient(name = "evidence-service")     → evidence-app:8088
 ```
+
+> Nota: `report-service` y `auth-service` aún se consumen desde el BFF por URL fija (`MS_REPORTES_URL`, `MS_AUTH_URL`); el resto del descubrimiento entre servicios y desde el BFF ya opera por nombre lógico vía Eureka.
 
 Dashboard Eureka: `http://localhost:8761`
 
@@ -799,7 +812,7 @@ Optimización y consolidación de respuestas para el frontend.
 Punto único de entrada con validación JWT integrada.
 
 ## Service Discovery (Eureka)
-Registro y descubrimiento dinámico de servicios. alert-service y notification-service se registran en Eureka; el BFF los descubre por nombre lógico.
+Registro y descubrimiento dinámico de servicios. alert-service, notification-service, report-service, incident-service y evidence-service se registran en Eureka. El BFF descubre alert, notification, incident y evidence por nombre lógico (Feign), y report-service descubre incident y evidence por nombre (RestTemplate con @LoadBalanced).
 
 ## Strategy Pattern
 `NotificacionStrategy` selecciona el generador correcto por rol de usuario y canales activos.
