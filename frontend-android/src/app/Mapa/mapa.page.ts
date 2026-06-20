@@ -217,6 +217,8 @@ export class MapaPage implements OnInit {
   }
 
   initSatelliteMap() {
+    if (this.map) { this.renderMapLayers(); this.renderMarkers(); return; }
+
     this.map = L.map('globalMap', {
       zoomControl: false,
       attributionControl: false

@@ -94,10 +94,7 @@ export class MapaPage implements OnInit {
   ionViewDidEnter() {
     setTimeout(() => {
       this.initSatelliteMap();
-
-      if (this.backendLoaded) {
-        this.renderMapLayers();
-      }
+      this.renderMapLayers();
     }, 300);
   }
 
@@ -214,6 +211,8 @@ export class MapaPage implements OnInit {
      MAP
      ================================================================ */
   initSatelliteMap() {
+  if (this.map) { this.renderMapLayers(); this.renderMarkers(); return; }
+
   this.map = L.map('globalMap', {
     zoomControl: false,
     attributionControl: false
@@ -229,9 +228,9 @@ export class MapaPage implements OnInit {
   setTimeout(() => {
     this.map?.invalidateSize();
 
-    if (this.backendLoaded) {
-      this.renderMapLayers();
-    }
+    // Dibuja lo que ya esté cargado (zonas y/o rutas); renderMapLayers() es
+    // segura de llamar aunque alguno de los arreglos esté aún vacío.
+    this.renderMapLayers();
 
     this.renderMarkers();
   }, 300);
