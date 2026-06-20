@@ -44,6 +44,7 @@ export class MapaPage implements OnInit {
 
   public emergencias: any[] = [];
   public historialIncendios: ReporteResponse[] = [];
+  private mainZoneId: string | null = null;
 
   private marcadoresLeaflet: L.Marker[] = [];
   private backendLoaded = false;
@@ -74,6 +75,9 @@ export class MapaPage implements OnInit {
     this.geoService.getMapData().subscribe({
       next: (data) => {
         this.backendLoaded = true;
+
+        const main = (data.zones || []).find((z: any) => z.zoneType === 'MAIN');
+        this.mainZoneId = main ? main.id : null;
 
         this.brigadasDisponibles = (data.brigades || [])
           .filter(b => b.status === 'AVAILABLE')
@@ -110,13 +114,14 @@ export class MapaPage implements OnInit {
                 backendId: brigade.id,
                 emergenciaId: emergencia.id
               });
-            } else {
+            } else if (this.mainZoneId) {
               this.geoService.updateBrigade(brigade.id, {
                 name: brigade.name,
                 institution: brigade.institution || 'Valle del Sol',
                 status: 'AVAILABLE',
                 latitude: -33.46,
-                longitude: -70.65
+                longitude: -70.65,
+                zoneId: this.mainZoneId
               }).subscribe({
                 next: () => {
                   this.brigadasDisponibles.push({
@@ -215,13 +220,14 @@ export class MapaPage implements OnInit {
   async assignBrigade(selectedBrigade: any) {
     if (!this.focoSeleccionado || this.focoSeleccionado.brigada) return;
 
-    if (selectedBrigade.backendId) {
+    if (selectedBrigade.backendId && this.mainZoneId) {
       this.geoService.updateBrigade(selectedBrigade.backendId, {
         name: selectedBrigade.nombre,
         institution: 'Valle del Sol',
         status: 'DEPLOYED',
         latitude: this.focoSeleccionado.lat,
-        longitude: this.focoSeleccionado.lng
+        longitude: this.focoSeleccionado.lng,
+        zoneId: this.mainZoneId
       }).subscribe({
         error: (err) => console.warn('Could not update brigade in backend', err)
       });
@@ -245,13 +251,14 @@ export class MapaPage implements OnInit {
   private returnBrigade(emergencia: any) {
     const occupied = this.brigadasOcupadas.find(b => b.emergenciaId === emergencia.id);
     if (occupied) {
-      if ((occupied as any).backendId) {
+      if ((occupied as any).backendId && this.mainZoneId) {
         this.geoService.updateBrigade((occupied as any).backendId, {
           name: occupied.nombre,
           institution: 'Valle del Sol',
           status: 'AVAILABLE',
           latitude: -33.46,
-          longitude: -70.65
+          longitude: -70.65,
+          zoneId: this.mainZoneId
         }).subscribe({
           next: () => {
             this.geoService.getBrigades().subscribe({
@@ -286,12 +293,8 @@ export class MapaPage implements OnInit {
     if (newStatus === 'finalizado') {
       const foco = this.focoSeleccionado;
 
-      if (foco.backendId) {
-        this.geoService.deleteMappedReport(foco.backendId).subscribe({
-          error: (err) => console.warn('Could not delete mapped_report in Geo Service', err)
-        });
-      }
-
+      // geo-service no expone borrado de mapped-reports; el marcador se
+      // retira solo de la vista local (ver más abajo).
       if (foco.externalReportId) {
         this.reportService.actualizarEstado(foco.externalReportId, { estado: 'INACTIVE' }).subscribe({
           next: (updated) => {
@@ -324,12 +327,18 @@ export class MapaPage implements OnInit {
 
     const nombre = this.nuevaBrigadaNombre.trim();
 
+    if (!this.mainZoneId) {
+      await this.showToast('No se pudo determinar la zona principal. Intenta de nuevo.', 'danger');
+      return;
+    }
+
     this.geoService.createBrigade({
       name: nombre,
       institution: 'Valle del Sol',
       status: 'AVAILABLE',
       latitude: -33.46,
-      longitude: -70.65
+      longitude: -70.65,
+      zoneId: this.mainZoneId
     }).subscribe({
       next: (res) => {
         this.brigadasDisponibles.push({
@@ -375,12 +384,7 @@ export class MapaPage implements OnInit {
   }
 
   async deleteEmergency(emergencia: any) {
-    if (emergencia.backendId) {
-      this.geoService.deleteMappedReport(emergencia.backendId).subscribe({
-        error: (err) => console.warn('Could not delete emergency in backend', err)
-      });
-    }
-
+    // geo-service no expone borrado de mapped-reports; se retira solo de la vista local.
     if (emergencia.brigada) { this.returnBrigade(emergencia); }
 
     if (this.focoSeleccionado?.id === emergencia.id) { this.focoSeleccionado = null; }

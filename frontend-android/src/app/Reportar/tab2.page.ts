@@ -24,6 +24,7 @@ import * as L from 'leaflet';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { ReportService, ReporteResponse, ReporteMediaItem, SeverityLevel } from '../services/report.service';
 import { GeolocationService } from '../services/geolocation.service';
+import { GeoService } from '../services/geo.service';
 
 export interface MediaPreview {
   url: string;
@@ -53,6 +54,7 @@ export class Tab2Page {
   map: L.Map | undefined;
   marker: L.Marker | undefined;
   latLng = { lat: -33.4489, lng: -70.6693 };
+  mainZoneId: string | null = null;
 
   isAdmin = false;
 
@@ -89,7 +91,8 @@ export class Tab2Page {
   constructor(
     private toastController: ToastController,
     private reportService: ReportService,
-    private geoSvc: GeolocationService
+    private geoSvc: GeolocationService,
+    private geoService: GeoService
   ) {
     addIcons({
       ellipse, locationOutline, navigate, timerOutline, listOutline,
@@ -106,6 +109,14 @@ export class Tab2Page {
     this.isAdmin = (role === 'admin');
     setTimeout(() => { this.loadMap(); }, 200);
     if (this.isAdmin) { this.loadHistory(); }
+    this.loadMainZone();
+  }
+
+  private loadMainZone() {
+    this.geoService.getMainZone().subscribe({
+      next: (zone) => { this.mainZoneId = zone.id; },
+      error: (err) => console.warn('No se pudo obtener la zona principal', err)
+    });
   }
 
   private loadHistory() {
@@ -271,12 +282,18 @@ export class Tab2Page {
       await this.showToast('Por favor agregue una descripción del incidente', 'warning'); return;
     }
 
+    if (!this.mainZoneId) {
+      await this.showToast('No se pudo determinar la zona principal. Intenta de nuevo.', 'danger');
+      return;
+    }
+
     const userId    = localStorage.getItem('userId')    || undefined;
     const userEmail = localStorage.getItem('userEmail') || 'Anónimo';
 
     this.reportService.crearReporte({
       userId, usuarioReportante: userEmail,
       descripcion: this.descripcion,
+      zoneId: this.mainZoneId,
       longitude: this.latLng.lng, latitude: this.latLng.lat,
       severity: this.mapSeverity(this.severidad)
     }).subscribe({
@@ -376,7 +393,8 @@ export class Tab2Page {
     });
   }
 
-  mapSeverityLabel(sev: SeverityLevel | string): string {
+  mapSeverityLabel(sev: SeverityLevel | string | undefined): string {
+    if (!sev) return 'sin clasificar';
     const map: Record<string, string> = {
       'LOW': 'baja', 'MEDIUM': 'media', 'HIGH': 'alta', 'CRITICAL': 'critica'
     };
