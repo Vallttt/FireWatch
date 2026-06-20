@@ -62,6 +62,13 @@ Auth      User      Report    Alert     Notif.    Geo       Zone    Brigade
 Service   Service   Service   Service   Service   Service   Service Service
 (:8080)  (:8084)   (:8081)   (:8083)   (:8090)   (:8082)  (:8085)  (:8086)
 
+                       │
+              ┌────────┴────────┐
+              ▼                 ▼
+          Incident          Evidence
+          Service           Service
+          (:8087)           (:8088)
+
                                   │           ▲
                                   └───────────┘
                                Eureka Discovery
@@ -109,17 +116,73 @@ Responsable de:
 
 Responsable de:
 
-- Gestión de reportes de incendios.
-- Historial de incidentes.
-- Estados de reportes.
-- Adjuntos multimedia.
+- Gestión del núcleo del reporte de incendios (datos base, ubicación, usuario reportante).
+- Coordinación con incident-service y evidence-service.
+- Integración con alert-service y geo-service.
 
 ### Funcionalidades
 
-- Crear, listar y actualizar reportes.
-- Subir y consultar archivos multimedia por reporte.
-- Estadísticas operacionales.
+- Crear, listar, consultar y eliminar reportes.
+- Delegar el estado y la severidad del incidente a incident-service.
+- Delegar los archivos multimedia a evidence-service.
 - Integración con alert-service y geo-service.
+
+originalmente report-service también manejaba los estados/severidad y los adjuntos multimedia. Esa responsabilidad se separó en dos microservicios dedicados (incident-service y evidence-service) para desacoplar. El reporte completo se reconstruye en el BFF mediante el endpoint  `/api/reportes/{id}/completo`.
+
+---
+
+## 🔥 incident-service
+
+Responsable de:
+
+- Estado operativo del incidente (ACTIVE / INACTIVE).
+- Nivel de severidad del incidente.
+- Vínculo con su reporte de origen mediante `reporteId`.
+
+### Funcionalidades
+
+- Listar incidentes y filtrar focos activos.
+- Consultar incidente por su `id` o por `reporteId`.
+- Actualizar el estado del incidente.
+- Eliminar el incidente asociado a un reporte.
+
+### Endpoints
+
+```http
+GET    /api/incidentes
+POST   /api/incidentes
+GET    /api/incidentes/focos-activos
+GET    /api/incidentes/{id}
+GET    /api/incidentes/reporte/{reporteId}
+PATCH  /api/incidentes/{id}/estado
+DELETE /api/incidentes/reporte/{reporteId}
+```
+
+---
+
+## 📎 evidence-service
+
+Responsable de:
+
+- Almacenamiento de evidencias multimedia (foto/video) asociadas a un reporte.
+- Persistencia binaria en `evidence_db` (LONGBLOB).
+- Entrega de la multimedia como data-URL en base64.
+
+### Funcionalidades
+
+- Subir una o varias evidencias a un reporte (multipart).
+- Listar las evidencias de un reporte.
+- Contar evidencias por reporte.
+- Eliminar las evidencias de un reporte.
+
+### Endpoints
+
+```http
+GET    /api/evidencias/{reporteId}
+POST   /api/evidencias/{reporteId}
+GET    /api/evidencias/{reporteId}/count
+DELETE /api/evidencias/{reporteId}
+```
 
 ---
 
@@ -289,6 +352,9 @@ Backend For Frontend encargado de consolidar información para el cliente.
 
 - Dashboard centralizado con datos en tiempo real.
 - Consolidación MapData (zonas, brigadas, reportes georreferenciados).
+- Reconstrucción del reporte completo (`/api/reportes/{id}/completo`): combina el reporte base, 
+  su incidente (estado/severidad) y sus evidencias en una sola respuesta.
+- Proxy hacia incident-service (`/api/incidentes`) y evidence-service (`/api/evidencias`).
 - Descubrimiento de `alert-service` y `notification-service` vía Eureka.
 - Enrutamiento transparente de alertas e historial de notificaciones.
 
@@ -333,7 +399,7 @@ Punto único de entrada del sistema con validación JWT integrada.
 - Rutas públicas sin token: `/auth/**`, `/api/users/register`, `/api/auth/password/**`, `OPTIONS`.
 - Cualquier otra ruta requiere `Authorization: Bearer <token>` válido.
 - CORS global (acepta web, Capacitor Android, emulador AVD).
-- Enrutamiento de todo el tráfico al BFF.
+- Enrutamiento de todo el tráfico al BFF, incluidas las rutas `/api/incidentes/**` y `/api/evidencias/**`.
 
 ---
 
@@ -447,7 +513,9 @@ valledelsol-platform/
 ├── auth-service/           — Autenticación JWT
 ├── user-service/           — Usuarios y roles
 ├── bff-service/            — Backend For Frontend
-├── report-service/         — Reportes de incendios
+├── report-service/         — Núcleo de reportes de incendios
+├── incident-service/       — Estado y severidad de incidentes
+├── evidence-service/       — Evidencias multimedia
 ├── alert-service/          — Generación y clasificación de alertas
 ├── notification-service/   — Despacho de notificaciones por canal y rol
 ├── geo-service/            — Reportes georreferenciados
@@ -475,6 +543,8 @@ valledelsol-platform/
 | BFF | 8001 | Orquestador |
 | Auth Service | 8080 | Autenticación JWT |
 | Report Service | 8081 | Reportes de incendios |
+| Incident Service | 8087 | Estado y severidad de incidentes |
+| Evidence Service | 8088 | Evidencias multimedia |
 | Geo Service | 8082 | Datos georreferenciados |
 | Alert Service | 8083 | Generación de alertas |
 | User Service | 8084 | Gestión de usuarios |
@@ -526,7 +596,9 @@ BREVO_SMTP_KEY
 |---|---|---|
 | auth_vallesol_db | auth-service | — |
 | user_db | user-service | users, password_reset_codes |
-| report_db | report-service | reportes, reporte_media |
+| report_db | report-service | reportes |
+| incident_db | incident-service | incidentes |
+| evidence_db | evidence-service | evidencias |
 | geo_db | geo-service | mapped_reports |
 | zone_db | zone-service | zones, evacuation_routes |
 | brigade_db | brigade-service | brigades |
@@ -670,9 +742,29 @@ GET  /api/dashboard/stats          — totalIncendios, alertasEmitidas, brigadas
 GET    /api/reportes
 POST   /api/reportes
 GET    /api/reportes/{id}
-PATCH  /api/reportes/{id}/estado
-POST   /api/reportes/{id}/media
-GET    /api/reportes/{id}/media
+DELETE /api/reportes/{id}
+GET    /api/reportes/{id}/completo
+```
+
+## Incidentes
+
+```http
+GET    /api/incidentes
+POST   /api/incidentes
+GET    /api/incidentes/focos-activos
+GET    /api/incidentes/{id}
+GET    /api/incidentes/reporte/{reporteId}
+PATCH  /api/incidentes/{id}/estado
+DELETE /api/incidentes/reporte/{reporteId}
+```
+
+## Evidencias
+
+```http
+GET    /api/evidencias/{reporteId}
+POST   /api/evidencias/{reporteId}
+GET    /api/evidencias/{reporteId}/count
+DELETE /api/evidencias/{reporteId}
 ```
 
 ## Zonas y Brigadas
@@ -698,7 +790,7 @@ GET /api/map/data
 Persistencia desacoplada mediante JpaRepository.
 
 ## Database per Service
-Cada microservicio mantiene su propio esquema. 8 bases de datos independientes.
+Cada microservicio mantiene su propio esquema. 10 bases de datos independientes.
 
 ## Backend For Frontend (BFF)
 Optimización y consolidación de respuestas para el frontend.
@@ -764,6 +856,8 @@ Desarrollado con Ionic 7 + Angular 17.
 - Separación auth-service ↔ user-service.
 - Separación geo-service ↔ zone-service ↔ brigade-service.
 - Reportes multimedia (foto/video).
+- Migración de report-service en tres microservicios: report (núcleo), incident (estado/severidad) y evidence (multimedia), expuestos por el BFF y ruteados por el Gateway.
+- Endpoint agregador de reporte completo en el BFF (`/api/reportes/{id}/completo`).
 - Gestión de zonas operativas y rutas de evacuación.
 - Gestión de brigadas y estado operativo.
 - Recuperación de contraseña con Brevo SMTP.
