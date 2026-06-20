@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 
-@FeignClient(name = "ms-evidence", url = "${ms.evidence.url}")
+@FeignClient(name = "evidence-service")
 public interface EvidenceClient {
 
     @GetMapping("/api/evidencias/{reporteId}")

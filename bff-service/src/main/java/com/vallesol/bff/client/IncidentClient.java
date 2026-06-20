@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 
-@FeignClient(name = "ms-incident", url = "${ms.incident.url}")
+@FeignClient(name = "incident-service")
 public interface IncidentClient {
 
     @GetMapping("/api/incidentes")
