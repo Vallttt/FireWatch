@@ -1,5 +1,6 @@
 package com.example.reportes.service;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -14,7 +15,7 @@ public class EvidenceService {
     @Value("${evidence.service.url}")
     private String evidenceServiceUrl;
 
-    public EvidenceService(RestTemplate restTemplate) {
+    public EvidenceService(@Qualifier("eurekaRestTemplate") RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 

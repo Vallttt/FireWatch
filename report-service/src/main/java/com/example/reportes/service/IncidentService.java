@@ -1,6 +1,7 @@
 package com.example.reportes.service;
 
 import com.example.reportes.dto.request.IncidenteRequestDTO;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -15,7 +16,7 @@ public class IncidentService {
     @Value("${incident.service.url}")
     private String incidentServiceUrl;
 
-    public IncidentService(RestTemplate restTemplate) {
+    public IncidentService(@Qualifier("eurekaRestTemplate") RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 

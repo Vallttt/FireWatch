@@ -109,6 +109,8 @@ services:
     depends_on:
       mysql-db:
         condition: service_healthy
+      eureka-server:
+        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/report_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
@@ -118,8 +120,9 @@ services:
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - GEO_SERVICE_URL=http://geo-app:8082
       - ALERTAS_SERVICE_URL=http://alertas-app:8083
-      - INCIDENT_SERVICE_URL=http://incident-app:8087
-      - EVIDENCE_SERVICE_URL=http://evidence-app:8088
+      - INCIDENT_SERVICE_URL=http://incident-service
+      - EVIDENCE_SERVICE_URL=http://evidence-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     networks:
       - red-municipalidad
       
