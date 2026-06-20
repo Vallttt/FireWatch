@@ -82,9 +82,19 @@ public class ApiGatewayApplication {
                         .path("/api/alertas/**")
                         .uri(bffUrl))
 
-                // 4. Map / Geo → BFF → Geo Service
+                // 4. Map / Geo → BFF → Geo Service (consolidated map data)
+                .route("bff-map-data", r -> r
+                        .path("/api/map-data/**")
+                        .uri(bffUrl))
+
+                // 4.1 Geo → BFF → Geo Service (raw mapped reports)
                 .route("bff-geo", r -> r
-                        .path("/api/mapa-data/**")
+                        .path("/api/geo/**")
+                        .uri(bffUrl))
+
+                // 4.2 Evacuation routes → BFF → Zone Service
+                .route("bff-evacuation-routes", r -> r
+                        .path("/api/evacuation-routes/**")
                         .uri(bffUrl))
 
                 // 4. Map / Geo → BFF → Zone Service

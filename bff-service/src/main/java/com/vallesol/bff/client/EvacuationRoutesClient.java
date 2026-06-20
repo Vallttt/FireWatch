@@ -49,7 +49,7 @@ public class EvacuationRoutesClient {
 
         ApiResponseDTO<EvacuationResponseDTO> responseDTO =
                 restClient.get()
-                        .uri(evacroutesServiceUrl + "/api/evacuation-route/" + id)
+                        .uri(evacroutesServiceUrl + "/api/evacuation-routes/" + id)
                         .retrieve()
                         .body(new ParameterizedTypeReference<>() {});
 
@@ -71,7 +71,7 @@ public class EvacuationRoutesClient {
 
         ApiResponseDTO<EvacuationResponseDTO> responseDTO =
                 restClient.put()
-                        .uri(evacroutesServiceUrl + "/api/evacuation-route/" + id)
+                        .uri(evacroutesServiceUrl + "/api/evacuation-routes/" + id)
                         .body(requestDTO)
                         .retrieve()
                         .body(new ParameterizedTypeReference<>() {});
@@ -81,7 +81,7 @@ public class EvacuationRoutesClient {
 
     public void deleteById(UUID id){
         restClient.delete()
-                .uri(evacroutesServiceUrl + "/api/evacuation-route/" + id)
+                .uri(evacroutesServiceUrl + "/api/evacuation-routes/" + id)
                 .retrieve()
                 .toBodilessEntity();
     }
