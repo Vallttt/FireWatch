@@ -59,6 +59,7 @@ export class Tab2Page {
   mainLayer: L.GeoJSON | null = null;
   mainBounds: L.LatLngBounds | null = null;
   mainGeoJson: any = null;
+  mainZoneId: string | null = null;
 
   isAdmin = false;
 
@@ -199,18 +200,19 @@ private renderReportZones() {
     const layer = L.geoJSON(geo, {
       style: {
         color: zone.color || '#3388ff',
-        weight: zone.type === 'MAIN' ? 4 : 2,
-        fillOpacity: zone.type === 'MAIN' ? 0.08 : 0.25
+        weight: zone.zoneType === 'MAIN' ? 4 : 2,
+        fillOpacity: zone.zoneType === 'MAIN' ? 0.08 : 0.25
       }
     }).addTo(this.map!);
 
-    layer.bindPopup(`${zone.name} (${zone.type})`);
+    layer.bindPopup(`${zone.name} (${zone.zoneType})`);
     this.zoneLayers.push(layer);
 
-    if (zone.type === 'MAIN') {
+    if (zone.zoneType === 'MAIN') {
       this.mainLayer = layer;
       this.mainGeoJson = geo;
       this.mainBounds = layer.getBounds();
+      this.mainZoneId = zone.id;
 
       this.map!.fitBounds(this.mainBounds, {
         padding: [20, 20],
@@ -321,9 +323,15 @@ private isPointInsideMainZone(latlng: L.LatLng): boolean {
       return;
     }
 
+    if (!this.mainZoneId) {
+      await this.showToast('No se pudo determinar la zona principal. Intenta de nuevo.', 'danger');
+      return;
+    }
+
     this.reportService.crearReporte({
       userId, usuarioReportante: userEmail,
       descripcion: this.descripcion,
+      zoneId: this.mainZoneId,
       longitude: this.latLng.lng, latitude: this.latLng.lat,
       severity: this.mapSeverity(this.severidad)
     }).subscribe({
@@ -424,7 +432,8 @@ private isPointInsideMainZone(latlng: L.LatLng): boolean {
     });
   }
 
-  mapSeverityLabel(sev: SeverityLevel | string): string {
+  mapSeverityLabel(sev: SeverityLevel | string | undefined): string {
+    if (!sev) return 'sin clasificar';
     const map: Record<string, string> = {
       'LOW': 'baja', 'MEDIUM': 'media', 'HIGH': 'alta', 'CRITICAL': 'critica'
     };

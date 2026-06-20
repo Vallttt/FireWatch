@@ -48,6 +48,7 @@ export class MapaPage implements OnInit {
 
   public emergencias: any[] = [];
   public historialIncendios: ReporteResponse[] = [];
+  private mainZoneId: string | null = null;
 
   private marcadoresLeaflet: L.Marker[] = [];
   private backendLoaded = false;
@@ -91,10 +92,10 @@ export class MapaPage implements OnInit {
     this.geoService.getMapData().subscribe({
       next: (data) => {
         this.zones = data.zones || [];
-        this.routes = data.routes || [];
+        this.routes = data.evacuationRoutes || [];
 
-        console.log('ZONAS MAPA PRINCIPAL:', this.zones);
-        console.log('RUTAS MAPA PRINCIPAL:', this.routes);
+        const main = this.zones.find((z: any) => z.zoneType === 'MAIN');
+        this.mainZoneId = main ? main.id : null;
 
         this.backendLoaded = true;
 
@@ -142,14 +143,15 @@ export class MapaPage implements OnInit {
                 backendId: brigade.id,
                 emergenciaId: emergencia.id
               });
-            } else {
+            } else if (this.mainZoneId) {
               // Brigade DEPLOYED with no active fire → reset to AVAILABLE
               this.geoService.updateBrigade(brigade.id, {
                 name: brigade.name,
                 institution: brigade.institution || 'Valle del Sol',
                 status: 'AVAILABLE',
                 latitude: -33.46,
-                longitude: -70.65
+                longitude: -70.65,
+                zoneId: this.mainZoneId
               }).subscribe({
                 next: () => {
                   this.brigadasDisponibles.push({
@@ -265,13 +267,14 @@ export class MapaPage implements OnInit {
     if (!this.focoSeleccionado || this.focoSeleccionado.brigada) return;
 
     // Update status in backend if connected
-    if (selectedBrigade.backendId) {
+    if (selectedBrigade.backendId && this.mainZoneId) {
       this.geoService.updateBrigade(selectedBrigade.backendId, {
         name: selectedBrigade.nombre,
         institution: 'Valle del Sol',
         status: 'DEPLOYED',
         latitude: this.focoSeleccionado.lat,
-        longitude: this.focoSeleccionado.lng
+        longitude: this.focoSeleccionado.lng,
+        zoneId: this.mainZoneId
       }).subscribe({
         error: (err) => console.warn('Could not update brigade in backend', err)
       });
@@ -301,13 +304,14 @@ export class MapaPage implements OnInit {
     const occupied = this.brigadasOcupadas.find(b => b.emergenciaId === emergencia.id);
     if (occupied) {
       // Update in backend
-      if ((occupied as any).backendId) {
+      if ((occupied as any).backendId && this.mainZoneId) {
         this.geoService.updateBrigade((occupied as any).backendId, {
           name: occupied.nombre,
           institution: 'Valle del Sol',
           status: 'AVAILABLE',
           latitude: -33.46,
-          longitude: -70.65
+          longitude: -70.65,
+          zoneId: this.mainZoneId
         }).subscribe({
           next: () => {
             this.geoService.getBrigades().subscribe({
@@ -344,14 +348,8 @@ export class MapaPage implements OnInit {
     if (newStatus === 'finalizado') {
       const foco = this.focoSeleccionado;
 
-      // Delete from Geo Service → removes from map
-      if (foco.backendId) {
-        this.geoService.deleteMappedReport(foco.backendId).subscribe({
-          error: (err) => console.warn('Could not delete mapped_report in Geo Service', err)
-        });
-      }
-
-      // Mark INACTIVE in Report Service → updates dashboard
+      // Mark INACTIVE in Incident Service (via report.service) → updates dashboard.
+      // El marcador se quita del mapa localmente (geo-service no expone borrado de mapped-reports).
       if (foco.externalReportId) {
         this.reportService.actualizarEstado(foco.externalReportId, { estado: 'INACTIVE' }).subscribe({
           next: (updated) => {
@@ -384,13 +382,19 @@ export class MapaPage implements OnInit {
 
     const nombre = this.nuevaBrigadaNombre.trim();
 
+    if (!this.mainZoneId) {
+      await this.showToast('No se pudo determinar la zona principal. Intenta de nuevo.', 'danger');
+      return;
+    }
+
     // Attempt to create in backend
     this.geoService.createBrigade({
       name: nombre,
       institution: 'Valle del Sol',
       status: 'AVAILABLE',
       latitude: -33.46,
-      longitude: -70.65
+      longitude: -70.65,
+      zoneId: this.mainZoneId
     }).subscribe({
       next: (res) => {
         this.brigadasDisponibles.push({
@@ -439,13 +443,7 @@ export class MapaPage implements OnInit {
   }
 
   async deleteEmergency(emergencia: any) {
-    // Delete from backend if it has an ID
-    if (emergencia.backendId) {
-      this.geoService.deleteMappedReport(emergencia.backendId).subscribe({
-        error: (err) => console.warn('Could not delete emergency in backend', err)
-      });
-    }
-
+    // geo-service no expone borrado de mapped-reports; se retira solo de la vista local.
     // Return brigade if one was assigned
     if (emergencia.brigada) {
       this.returnBrigade(emergencia);
@@ -478,15 +476,15 @@ export class MapaPage implements OnInit {
     const layer = L.geoJSON(geo, {
       style: {
         color: zone.color || '#3388ff',
-        weight: zone.type === 'MAIN' ? 4 : 2,
-        fillOpacity: zone.type === 'MAIN' ? 0.08 : 0.28
+        weight: zone.zoneType === 'MAIN' ? 4 : 2,
+        fillOpacity: zone.zoneType === 'MAIN' ? 0.08 : 0.28
       }
     }).addTo(this.map!);
 
-    layer.bindPopup(`${zone.name} (${zone.type})`);
+    layer.bindPopup(`${zone.name} (${zone.zoneType})`);
     this.zoneLayers.push(layer);
 
-    if (zone.type === 'MAIN') {
+    if (zone.zoneType === 'MAIN') {
       this.map!.fitBounds(layer.getBounds(), {
         padding: [20, 20],
         animate: false

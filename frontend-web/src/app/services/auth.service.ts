@@ -43,12 +43,13 @@ export interface RegisterResponse {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  private baseUrl = `${environment.apiGateway}/auth`;
+  private authUrl = `${environment.apiGateway}/auth`;
+  private usersUrl = `${environment.apiGateway}/api/users`;
 
   constructor(private http: HttpClient) {}
 
   login(body: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.baseUrl}/login`, body).pipe(
+    return this.http.post<LoginResponse>(`${this.authUrl}/login`, body).pipe(
       tap(res => {
         localStorage.setItem('jwt_token', res.token);
         localStorage.setItem('userId', res.userId);
@@ -59,7 +60,7 @@ export class AuthService {
   }
 
   register(body: RegisterRequest): Observable<RegisterResponse> {
-    return this.http.post<RegisterResponse>(`${this.baseUrl}/register`, body);
+    return this.http.post<RegisterResponse>(`${this.usersUrl}/register`, body);
   }
 
   logout(): void {

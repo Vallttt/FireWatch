@@ -10,16 +10,26 @@ export interface AlertaRequest {
   reporteId?: string;
   mensaje: string;
   tipo: string;
+  /** Si se omiten, alert-service los clasifica automáticamente (ClasificadorEmergencia). */
+  nivelEmergencia?: 'CRITICO' | 'ALTO' | 'MEDIO' | 'BAJO';
+  destinatarios?: 'TODOS' | 'BRIGADAS' | 'ADMINISTRADORES' | 'BRIGADAS_Y_ADMINISTRADORES';
   canalEmail?: boolean;
+  canalPush?: boolean;
 }
 
 export interface Notificacion {
   id: string;
+  despachoId?: string;
   tipoAlerta: string;
   mensaje: string;
   fechaEnvio: string;
   destinatario: string;
   estadoEnvio: string;
+  /** "EMAIL" | "PUSH" | "EMAIL+PUSH" */
+  canal?: string;
+  nivelEmergencia?: 'CRITICO' | 'ALTO' | 'MEDIO' | 'BAJO';
+  /** "CIUDADANO" | "BRIGADA" | "ADMINISTRADOR" | "SISTEMA" */
+  tipoDestinatario?: string;
   reporteId?: string;
   usuarioId?: string;
 }

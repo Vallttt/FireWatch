@@ -8,20 +8,11 @@ import { environment } from '../../environments/environment';
 /* ------------------------------------------------------------------ */
 export type BrigadeStatus = 'AVAILABLE' | 'DEPLOYED' | 'OFFLINE';
 export type GeoReportStatus = 'ACTIVE' | 'INACTIVE';
-export type GeoSeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type ZoneType = string;
+export type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type ZoneType = 'MAIN' | 'OPERATIONAL';
 
 /* ------------------------------------------------------------------ */
-/*  Response wrappers                                                  */
-/* ------------------------------------------------------------------ */
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
-
-/* ------------------------------------------------------------------ */
-/*  DTOs                                                               */
+/*  DTOs (match bff-service real DTOs)                                 */
 /* ------------------------------------------------------------------ */
 export interface BrigadeRequest {
   name: string;
@@ -29,7 +20,8 @@ export interface BrigadeRequest {
   status: BrigadeStatus;
   latitude: number;
   longitude: number;
-  zoneId?: string;
+  /** Requerido por el backend (BrigadeRequestDTO.zoneId es @NotNull) */
+  zoneId: string;
 }
 
 export interface BrigadeResponse {
@@ -39,25 +31,17 @@ export interface BrigadeResponse {
   status: BrigadeStatus;
   latitude: number;
   longitude: number;
+  isActive: boolean;
   zoneId: string;
   zoneName: string;
 }
 
-export interface MappedReportRequest {
-  externalReportId: string;
-  reportStatus: GeoReportStatus;
-  severity: GeoSeverityLevel;
-  latitude: number;
-  longitude: number;
-  reportedAt: string;
-  zoneId?: string;
-}
-
+/** Reporte georreferenciado, sincronizado por report-service hacia geo-service. */
 export interface MappedReportResponse {
   id: string;
   externalReportId: string;
   reportStatus: GeoReportStatus;
-  severity: GeoSeverityLevel;
+  severity: SeverityLevel;
   latitude: number;
   longitude: number;
   reportedAt: string;
@@ -65,12 +49,29 @@ export interface MappedReportResponse {
   zoneId: string;
 }
 
+export interface ZoneRequest {
+  name: string;
+  description: string;
+  isActive: boolean;
+  /** Formato "#RRGGBB" */
+  color: string;
+  zoneType: ZoneType;
+  geoJson: string;
+}
+
 export interface ZoneResponse {
   id: string;
   name: string;
   color: string;
-  type: ZoneType;
+  zoneType: ZoneType;
   geoJson: string;
+}
+
+export interface EvacuationRouteRequest {
+  name: string;
+  description: string;
+  geoJson: string;
+  zoneId: string;
 }
 
 export interface EvacuationResponse {
@@ -81,11 +82,18 @@ export interface EvacuationResponse {
   zoneId: string;
 }
 
+/** Respuesta consolidada de GET /api/map-data */
 export interface MapDataResponse {
   zones: ZoneResponse[];
-  routes: EvacuationResponse[];
+  evacuationRoutes: EvacuationResponse[];
   brigades: BrigadeResponse[];
   reports: MappedReportResponse[];
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
 }
 
 /* ------------------------------------------------------------------ */
@@ -94,62 +102,91 @@ export interface MapDataResponse {
 @Injectable({ providedIn: 'root' })
 export class GeoService {
 
-  private baseUrl = `${environment.apiGateway}/api/mapa`;
+  private apiUrl = environment.apiGateway;
 
   constructor(private http: HttpClient) {}
 
   /* ----------  MAP DATA (all-in-one)  ---------- */
+  /** Devuelve zonas, rutas de evacuación, brigadas y reportes mapeados en una sola llamada. */
   getMapData(): Observable<MapDataResponse> {
-    return this.http.get<ApiResponse<MapDataResponse>>(`${this.baseUrl}/map-data`)
+    return this.http.get<ApiResponse<MapDataResponse>>(`${this.apiUrl}/api/map-data`)
       .pipe(map(r => r.data));
   }
 
   /* ----------  BRIGADES  ---------- */
   getBrigades(): Observable<BrigadeResponse[]> {
-    return this.http.get<ApiResponse<BrigadeResponse[]>>(`${this.baseUrl}/brigades`)
-      .pipe(map(r => r.data));
+    return this.http.get<BrigadeResponse[]>(`${this.apiUrl}/api/brigades`);
+  }
+
+  getBrigade(id: string): Observable<BrigadeResponse> {
+    return this.http.get<BrigadeResponse>(`${this.apiUrl}/api/brigades/${id}`);
   }
 
   createBrigade(body: BrigadeRequest): Observable<BrigadeResponse> {
-    return this.http.post<ApiResponse<BrigadeResponse>>(`${this.baseUrl}/brigades`, body)
-      .pipe(map(r => r.data));
+    return this.http.post<BrigadeResponse>(`${this.apiUrl}/api/brigades`, body);
   }
 
   updateBrigade(id: string, body: BrigadeRequest): Observable<BrigadeResponse> {
-    return this.http.put<ApiResponse<BrigadeResponse>>(`${this.baseUrl}/brigades/${id}`, body)
-      .pipe(map(r => r.data));
+    return this.http.put<BrigadeResponse>(`${this.apiUrl}/api/brigades/${id}`, body);
   }
 
   deleteBrigade(id: string): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/brigades/${id}`)
-      .pipe(map(r => r.data));
-  }
-
-  /* ----------  MAPPED REPORTS  ---------- */
-  getMappedReports(): Observable<MappedReportResponse[]> {
-    return this.http.get<ApiResponse<MappedReportResponse[]>>(`${this.baseUrl}/mapped-reports`)
-      .pipe(map(r => r.data));
-  }
-
-  createMappedReport(body: MappedReportRequest): Observable<MappedReportResponse> {
-    return this.http.post<ApiResponse<MappedReportResponse>>(`${this.baseUrl}/mapped-reports`, body)
-      .pipe(map(r => r.data));
-  }
-
-  deleteMappedReport(id: string): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/mapped-reports/${id}`)
-      .pipe(map(r => r.data));
+    return this.http.delete<void>(`${this.apiUrl}/api/brigades/${id}`);
   }
 
   /* ----------  ZONES  ---------- */
   getZones(): Observable<ZoneResponse[]> {
-    return this.http.get<ApiResponse<ZoneResponse[]>>(`${this.baseUrl}/zones`)
-      .pipe(map(r => r.data));
+    return this.http.get<ZoneResponse[]>(`${this.apiUrl}/api/zones`);
+  }
+
+  getMainZone(): Observable<ZoneResponse> {
+    return this.http.get<ZoneResponse>(`${this.apiUrl}/api/zones/main`);
+  }
+
+  getOperationalZones(): Observable<ZoneResponse[]> {
+    return this.http.get<ZoneResponse[]>(`${this.apiUrl}/api/zones/operational`);
+  }
+
+  getActiveZones(): Observable<ZoneResponse[]> {
+    return this.http.get<ZoneResponse[]>(`${this.apiUrl}/api/zones/active`);
+  }
+
+  createZone(body: ZoneRequest): Observable<ZoneResponse> {
+    return this.http.post<ZoneResponse>(`${this.apiUrl}/api/zones`, body);
+  }
+
+  updateZone(id: string, body: ZoneRequest): Observable<ZoneResponse> {
+    return this.http.put<ZoneResponse>(`${this.apiUrl}/api/zones/${id}`, body);
+  }
+
+  deleteZone(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/api/zones/${id}`);
   }
 
   /* ----------  EVACUATION ROUTES  ---------- */
   getEvacuationRoutes(): Observable<EvacuationResponse[]> {
-    return this.http.get<ApiResponse<EvacuationResponse[]>>(`${this.baseUrl}/evacroute`)
-      .pipe(map(r => r.data));
+    return this.http.get<EvacuationResponse[]>(`${this.apiUrl}/api/evacuation-routes`);
+  }
+
+  getEvacuationRoutesByZone(zoneId: string): Observable<EvacuationResponse[]> {
+    return this.http.get<EvacuationResponse[]>(`${this.apiUrl}/api/evacuation-routes/zone/${zoneId}`);
+  }
+
+  createEvacuationRoute(body: EvacuationRouteRequest): Observable<EvacuationResponse> {
+    return this.http.post<EvacuationResponse>(`${this.apiUrl}/api/evacuation-routes`, body);
+  }
+
+  updateEvacuationRoute(id: string, body: EvacuationRouteRequest): Observable<EvacuationResponse> {
+    return this.http.put<EvacuationResponse>(`${this.apiUrl}/api/evacuation-routes/${id}`, body);
+  }
+
+  deleteEvacuationRoute(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/api/evacuation-routes/${id}`);
+  }
+
+  /* ----------  MAPPED REPORTS (solo lectura — geo-service)  ---------- */
+  /** El BFF solo expone lectura; la creación/eliminación las gestiona report-service internamente. */
+  getMappedReports(): Observable<MappedReportResponse[]> {
+    return this.http.get<MappedReportResponse[]>(`${this.apiUrl}/api/geo`);
   }
 }
