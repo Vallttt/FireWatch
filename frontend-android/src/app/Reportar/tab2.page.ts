@@ -24,7 +24,7 @@ import * as L from 'leaflet';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { ReportService, ReporteResponse, ReporteMediaItem, SeverityLevel } from '../services/report.service';
 import { GeolocationService } from '../services/geolocation.service';
-import { GeoService } from '../services/geo.service';
+import { ZonesAssetService, ComunaZone } from '../services/zones-asset.service';
 
 export interface MediaPreview {
   url: string;
@@ -54,7 +54,7 @@ export class Tab2Page {
   map: L.Map | undefined;
   marker: L.Marker | undefined;
   latLng = { lat: -33.4489, lng: -70.6693 };
-  mainZoneId: string | null = null;
+  zones: ComunaZone[] = [];
 
   isAdmin = false;
 
@@ -92,7 +92,7 @@ export class Tab2Page {
     private toastController: ToastController,
     private reportService: ReportService,
     private geoSvc: GeolocationService,
-    private geoService: GeoService
+    private zonesAssetService: ZonesAssetService
   ) {
     addIcons({
       ellipse, locationOutline, navigate, timerOutline, listOutline,
@@ -109,13 +109,14 @@ export class Tab2Page {
     this.isAdmin = (role === 'admin');
     setTimeout(() => { this.loadMap(); }, 200);
     if (this.isAdmin) { this.loadHistory(); }
-    this.loadMainZone();
+    this.loadZones();
   }
 
-  private loadMainZone() {
-    this.geoService.getMainZone().subscribe({
-      next: (zone) => { this.mainZoneId = zone.id; },
-      error: (err) => console.warn('No se pudo obtener la zona principal', err)
+  /** Límites comunales reales (asset local — zone-service aún no tiene datos reales). */
+  private loadZones() {
+    this.zonesAssetService.getZones().subscribe({
+      next: (zones) => { this.zones = zones; },
+      error: (err) => console.warn('No se pudieron cargar las comunas', err)
     });
   }
 
@@ -282,8 +283,9 @@ export class Tab2Page {
       await this.showToast('Por favor agregue una descripción del incidente', 'warning'); return;
     }
 
-    if (!this.mainZoneId) {
-      await this.showToast('No se pudo determinar la zona principal. Intenta de nuevo.', 'danger');
+    const zona = this.zonesAssetService.findZoneContaining(this.latLng.lat, this.latLng.lng, this.zones);
+    if (!zona) {
+      await this.showToast('No puedes enviar reportes fuera del área de cobertura (Santiago y comunas cercanas).', 'warning');
       return;
     }
 
@@ -293,7 +295,7 @@ export class Tab2Page {
     this.reportService.crearReporte({
       userId, usuarioReportante: userEmail,
       descripcion: this.descripcion,
-      zoneId: this.mainZoneId,
+      zoneId: zona.id,
       longitude: this.latLng.lng, latitude: this.latLng.lat,
       severity: this.mapSeverity(this.severidad)
     }).subscribe({

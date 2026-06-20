@@ -1,8 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
-import { point } from '@turf/helpers';
 import {
   IonContent, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
   IonLabel, IonTextarea, IonButton,
@@ -24,7 +22,7 @@ import {
 import * as L from 'leaflet';
 import { ReportService, ReporteResponse, ReporteMediaItem, SeverityLevel } from '../services/report.service';
 import { GeolocationService } from '../services/geolocation.service';
-import { GeoService } from '../services/geo.service';
+import { ZonesAssetService, ComunaZone } from '../services/zones-asset.service';
 
 export interface MediaPreview {
   url: string;
@@ -54,12 +52,11 @@ export class Tab2Page {
   map: L.Map | undefined;
   marker: L.Marker | undefined;
   latLng = { lat: -33.4489, lng: -70.6693 };
-  zones: any[] = [];
+  zones: ComunaZone[] = [];
   zoneLayers: L.Layer[] = [];
-  mainLayer: L.GeoJSON | null = null;
   mainBounds: L.LatLngBounds | null = null;
-  mainGeoJson: any = null;
-  mainZoneId: string | null = null;
+  /** Zona (comuna real) que contiene el punto seleccionado actualmente. */
+  zonaSeleccionada: ComunaZone | null = null;
 
   isAdmin = false;
 
@@ -97,7 +94,7 @@ export class Tab2Page {
     private toastController: ToastController,
     private reportService: ReportService,
     private geoSvc: GeolocationService,
-    private geoService: GeoService
+    private zonesAssetService: ZonesAssetService
   ) {
     addIcons({
       ellipse, locationOutline, navigate, timerOutline, listOutline,
@@ -157,13 +154,15 @@ export class Tab2Page {
 
     if (!p) return;
 
-    if (!this.isPointInsideMainZone(p)) {
-      await this.showToast('El reporte debe estar dentro de la zona principal.', 'warning');
+    const zona = this.zonesAssetService.findZoneContaining(p.lat, p.lng, this.zones);
+    if (!zona) {
+      await this.showToast('El reporte debe estar dentro del área de cobertura (Santiago y comunas cercanas).', 'warning');
 
       this.marker?.setLatLng([this.latLng.lat, this.latLng.lng]);
       return;
     }
 
+    this.zonaSeleccionada = zona;
     this.latLng.lat = p.lat;
     this.latLng.lng = p.lng;
 });
@@ -171,64 +170,53 @@ export class Tab2Page {
     this.loadZonesForReportMap();
   }
 
+  /** Límites comunales reales (asset local — zone-service aún no tiene datos reales). */
   private loadZonesForReportMap() {
-  this.geoService.getMapData().subscribe({
-    next: (data) => {
-      this.zones = data.zones || [];
-      this.renderReportZones();
-    },
-    error: (err) => {
-      console.error('No se pudieron cargar las zonas en Reportar', err);
-    }
-  });
-}
+    this.zonesAssetService.getZones().subscribe({
+      next: (zones) => {
+        this.zones = zones;
+        this.renderReportZones();
 
-private renderReportZones() {
-  if (!this.map) return;
-
-  this.zoneLayers.forEach((layer: L.Layer) => layer.remove());
-  this.zoneLayers = [];
-
-  this.mainLayer = null;
-  this.mainBounds = null;
-
-  this.zones.forEach((zone: any) => {
-    if (!zone.geoJson) return;
-
-    const geo = JSON.parse(zone.geoJson);
-
-    const layer = L.geoJSON(geo, {
-      style: {
-        color: zone.color || '#3388ff',
-        weight: zone.zoneType === 'MAIN' ? 4 : 2,
-        fillOpacity: zone.zoneType === 'MAIN' ? 0.08 : 0.25
+        // Determina en qué comuna cae el marcador inicial (ubicación por defecto / GPS)
+        this.zonaSeleccionada = this.zonesAssetService.findZoneContaining(this.latLng.lat, this.latLng.lng, this.zones);
+      },
+      error: (err) => {
+        console.error('No se pudieron cargar las comunas en Reportar', err);
       }
-    }).addTo(this.map!);
+    });
+  }
 
-    layer.bindPopup(`${zone.name} (${zone.zoneType})`);
-    this.zoneLayers.push(layer);
+  private renderReportZones() {
+    if (!this.map) return;
 
-    if (zone.zoneType === 'MAIN') {
-      this.mainLayer = layer;
-      this.mainGeoJson = geo;
-      this.mainBounds = layer.getBounds();
-      this.mainZoneId = zone.id;
+    this.zoneLayers.forEach((layer: L.Layer) => layer.remove());
+    this.zoneLayers = [];
+    this.mainBounds = null;
 
-      this.map!.fitBounds(this.mainBounds, {
-        padding: [20, 20],
-        animate: false
-      });
-    }
-  });
-}
+    this.zones.forEach((zone) => {
+      if (!zone.geometry) return;
 
-private isPointInsideMainZone(latlng: L.LatLng): boolean {
-  if (!this.mainGeoJson) return false;
+      const esProvincia = zone.zoneType === 'PROVINCE';
+      const esPrincipal = zone.zoneType === 'MAIN';
 
-  const pt = point([latlng.lng, latlng.lat]);
+      const layer = L.geoJSON(zone.geometry, {
+        style: {
+          color: zone.color || '#3388ff',
+          weight: esProvincia ? 2 : (esPrincipal ? 4 : 2),
+          dashArray: esProvincia ? '6 4' : undefined,
+          fillOpacity: esProvincia ? 0 : (esPrincipal ? 0.06 : 0.2)
+        }
+      }).addTo(this.map!);
 
-  return booleanPointInPolygon(pt, this.mainGeoJson);
-}
+      layer.bindPopup(`${zone.name} (${zone.zoneType})`);
+      this.zoneLayers.push(layer);
+
+      if (esPrincipal) {
+        this.mainBounds = layer.getBounds();
+        this.map!.fitBounds(this.mainBounds, { padding: [20, 20], animate: false });
+      }
+    });
+  }
 
   async getMyLocation() {
     if (!this.map) { this.loadMap(); }
@@ -316,22 +304,18 @@ private isPointInsideMainZone(latlng: L.LatLng): boolean {
 
     const userId    = localStorage.getItem('userId')    || undefined;
     const userEmail = localStorage.getItem('userEmail') || 'Anónimo';
-    const selectedPoint = L.latLng(this.latLng.lat, this.latLng.lng);
 
-    if (!this.isPointInsideMainZone(selectedPoint)) {
-      await this.showToast('No puedes enviar reportes fuera de la zona principal.', 'warning');
+    const zona = this.zonesAssetService.findZoneContaining(this.latLng.lat, this.latLng.lng, this.zones);
+    if (!zona) {
+      await this.showToast('No puedes enviar reportes fuera del área de cobertura (Santiago y comunas cercanas).', 'warning');
       return;
     }
-
-    if (!this.mainZoneId) {
-      await this.showToast('No se pudo determinar la zona principal. Intenta de nuevo.', 'danger');
-      return;
-    }
+    this.zonaSeleccionada = zona;
 
     this.reportService.crearReporte({
       userId, usuarioReportante: userEmail,
       descripcion: this.descripcion,
-      zoneId: this.mainZoneId,
+      zoneId: zona.id,
       longitude: this.latLng.lng, latitude: this.latLng.lat,
       severity: this.mapSeverity(this.severidad)
     }).subscribe({

@@ -19,6 +19,7 @@ import * as L from 'leaflet';
 
 import { GeoService, BrigadeResponse, MappedReportResponse } from '../services/geo.service';
 import { ReportService, ReporteResponse } from '../services/report.service';
+import { ZonesAssetService, ComunaZone } from '../services/zones-asset.service';
 
 @Component({
   selector: 'app-mapa',
@@ -35,7 +36,7 @@ import { ReportService, ReporteResponse } from '../services/report.service';
 })
 export class MapaPage implements OnInit {
   public map: L.Map | undefined;
-  public zones: any[] = [];
+  public zones: ComunaZone[] = [];
   public zoneLayers: L.Layer[] = [];
   public isAdmin = false;
   public focoSeleccionado: any = null;
@@ -57,7 +58,8 @@ export class MapaPage implements OnInit {
     private ngZone: NgZone,
     private toastController: ToastController,
     private geoService: GeoService,
-    private reportService: ReportService
+    private reportService: ReportService,
+    private zonesAssetService: ZonesAssetService
   ) {
     addIcons({
       flame, ellipse, shieldHalfOutline,
@@ -72,7 +74,21 @@ export class MapaPage implements OnInit {
     const role = localStorage.getItem('userRole');
     this.isAdmin = (role === 'admin');
     setTimeout(() => { this.initSatelliteMap(); }, 200);
+    this.loadZones();
     this.loadBackendData();
+  }
+
+  /** Límites comunales reales (asset local — zone-service aún no tiene datos reales). */
+  private loadZones() {
+    this.zonesAssetService.getZones().subscribe({
+      next: (zones) => {
+        this.zones = zones;
+        const main = zones.find(z => z.zoneType === 'MAIN');
+        this.mainZoneId = main ? main.id : null;
+        if (this.map) { this.renderMapLayers(); }
+      },
+      error: (err) => console.warn('No se pudieron cargar los límites comunales', err)
+    });
   }
 
   ionViewDidEnter() {
@@ -91,11 +107,7 @@ export class MapaPage implements OnInit {
   private loadBackendData() {
     this.geoService.getMapData().subscribe({
       next: (data) => {
-        this.zones = data.zones || [];
         this.routes = data.evacuationRoutes || [];
-
-        const main = this.zones.find((z: any) => z.zoneType === 'MAIN');
-        this.mainZoneId = main ? main.id : null;
 
         this.backendLoaded = true;
 
@@ -468,23 +480,26 @@ export class MapaPage implements OnInit {
   this.zoneLayers = [];
   this.routeLayers = [];
 
-  this.zones.forEach((zone: any) => {
-    if (!zone.geoJson) return;
+  this.zones.forEach((zone) => {
+    if (!zone.geometry) return;
 
-    const geo = JSON.parse(zone.geoJson);
+    // Provincia de Santiago: solo contorno de referencia, sin relleno
+    const esProvincia = zone.zoneType === 'PROVINCE';
+    const esPrincipal = zone.zoneType === 'MAIN';
 
-    const layer = L.geoJSON(geo, {
+    const layer = L.geoJSON(zone.geometry, {
       style: {
         color: zone.color || '#3388ff',
-        weight: zone.zoneType === 'MAIN' ? 4 : 2,
-        fillOpacity: zone.zoneType === 'MAIN' ? 0.08 : 0.28
+        weight: esProvincia ? 2 : (esPrincipal ? 4 : 2),
+        dashArray: esProvincia ? '6 4' : undefined,
+        fillOpacity: esProvincia ? 0 : (esPrincipal ? 0.06 : 0.22)
       }
     }).addTo(this.map!);
 
     layer.bindPopup(`${zone.name} (${zone.zoneType})`);
     this.zoneLayers.push(layer);
 
-    if (zone.zoneType === 'MAIN') {
+    if (esPrincipal) {
       this.map!.fitBounds(layer.getBounds(), {
         padding: [20, 20],
         animate: false
