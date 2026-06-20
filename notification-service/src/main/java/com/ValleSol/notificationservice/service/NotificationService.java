@@ -27,6 +27,7 @@ public class NotificationService {
         System.out.println("Latitud    : " + event.getLatitude());
         System.out.println("Longitud   : " + event.getLongitude());
         System.out.println("Fecha      : " + event.getFechaReporte());
+        System.out.println("NIVEL = " + event.getNivelEmergencia());
         System.out.println("=====================================");
 
         List<UserDTO> usuarios = userClient.getUsersForAlerts();

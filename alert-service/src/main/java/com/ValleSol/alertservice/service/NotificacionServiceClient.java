@@ -40,6 +40,7 @@ public class NotificacionServiceClient {
         payload.put("latitude", request.getLatitude());
         payload.put("longitude", request.getLongitude());
         payload.put("zoneId", request.getZoneId() != null ? request.getZoneId().toString() : null);
+        payload.put("zoneName", request.getZoneName());
         payload.put("fechaReporte", request.getFechaReporte());
 
         try {

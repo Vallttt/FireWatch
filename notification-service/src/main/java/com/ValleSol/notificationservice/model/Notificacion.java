@@ -59,5 +59,7 @@ public class Notificacion {
 
     private String zoneName;
 
+    private String zoneId;
+
     private LocalDateTime fechaReporte;
 }

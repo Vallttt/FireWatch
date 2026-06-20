@@ -27,13 +27,15 @@ public class ReporteService {
     private final AlertService alertasService;
     private final IncidentService incidentService;
     private final EvidenceService evidenceService;
+    private final ZoneClient zoneClient;
 
     public ReporteService(GeoService geoService, AlertService alertasService,
-                          IncidentService incidentService, EvidenceService evidenceService) {
+                          IncidentService incidentService, EvidenceService evidenceService, ZoneClient zoneClient) {
         this.geoService = geoService;
         this.alertasService = alertasService;
         this.incidentService = incidentService;
         this.evidenceService = evidenceService;
+        this.zoneClient = zoneClient;
     }
 
     public ReporteResponseDTO crearReporte(ReporteRequestDTO request) {
@@ -93,7 +95,16 @@ public class ReporteService {
             alerta.setLongitude(guardado.getLongitude());
             alerta.setZoneId(guardado.getZoneId());
             alerta.setFechaReporte(guardado.getFechaIncidente());
-            alerta.setNivelEmergencia(request.getSeverity() != null ? request.getSeverity().name() : "MEDIUM");
+            alerta.setNivelEmergencia(
+                    request.getSeverity() != null
+                            ? request.getSeverity().name()
+                            : "MEDIUM"
+            );
+            String zoneName =
+                    zoneClient.obtenerNombreZona(guardado.getZoneId());
+
+            alerta.setZoneName(guardado.getZoneId().toString());
+
 
             alertasService.enviarAlerta(alerta);
         } catch (Exception e) {

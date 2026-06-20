@@ -25,5 +25,6 @@ public class AlertaRequestDTO {
     private Double latitude;
     private Double longitude;
     private UUID zoneId;
+    private String zoneName;
     private LocalDateTime fechaReporte;
 }

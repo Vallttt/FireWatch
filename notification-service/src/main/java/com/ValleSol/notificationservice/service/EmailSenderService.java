@@ -59,9 +59,16 @@ public class EmailSenderService {
                 ? notif.getUsuarioReportante()
                 : "No informado";
 
-        String fecha = notif.getFechaReporte() != null
-                ? notif.getFechaReporte().toString()
-                : "No disponible";
+        String fecha = "No disponible";
+
+        if (notif.getFechaReporte() != null) {
+            fecha = notif.getFechaReporte()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        }
+
+        String zona = notif.getZoneName() != null
+                ? notif.getZoneName()
+                : "No informada";
 
         String lat = notif.getLatitude() != null
                 ? String.valueOf(notif.getLatitude())
@@ -74,6 +81,14 @@ public class EmailSenderService {
         String reporteId = notif.getReporteId() != null
                 ? notif.getReporteId().toString()
                 : "-";
+
+        String colorNivel = "#28a745";
+
+        switch (nivel.toUpperCase()) {
+            case "HIGH" -> colorNivel = "#dc3545";
+            case "MEDIUM" -> colorNivel = "#ffc107";
+            case "LOW" -> colorNivel = "#28a745";
+        }
 
         return """
         <html>
@@ -102,7 +117,16 @@ public class EmailSenderService {
                         </tr>
                         <tr>
                             <td><strong>Nivel Emergencia</strong></td>
-                            <td>%s</td>
+                            <td>
+                                <span style="
+                                    background:%s;
+                                    color:white;
+                                    padding:4px 10px;
+                                    border-radius:5px;
+                                    font-weight:bold;">
+                                    %s
+                                </span>
+                            </td>
                         </tr>
                         <tr>
                             <td><strong>Reportante</strong></td>
@@ -110,6 +134,10 @@ public class EmailSenderService {
                         </tr>
                         <tr>
                             <td><strong>Fecha</strong></td>
+                            <td>%s</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Zona</strong></td>
                             <td>%s</td>
                         </tr>
                     </table>
@@ -141,9 +169,11 @@ public class EmailSenderService {
         """
                 .formatted(
                         reporteId,
+                        colorNivel,
                         nivel,
                         reportante,
                         fecha,
+                        zona,
                         descripcion,
                         lat,
                         lon
