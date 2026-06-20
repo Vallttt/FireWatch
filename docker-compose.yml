@@ -162,6 +162,8 @@ services:
     depends_on:
       mysql-db:
         condition: service_healthy
+      eureka-server:
+        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/evidence_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
@@ -169,8 +171,9 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     networks:
-      - red-municipalidad          
+      - red-municipalidad        
 
   # ============================================================
   # MICROSERVICIO — Geo Service (:8082)
