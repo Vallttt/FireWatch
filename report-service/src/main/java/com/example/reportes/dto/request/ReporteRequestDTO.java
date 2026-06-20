@@ -1,6 +1,7 @@
 package com.example.reportes.dto.request;
 
 import com.example.reportes.enums.SeverityLevel;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
@@ -8,9 +9,13 @@ public class ReporteRequestDTO {
     private UUID userId;
     private String usuarioReportante;
     private String descripcion;
+    @NotNull
     private UUID zoneId;
+    @NotNull
     private Double longitude;
+    @NotNull
     private Double latitude;
+    @NotNull
     private SeverityLevel severity;
 
     

@@ -10,17 +10,17 @@ import java.util.UUID;
 @Service
 public class NotificationService {
 
-    private final AuthClient             authClient;
+    private final UserClient userClient;
     private final NotificacionStrategy   strategy;
 
-    public NotificationService(AuthClient authClient,
-                                NotificacionStrategy strategy) {
-        this.authClient = authClient;
+    public NotificationService(UserClient userClient,
+                               NotificacionStrategy strategy) {
+        this.userClient = userClient;
         this.strategy   = strategy;
     }
 
     public void processNotifications(AlertaEventDTO event) {
-        List<UserDTO> usuarios = authClient.getUsersForAlerts();
+        List<UserDTO> usuarios = userClient.getUsersForAlerts();
 
         UUID dispatchId = event.getDespachoId() != null
                 ? event.getDespachoId()
@@ -42,6 +42,6 @@ public class NotificationService {
     }
 
     public List<UserDTO> testAuthConnection() {
-        return authClient.getUsersForAlerts();
+        return userClient.getUsersForAlerts();
     }
 }

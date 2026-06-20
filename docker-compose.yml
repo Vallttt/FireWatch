@@ -193,6 +193,7 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - ZONE_SERVICE_URL=http://zone-app:8085
     networks:
       - red-municipalidad
 
@@ -271,7 +272,7 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     networks:
       - red-municipalidad
 
@@ -300,10 +301,11 @@ services:
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - AUTH_SERVICE_URL=http://auth-app:8080
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - BREVO_SMTP_USER=${BREVO_SMTP_USER}
       - BREVO_SMTP_KEY=${BREVO_SMTP_KEY}
       - MAIL_FROM=w.vinet.h@gmail.com
+      - USER_SERVICE_URL=http://user-app:8084
     networks:
       - red-municipalidad
 

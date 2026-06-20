@@ -132,9 +132,7 @@ public class MappedReportService {
 
         Geometry zoneGeometry = geoJsonToGeometry(zone.getGeoJson());
 
-        GeometryFactory geometryFactory = new GeometryFactory();
-
-        Point reportPoint = geometryFactory.createPoint(
+        Point reportPoint = new GeometryFactory().createPoint(
                 new Coordinate(longitude, latitude)
         );
 

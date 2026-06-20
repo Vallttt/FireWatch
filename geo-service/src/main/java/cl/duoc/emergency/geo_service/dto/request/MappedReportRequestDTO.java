@@ -26,5 +26,6 @@ public class MappedReportRequestDTO {
     private Double longitude;
     @NotNull
     private LocalDateTime reportedAt;
+    @NotNull
     private UUID zoneId;
 }

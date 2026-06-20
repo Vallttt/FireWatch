@@ -19,7 +19,7 @@ public class GeoService {
     }
 
     public void crearMappedReport(MappedReportRequestDTO request) {
-        String url = geoServiceUrl + "/api/mapped-reports";
+        String url = geoServiceUrl + "/api/geo";
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
     }
 }
