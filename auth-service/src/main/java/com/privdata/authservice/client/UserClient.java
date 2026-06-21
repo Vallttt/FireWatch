@@ -16,10 +16,11 @@ public class UserClient {
     private String userServiceUrl;
 
     public UserAuthResponseDTO findByEmail(String email) {
-        return restClient.get()
+        ApiResponseDTO<UserAuthResponseDTO> response = restClient.get()
                 .uri(userServiceUrl + "/api/users/internal?email=" + email)
                 .retrieve()
-                .body(UserAuthResponseDTO.class);
+                .body(new org.springframework.core.ParameterizedTypeReference<ApiResponseDTO<UserAuthResponseDTO>>() {});
+        return response != null ? response.getData() : null;
     }
 
     

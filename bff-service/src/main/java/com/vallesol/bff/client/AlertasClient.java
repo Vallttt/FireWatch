@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.Map;
 
 
-@FeignClient(name = "alert-service")
+@FeignClient(name = "alertas-service")
 public interface AlertasClient {
 
     @PostMapping("/api/alertas/enviar")
