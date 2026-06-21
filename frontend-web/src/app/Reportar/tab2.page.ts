@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -44,7 +44,7 @@ export interface MediaPreview {
     IonList, IonItem
   ]
 })
-export class Tab2Page {
+export class Tab2Page implements OnInit {
   clasificacionInicial: string = '';
   tipoDesc: string = '';
   severidad: string = 'media';
@@ -104,6 +104,10 @@ export class Tab2Page {
       imagesOutline, eyeOutline, closeOutline,
       chevronBackOutline, chevronForwardOutline
     });
+  }
+
+  ngOnInit() {
+    setTimeout(() => { this.loadMap(); }, 200);
   }
 
   ionViewDidEnter() {
