@@ -65,9 +65,7 @@ export class MapaPage implements OnInit {
   public backendRoutes: EvacuationResponse[] = [];
 
   public drawingMode: 'none' | 'zone' | 'route' = 'none';
-  public drawingPoints: L.LatLng[] = [];
-  private adminDrawingLayer: L.Layer | null = null;
-  private adminDrawingMarkers: L.CircleMarker[] = [];
+  public selectedComunaForZone: ComunaZone | null = null;
 
   public showZoneForm = false;
   public newZoneName = '';
@@ -79,6 +77,8 @@ export class MapaPage implements OnInit {
   public newRouteName = '';
   public newRouteDescription = '';
   public selectedRouteZoneId = '';
+  public routeTipo: 'ESTRUCTURAL' | 'FORESTAL' | 'URBANO' = 'ESTRUCTURAL';
+  public routeSeveridad: 'BAJA' | 'MEDIA' | 'ALTA' = 'BAJA';
 
   private marcadoresLeaflet: L.Marker[] = [];
   private backendLoaded = false;
@@ -206,10 +206,9 @@ export class MapaPage implements OnInit {
 
   async startDrawZone() {
     this.drawingMode = 'zone';
-    this.drawingPoints = [];
+    this.selectedComunaForZone = null;
     this.showZoneForm = false;
-    this.clearAdminDrawing();
-    await this.showToast('Haz clic en el mapa para marcar los vértices de la zona (mínimo 3).', 'primary');
+    await this.showToast('Haz clic sobre una comuna pintada en el mapa para usarla como base de la nueva zona.', 'primary');
   }
 
   async startDrawRoute() {
@@ -218,15 +217,12 @@ export class MapaPage implements OnInit {
       return;
     }
     this.drawingMode = 'route';
-    this.drawingPoints = [];
-    this.showRouteForm = false;
-    this.clearAdminDrawing();
-    await this.showToast('Haz clic en el mapa para marcar el recorrido de la ruta (mínimo 2 puntos).', 'primary');
+    this.showRouteForm = true;
   }
 
   cancelDrawing() {
     this.drawingMode = 'none';
-    this.drawingPoints = [];
+    this.selectedComunaForZone = null;
     this.showZoneForm = false;
     this.showRouteForm = false;
     this.newZoneName = '';
@@ -236,63 +232,25 @@ export class MapaPage implements OnInit {
     this.newRouteName = '';
     this.newRouteDescription = '';
     this.selectedRouteZoneId = '';
-    this.clearAdminDrawing();
+    this.routeTipo = 'ESTRUCTURAL';
+    this.routeSeveridad = 'BAJA';
   }
 
-  private clearAdminDrawing() {
-    if (this.adminDrawingLayer) { this.adminDrawingLayer.remove(); this.adminDrawingLayer = null; }
-    this.adminDrawingMarkers.forEach(m => m.remove());
-    this.adminDrawingMarkers = [];
-  }
+  /** Se llama al hacer clic sobre una comuna ya pintada en el mapa, mientras se está creando una zona. */
+  onComunaLayerClicked(zone: ComunaZone) {
+    if (this.drawingMode !== 'zone' || this.showZoneForm) return;
 
-  private onMapClickForDrawing(e: L.LeafletMouseEvent) {
-    if (this.drawingMode === 'none' || this.showZoneForm || this.showRouteForm) return;
-
-    this.drawingPoints.push(e.latlng);
-    const marker = L.circleMarker(e.latlng, {
-      radius: 5, color: '#ffffff', weight: 2, fillColor: '#ff6a00', fillOpacity: 1
-    }).addTo(this.map!);
-    this.adminDrawingMarkers.push(marker);
-    this.redrawAdminShape();
-  }
-
-  private redrawAdminShape() {
-    if (this.adminDrawingLayer) { this.adminDrawingLayer.remove(); this.adminDrawingLayer = null; }
-    if (this.drawingPoints.length < 2) return;
-
-    this.adminDrawingLayer = this.drawingMode === 'zone'
-      ? L.polygon(this.drawingPoints, { color: '#ff6a00', weight: 3, fillOpacity: 0.2 }).addTo(this.map!)
-      : L.polyline(this.drawingPoints, { color: '#ff6a00', weight: 4 }).addTo(this.map!);
-  }
-
-  async finishDrawingZone() {
-    if (this.drawingPoints.length < 3) {
-      await this.showToast('Necesitas al menos 3 puntos para dibujar una zona.', 'warning');
-      return;
-    }
+    this.selectedComunaForZone = zone;
+    this.newZoneName = zone.name;
+    this.newZoneType = zone.zoneType === 'OPERATIONAL' ? 'OPERATIONAL' : 'MAIN';
+    this.newZoneColor = zone.color && /^#([A-Fa-f0-9]{6})$/.test(zone.color) ? zone.color : '#3388ff';
     this.showZoneForm = true;
   }
 
-  async finishDrawingRoute() {
-    if (this.drawingPoints.length < 2) {
-      await this.showToast('Necesitas al menos 2 puntos para dibujar una ruta.', 'warning');
-      return;
-    }
-    this.showRouteForm = true;
-  }
-
-  private pointsToPolygonGeoJson(): string {
-    const ring = this.drawingPoints.map(p => [p.lng, p.lat]);
-    ring.push(ring[0]);
-    return JSON.stringify({ type: 'Polygon', coordinates: [ring] });
-  }
-
-  private pointsToLineGeoJson(): string {
-    const coords = this.drawingPoints.map(p => [p.lng, p.lat]);
-    return JSON.stringify({ type: 'LineString', coordinates: coords });
-  }
-
   async saveZone() {
+    if (!this.selectedComunaForZone) {
+      await this.showToast('Haz clic sobre una comuna pintada en el mapa primero.', 'warning'); return;
+    }
     if (!this.newZoneName || this.newZoneName.trim().length < 4) {
       await this.showToast('El nombre debe tener al menos 4 caracteres.', 'warning'); return;
     }
@@ -309,7 +267,7 @@ export class MapaPage implements OnInit {
       isActive: true,
       color: this.newZoneColor,
       zoneType: this.newZoneType,
-      geoJson: this.pointsToPolygonGeoJson()
+      geoJson: this.simplifyGeometryForBackend(this.selectedComunaForZone.geometry)
     }).subscribe({
       next: async () => {
         await this.showToast('Zona creada correctamente', 'success');
@@ -317,36 +275,133 @@ export class MapaPage implements OnInit {
         this.loadBackendZonesAndRoutes();
       },
       error: async (err) => {
-        const msg = err.error?.message || 'No se pudo crear la zona. Verifica que el polígono esté dentro de la zona principal (si es operativa).';
+        const msg = err.error?.message || 'No se pudo crear la zona. Verifica que la comuna esté dentro de la zona principal (si es operativa).';
         await this.showToast(msg, 'danger');
       }
     });
+  }
+
+  /**
+   * El backend (ZoneRequestDTO.geoJson) limita el campo a 10000 caracteres, pero
+   * los límites comunales reales (OpenStreetMap) traen cientos de vértices con
+   * 7 decimales de precisión y superan ese límite ampliamente. Se redondea a 5
+   * decimales (~1m de precisión, de sobra para este uso) y, si aun así no entra,
+   * se reduce el número de vértices manteniendo la forma general del polígono.
+   */
+  private simplifyGeometryForBackend(geometry: GeoJSON.Geometry, maxChars = 9500): string {
+    if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') {
+      return JSON.stringify(geometry);
+    }
+
+    const round = (n: number) => Math.round(n * 1e5) / 1e5;
+
+    const decimateRing = (ring: number[][], step: number): number[][] => {
+      const kept = step <= 1
+        ? ring.slice()
+        : ring.filter((_, i) => i % step === 0 || i === ring.length - 1);
+      const rounded = kept.map(([lng, lat]) => [round(lng), round(lat)]);
+      const first = rounded[0], last = rounded[rounded.length - 1];
+      if (first[0] !== last[0] || first[1] !== last[1]) rounded.push([first[0], first[1]]);
+      return rounded;
+    };
+
+    const allRings: number[][][] = geometry.type === 'Polygon'
+      ? (geometry as any).coordinates
+      : (geometry as any).coordinates.flat();
+    const minRingLength = Math.min(...allRings.map(r => r.length));
+    const maxStep = Math.max(1, Math.floor((minRingLength - 4) / 4));
+
+    let result: any = geometry;
+    for (let step = 1; step <= maxStep; step++) {
+      result = geometry.type === 'Polygon'
+        ? { type: 'Polygon', coordinates: (geometry as any).coordinates.map((r: number[][]) => decimateRing(r, step)) }
+        : { type: 'MultiPolygon', coordinates: (geometry as any).coordinates.map((poly: number[][][]) => poly.map(r => decimateRing(r, step))) };
+
+      if (JSON.stringify(result).length <= maxChars) break;
+    }
+
+    return JSON.stringify(result);
+  }
+
+  /* ----------  Ruta de evacuación automática (centro de la zona → borde más cercano)  ---------- */
+  /**
+   * El backend exige que la ruta quede completamente dentro de la zona, así que la
+   * "ruta automática" es el segmento más corto desde el centro de la zona hasta su
+   * borde — no se usa una distancia en metros porque saldría de la zona y el
+   * backend la rechazaría. Tipo/severidad solo quedan en la descripción, como
+   * contexto para la brigada.
+   */
+  private computeAutoRouteGeoJson(geoJson: string): string | null {
+    let geometry: any;
+    try { geometry = JSON.parse(geoJson); } catch { return null; }
+
+    let ring: number[][] | null = null;
+    if (geometry.type === 'Polygon') {
+      ring = geometry.coordinates[0];
+    } else if (geometry.type === 'MultiPolygon') {
+      ring = geometry.coordinates.reduce((best: number[][] | null, poly: number[][][]) =>
+        (!best || poly[0].length > best.length) ? poly[0] : best, null);
+    }
+    if (!ring || ring.length < 3) return null;
+
+    const pts = ring.slice(0, ring.length - 1);
+    const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+    const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+
+    let best: number[] = ring[0];
+    let bestDist = Infinity;
+    for (let i = 0; i < ring.length - 1; i++) {
+      const proj = this.closestPointOnSegment([cx, cy], ring[i], ring[i + 1]);
+      const d = Math.hypot(proj[0] - cx, proj[1] - cy);
+      if (d < bestDist) { bestDist = d; best = proj; }
+    }
+
+    return JSON.stringify({ type: 'LineString', coordinates: [[cx, cy], best] });
+  }
+
+  private closestPointOnSegment(p: number[], a: number[], b: number[]): number[] {
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return a;
+    let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    return [a[0] + t * dx, a[1] + t * dy];
   }
 
   async saveRoute() {
     if (!this.selectedRouteZoneId) {
       await this.showToast('Selecciona la zona operativa a la que pertenece la ruta.', 'warning'); return;
     }
-    if (!this.newRouteName || this.newRouteName.trim().length < 4) {
-      await this.showToast('El nombre debe tener al menos 4 caracteres.', 'warning'); return;
-    }
-    if (!this.newRouteDescription || this.newRouteDescription.trim().length < 20) {
-      await this.showToast('La descripción debe tener al menos 20 caracteres.', 'warning'); return;
+
+    const zona = this.backendZones.find(z => z.id === this.selectedRouteZoneId);
+    if (!zona) {
+      await this.showToast('La zona seleccionada ya no existe.', 'danger'); return;
     }
 
+    const geoJson = this.computeAutoRouteGeoJson(zona.geoJson);
+    if (!geoJson) {
+      await this.showToast('No se pudo calcular automáticamente la ruta para esta zona.', 'danger'); return;
+    }
+
+    const tipoLabel = { ESTRUCTURAL: 'estructural', FORESTAL: 'forestal', URBANO: 'urbano' }[this.routeTipo];
+    const severidadLabel = { BAJA: 'baja', MEDIA: 'media', ALTA: 'alta' }[this.routeSeveridad];
+    const name = this.newRouteName.trim() || `Ruta de evacuación — ${zona.name}`;
+    const description = this.newRouteDescription.trim() ||
+      `Ruta de evacuación generada automáticamente para incidente ${tipoLabel} de severidad ${severidadLabel} en la zona ${zona.name}.`;
+
     this.geoService.createEvacuationRoute({
-      name: this.newRouteName.trim(),
-      description: this.newRouteDescription.trim(),
-      geoJson: this.pointsToLineGeoJson(),
+      name,
+      description,
+      geoJson,
       zoneId: this.selectedRouteZoneId
     }).subscribe({
       next: async () => {
-        await this.showToast('Ruta de evacuación creada correctamente', 'success');
+        await this.showToast('Ruta de evacuación generada correctamente', 'success');
         this.cancelDrawing();
         this.loadBackendZonesAndRoutes();
       },
       error: async (err) => {
-        const msg = err.error?.message || 'No se pudo crear la ruta. Verifica que esté dentro de la zona seleccionada.';
+        const msg = err.error?.message || 'No se pudo crear la ruta.';
         await this.showToast(msg, 'danger');
       }
     });
@@ -394,6 +449,7 @@ export class MapaPage implements OnInit {
       }).addTo(this.map!);
 
       layer.bindPopup(`${zone.name} (${zone.zoneType})`);
+      layer.on('click', () => this.ngZone.run(() => this.onComunaLayerClicked(zone)));
       this.zoneLayers.push(layer);
 
       if (esPrincipal) {
@@ -513,8 +569,6 @@ export class MapaPage implements OnInit {
       attribution: '© OpenStreetMap · FireWatch',
       maxZoom: 18
     }).addTo(this.map);
-
-    this.map.on('click', (e: L.LeafletMouseEvent) => this.onMapClickForDrawing(e));
 
     if (this.zones.length > 0) { this.renderMapLayers(); }
     this.renderMarkers();

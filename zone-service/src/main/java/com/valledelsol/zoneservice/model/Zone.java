@@ -33,7 +33,7 @@ public class Zone {
     @Enumerated(EnumType.STRING)
     @Column(name = "zone_type",nullable = false)
     private ZoneType zoneType;
-    @Column(name = "geojson",nullable = false)
+    @Column(name = "geojson", nullable = false, columnDefinition = "MEDIUMTEXT")
     private String geoJson;
     @Column(name = "is_active",nullable = false)
     private Boolean isActive = true;

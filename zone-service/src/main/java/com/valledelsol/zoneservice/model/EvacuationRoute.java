@@ -26,7 +26,7 @@ public class EvacuationRoute {
     private String name;
     @Column(name = "description",nullable = false)
     private String description;
-    @Column(name = "geojson",nullable = false)
+    @Column(name = "geojson", nullable = false, columnDefinition = "MEDIUMTEXT")
     private String geoJson;
     @Column(name = "is_active",nullable = false)
     private boolean isActive;
