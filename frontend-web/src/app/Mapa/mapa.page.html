@@ -14,6 +14,43 @@
     <div id="globalMap" class="map-container"></div>
   </div>
 
+  <!-- 1.5. RUTA DE EVACUACIÓN DE TU ZONA (solo usuario) -->
+  <ion-card *ngIf="!isAdmin" class="main-card">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="exit-outline"></ion-icon>
+        <ion-card-title>Tu ruta de evacuación</ion-card-title>
+      </div>
+      <p class="subtitle" *ngIf="citizenZone">Comuna detectada: {{ citizenZone.name }}</p>
+    </ion-card-header>
+
+    <ion-card-content>
+      <p *ngIf="loadingCitizenRoute">Buscando tu ubicación…</p>
+
+      <div *ngIf="!loadingCitizenRoute && citizenLocationError">
+        <p>{{ citizenLocationError }}</p>
+        <button class="action-btn outline" (click)="loadCitizenEvacuationRoute()">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          Reintentar
+        </button>
+      </div>
+
+      <div *ngIf="!loadingCitizenRoute && !citizenLocationError && citizenZone && citizenEvacuationRoutes.length === 0">
+        <p>Aún no hay una ruta de evacuación cargada para la comuna de {{ citizenZone.name }}.</p>
+      </div>
+
+      <ion-list *ngIf="!loadingCitizenRoute && citizenEvacuationRoutes.length > 0" lines="none">
+        <ion-item *ngFor="let ruta of citizenEvacuationRoutes">
+          <ion-icon slot="start" name="exit-outline" color="warning"></ion-icon>
+          <ion-label>
+            <h3>{{ ruta.name }}</h3>
+            <p>{{ ruta.description }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
   <!-- 2. FOCO SELECCIONADO -->
   <ion-card *ngIf="focoSeleccionado" class="focus-card">
     <ion-card-header>

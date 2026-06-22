@@ -17,9 +17,10 @@ import {
 } from 'ionicons/icons';
 import * as L from 'leaflet';
 
-import { GeoService, BrigadeResponse, MappedReportResponse } from '../services/geo.service';
+import { GeoService, BrigadeResponse, MappedReportResponse, EvacuationResponse } from '../services/geo.service';
 import { ReportService, ReporteResponse } from '../services/report.service';
 import { ZonesAssetService, ComunaZone } from '../services/zones-asset.service';
+import { GeolocationService } from '../services/geolocation.service';
 
 @Component({
   selector: 'app-mapa',
@@ -49,6 +50,13 @@ export class MapaPage implements OnInit {
   public historialIncendios: ReporteResponse[] = [];
   private mainZoneId: string | null = null;
 
+  /** Ruta de evacuación real de la comuna donde está el ciudadano (solo usuario, no admin). */
+  public citizenZone: ComunaZone | null = null;
+  public citizenEvacuationRoutes: EvacuationResponse[] = [];
+  public loadingCitizenRoute = false;
+  public citizenLocationError: string | null = null;
+  private citizenRouteLayers: L.Layer[] = [];
+
   private marcadoresLeaflet: L.Marker[] = [];
   private backendLoaded = false;
 
@@ -57,7 +65,8 @@ export class MapaPage implements OnInit {
     private toastController: ToastController,
     private geoService: GeoService,
     private reportService: ReportService,
-    private zonesAssetService: ZonesAssetService
+    private zonesAssetService: ZonesAssetService,
+    private geolocationService: GeolocationService
   ) {
     addIcons({
       flame, ellipse, shieldHalfOutline,
@@ -84,8 +93,71 @@ export class MapaPage implements OnInit {
         const main = zones.find(z => z.zoneType === 'MAIN');
         this.mainZoneId = main ? main.id : null;
         if (this.map) { this.renderMapLayers(); }
+
+        if (!this.isAdmin) { this.loadCitizenEvacuationRoute(); }
       },
       error: (err) => console.warn('No se pudieron cargar los límites comunales', err)
+    });
+  }
+
+  /**
+   * Ubica al ciudadano por GPS, determina en qué comuna está y trae del
+   * backend (geo-service) la ruta de evacuación real configurada para esa
+   * zona. Solo aplica a ciudadanos — el admin gestiona rutas, no las recibe.
+   */
+  async loadCitizenEvacuationRoute() {
+    this.loadingCitizenRoute = true;
+    this.citizenLocationError = null;
+
+    try {
+      const pos = await this.geolocationService.getCurrentPosition();
+      const zona = this.zonesAssetService.findZoneContaining(pos.lat, pos.lng, this.zones);
+
+      if (!zona) {
+        this.citizenZone = null;
+        this.citizenEvacuationRoutes = [];
+        this.citizenLocationError = 'Tu ubicación actual está fuera del área de cobertura (Santiago y comunas cercanas).';
+        this.loadingCitizenRoute = false;
+        return;
+      }
+
+      this.citizenZone = zona;
+      this.geoService.getEvacuationRoutesByZone(zona.id).subscribe({
+        next: (rutas) => {
+          this.citizenEvacuationRoutes = rutas || [];
+          this.loadingCitizenRoute = false;
+          if (this.map) { this.renderCitizenRoute(); }
+        },
+        error: (err) => {
+          console.warn('No se pudo obtener la ruta de evacuación de la zona', err);
+          this.citizenEvacuationRoutes = [];
+          this.loadingCitizenRoute = false;
+        }
+      });
+    } catch (err: any) {
+      this.citizenLocationError = err?.message || 'No se pudo obtener tu ubicación.';
+      this.loadingCitizenRoute = false;
+    }
+  }
+
+  /** Dibuja en el mapa, resaltada, la ruta de evacuación de la zona del ciudadano. */
+  private renderCitizenRoute() {
+    if (!this.map) return;
+
+    this.citizenRouteLayers.forEach((layer: L.Layer) => layer.remove());
+    this.citizenRouteLayers = [];
+
+    this.citizenEvacuationRoutes.forEach((route) => {
+      if (!route.geoJson) return;
+      const geo = JSON.parse(route.geoJson);
+
+      const layer = L.geoJSON(geo, {
+        style: { color: '#ff6a00', weight: 6, opacity: 0.95, dashArray: '1' }
+      }).addTo(this.map!);
+      layer.bindPopup(`Tu ruta de evacuación: ${route.name}`);
+      this.citizenRouteLayers.push(layer);
+
+      this.map!.fitBounds(layer.getBounds(), { padding: [40, 40] });
     });
   }
 
@@ -217,7 +289,7 @@ export class MapaPage implements OnInit {
   }
 
   initSatelliteMap() {
-    if (this.map) { this.renderMapLayers(); this.renderMarkers(); return; }
+    if (this.map) { this.renderMapLayers(); this.renderMarkers(); this.renderCitizenRoute(); return; }
 
     this.map = L.map('globalMap', {
       zoomControl: false,
@@ -233,6 +305,7 @@ export class MapaPage implements OnInit {
 
     if (this.zones.length > 0) { this.renderMapLayers(); }
     this.renderMarkers();
+    this.renderCitizenRoute();
   }
 
   renderMarkers() {
