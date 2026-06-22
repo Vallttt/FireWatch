@@ -240,6 +240,142 @@
     </ion-card-content>
   </ion-card>
 
+  <!-- 6.5. GESTIÓN DE ZONAS Y RUTAS DE EVACUACIÓN (admin) -->
+  <ion-card *ngIf="isAdmin" class="main-card admin-panel">
+    <ion-card-header>
+      <div class="card-title-container">
+        <ion-icon name="add-circle-outline"></ion-icon>
+        <ion-card-title>Zonas y rutas de evacuación</ion-card-title>
+      </div>
+      <p class="subtitle">Dibuja sobre el mapa para crear zonas operativas y sus rutas</p>
+    </ion-card-header>
+
+    <ion-card-content>
+
+      <!-- Barra de acciones de dibujo -->
+      <div class="create-brigade-row" *ngIf="drawingMode === 'none'">
+        <button type="button" class="action-btn outline" (click)="startDrawZone()">
+          <ion-icon name="add-circle-outline"></ion-icon>
+          Dibujar zona
+        </button>
+        <button type="button" class="action-btn outline" (click)="startDrawRoute()">
+          <ion-icon name="exit-outline"></ion-icon>
+          Dibujar ruta
+        </button>
+      </div>
+
+      <!-- Modo de dibujo activo -->
+      <div *ngIf="drawingMode !== 'none' && !showZoneForm && !showRouteForm">
+        <p>
+          {{ drawingMode === 'zone'
+              ? 'Haz clic en el mapa para marcar los vértices de la zona (' + drawingPoints.length + ' puntos, mínimo 3).'
+              : 'Haz clic en el mapa para marcar el recorrido de la ruta (' + drawingPoints.length + ' puntos, mínimo 2).' }}
+        </p>
+        <div class="create-brigade-row">
+          <button type="button" class="action-btn controlado" (click)="drawingMode === 'zone' ? finishDrawingZone() : finishDrawingRoute()">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            Finalizar
+          </button>
+          <button type="button" class="action-btn finalizado" (click)="cancelDrawing()">
+            <ion-icon name="close-circle-outline"></ion-icon>
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <!-- Formulario: nueva zona -->
+      <div *ngIf="showZoneForm">
+        <input type="text" class="brigade-input" placeholder="Nombre de la zona" [(ngModel)]="newZoneName">
+        <br><br>
+        <textarea class="brigade-input" rows="2" placeholder="Descripción" [(ngModel)]="newZoneDescription"></textarea>
+        <br><br>
+        <select class="brigade-input" [(ngModel)]="newZoneType">
+          <option value="MAIN">Principal (MAIN)</option>
+          <option value="OPERATIONAL">Operativa</option>
+        </select>
+        <br><br>
+        <input type="color" class="brigade-input" [(ngModel)]="newZoneColor">
+        <div class="create-brigade-row">
+          <button type="button" class="action-btn controlado" (click)="saveZone()">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            Guardar zona
+          </button>
+          <button type="button" class="action-btn finalizado" (click)="cancelDrawing()">
+            <ion-icon name="close-circle-outline"></ion-icon>
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <!-- Formulario: nueva ruta -->
+      <div *ngIf="showRouteForm">
+        <select class="brigade-input" [(ngModel)]="selectedRouteZoneId">
+          <option value="" disabled selected>Selecciona la zona operativa</option>
+          <option *ngFor="let z of backendOperationalZones" [value]="z.id">{{ z.name }}</option>
+        </select>
+        <br><br>
+        <input type="text" class="brigade-input" placeholder="Nombre de la ruta" [(ngModel)]="newRouteName">
+        <br><br>
+        <textarea class="brigade-input" rows="2" placeholder="Descripción (mínimo 20 caracteres)" [(ngModel)]="newRouteDescription"></textarea>
+        <div class="create-brigade-row">
+          <button type="button" class="action-btn controlado" (click)="saveRoute()">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            Guardar ruta
+          </button>
+          <button type="button" class="action-btn finalizado" (click)="cancelDrawing()">
+            <ion-icon name="close-circle-outline"></ion-icon>
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista de zonas reales existentes -->
+      <ion-list lines="none" class="history-list" *ngIf="backendZones.length > 0; else noZones">
+        <ion-item *ngFor="let z of backendZones" class="history-item">
+          <div class="history-icon-bg" slot="start">
+            <ion-icon name="ellipse"></ion-icon>
+          </div>
+          <ion-label>
+            <h2>{{ z.name }}</h2>
+            <p class="history-meta">
+              <span class="brigada-tag">{{ z.zoneType }}</span>
+            </p>
+          </ion-label>
+          <button type="button" slot="end" class="delete-btn" (click)="deleteBackendZone(z)">
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </ion-item>
+      </ion-list>
+      <ng-template #noZones>
+        <div class="empty-state">
+          <p>Aún no hay zonas creadas.</p>
+        </div>
+      </ng-template>
+
+      <!-- Lista de rutas reales existentes -->
+      <ion-list lines="none" class="history-list" *ngIf="backendRoutes.length > 0; else noRoutes">
+        <ion-item *ngFor="let r of backendRoutes" class="history-item">
+          <div class="history-icon-bg" slot="start">
+            <ion-icon name="exit-outline"></ion-icon>
+          </div>
+          <ion-label>
+            <h2>{{ r.name }}</h2>
+            <p>{{ r.description }}</p>
+          </ion-label>
+          <button type="button" slot="end" class="delete-btn" (click)="deleteBackendRoute(r)">
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </ion-item>
+      </ion-list>
+      <ng-template #noRoutes>
+        <div class="empty-state">
+          <p>Aún no hay rutas de evacuación creadas.</p>
+        </div>
+      </ng-template>
+
+    </ion-card-content>
+  </ion-card>
+
   <!-- 7. PREVENCIÓN DE INCENDIOS (usuario) -->
   <ion-card *ngIf="!isAdmin" class="main-card">
     <ion-card-header>
