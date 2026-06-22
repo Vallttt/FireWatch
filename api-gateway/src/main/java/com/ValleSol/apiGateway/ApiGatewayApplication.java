@@ -57,6 +57,10 @@ public class ApiGatewayApplication {
                 .route("bff-auth", r -> r
                         .path("/auth/**")
                         .uri(bffUrl))
+
+                .route("bff-api-auth", r -> r
+                        .path("/api/auth/**")
+                        .uri(bffUrl))
                 // user -> register
                 .route("bff-users",r -> r
                         .path("/api/users/**")

@@ -1,10 +1,17 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 
-/**
- * Interceptor funcional (Angular 20 standalone).
- * Adjunta el JWT almacenado en localStorage a cada request que lo necesite.
- */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const publicUrls = [
+    '/auth/login',
+    '/api/users/register',
+    '/api/auth/password/forgot',
+    '/api/auth/password/reset'
+  ];
+
+  if (publicUrls.some(url => req.url.includes(url))) {
+    return next(req);
+  }
+
   const token = localStorage.getItem('jwt_token');
 
   if (token) {

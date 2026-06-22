@@ -69,9 +69,12 @@ public class SecurityConfig {
                         // ── Público ──────────────────────────────────────────────
                         .pathMatchers("/auth/**").permitAll()
                         .pathMatchers("/api/users/register").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/users/password/forgot").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/users/password/reset").permitAll()
                         .pathMatchers("/api/auth/password/**").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/reportes").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/evidencias/**").permitAll()
+                        
 
                         // ── Solo ADMIN ───────────────────────────────────────────
                         .pathMatchers("/api/users/**").hasRole("ADMIN")

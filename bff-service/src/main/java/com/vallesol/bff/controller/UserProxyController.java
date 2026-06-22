@@ -7,6 +7,7 @@ import com.vallesol.bff.dtos.request.UpdateUserStatusRequestDTO;
 import com.vallesol.bff.dtos.response.UserForAdminResposeDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 import java.util.List;
 import java.util.UUID;
@@ -50,5 +51,15 @@ public class UserProxyController {
     public ResponseEntity<Void> deleteUserById(@PathVariable UUID id){
         userClient.deleteUserById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/password/forgot")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(userClient.forgotPassword(body));
+    }
+
+    @PostMapping("/password/reset")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(userClient.resetPassword(body));
     }
 }
