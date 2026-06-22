@@ -207,4 +207,16 @@
     --background-hover: var(--red-gradient-vivid);
     --color: #ffffff;
   }
+
+  .forgot-link {
+  cursor: pointer;
+  color: #2563eb;
+  font-weight: 600;
+  text-align: center;
+  pointer-events: auto;
+  }
+
+  .forgot-link:hover {
+    text-decoration: underline;
+  }
 }

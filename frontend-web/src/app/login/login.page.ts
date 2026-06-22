@@ -182,4 +182,8 @@ export class LoginPage {
     });
     await toast.present();
   }
+
+  goForgotPassword(): void {
+  this.router.navigate(['/forgot-password']);
+}
 }

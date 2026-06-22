@@ -82,12 +82,16 @@ export class AuthService {
     localStorage.removeItem('emergencyMode');
   }
 
-  forgotPassword(body: ForgotPasswordRequest): Observable<any> {
-  return this.http.post(`${this.passwordUrl}/forgot`, body);
-}
+  forgotPassword(email: string) {
+  return this.http.post('/api/users/password/forgot', { email });
+  }
 
-  resetPassword(body: ResetPasswordRequest): Observable<any> {
-    return this.http.post(`${this.passwordUrl}/reset`, body);
+  resetPassword(email: string, code: string, newPassword: string) {
+    return this.http.post('/api/users/password/reset', {
+      email,
+      code,
+      newPassword
+    });
   }
 
   getToken(): string | null {
