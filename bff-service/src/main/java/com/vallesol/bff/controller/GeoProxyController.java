@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/geo")
@@ -18,5 +19,12 @@ public class GeoProxyController {
     @GetMapping()
     public ResponseEntity<?> getAllMappedReports() {
         return ResponseEntity.ok(geoClient.findAllMappedReports());
+    }
+
+    /** Borrado lógico: al finalizar un incendio, deja de aparecer en el mapa para siempre (no solo localmente). */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMappedReport(@PathVariable UUID id) {
+        geoClient.deleteMappedReport(id);
+        return ResponseEntity.noContent().build();
     }
 }

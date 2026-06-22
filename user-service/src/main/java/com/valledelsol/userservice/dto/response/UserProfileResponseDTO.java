@@ -9,5 +9,6 @@ public class UserProfileResponseDTO {
     private String lastName;
     private String email;
     private String phone;
+    private String role;
 
 }

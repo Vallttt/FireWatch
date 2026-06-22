@@ -14,32 +14,28 @@
     <div id="globalMap" class="map-container"></div>
   </div>
 
-  <!-- 1.5. RUTA DE EVACUACIÓN DE TU ZONA (solo usuario) -->
+  <!-- 1.5. RUTA DE EVACUACIÓN DE TU REPORTE (solo usuario) -->
   <ion-card *ngIf="!isAdmin" class="main-card">
     <ion-card-header>
       <div class="card-title-container">
         <ion-icon name="exit-outline"></ion-icon>
         <ion-card-title>Tu ruta de evacuación</ion-card-title>
       </div>
-      <p class="subtitle" *ngIf="citizenZone">Comuna detectada: {{ citizenZone.name }}</p>
+      <p class="subtitle" *ngIf="miZonaNombre">Zona detectada: {{ miZonaNombre }}</p>
     </ion-card-header>
 
     <ion-card-content>
-      <p *ngIf="loadingCitizenRoute">Buscando tu ubicación…</p>
+      <p *ngIf="loadingMyRoute">Buscando tu ruta de evacuación…</p>
 
-      <div *ngIf="!loadingCitizenRoute && citizenLocationError">
-        <p>{{ citizenLocationError }}</p>
-        <button class="action-btn outline" (click)="loadCitizenEvacuationRoute()">
-          <ion-icon name="information-circle-outline"></ion-icon>
-          Reintentar
-        </button>
+      <div *ngIf="!loadingMyRoute && !miReporteActivo">
+        <p>Aún no has registrado un reporte. Cuando reportes una emergencia, tu ruta de evacuación aparecerá aquí.</p>
       </div>
 
-      <div *ngIf="!loadingCitizenRoute && !citizenLocationError && citizenZone && citizenEvacuationRoutes.length === 0">
-        <p>Aún no hay una ruta de evacuación cargada para la comuna de {{ citizenZone.name }}.</p>
+      <div *ngIf="!loadingMyRoute && miReporteActivo && citizenEvacuationRoutes.length === 0">
+        <p>Tu reporte ya fue registrado, pero todavía no tiene una ruta de evacuación asignada.</p>
       </div>
 
-      <ion-list *ngIf="!loadingCitizenRoute && citizenEvacuationRoutes.length > 0" lines="none">
+      <ion-list *ngIf="!loadingMyRoute && citizenEvacuationRoutes.length > 0" lines="none">
         <ion-item *ngFor="let ruta of citizenEvacuationRoutes">
           <ion-icon slot="start" name="exit-outline" color="warning"></ion-icon>
           <ion-label>
@@ -188,6 +184,12 @@
     </ion-card-header>
 
     <ion-card-content>
+      <div class="brigade-zone-row" *ngIf="backendZones.length > 0">
+        <select class="brigade-input brigade-zone-select" [(ngModel)]="newBrigadaZoneId">
+          <option *ngFor="let z of backendZones" [value]="z.id">{{ z.name }}</option>
+        </select>
+      </div>
+      <p class="subtitle" *ngIf="backendZones.length === 0">Crea primero una zona para poder agregar brigadas.</p>
       <div class="create-brigade-row">
         <input
           type="text"

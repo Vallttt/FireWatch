@@ -184,9 +184,13 @@ export class GeoService {
     return this.http.delete<void>(`${this.apiUrl}/api/evacuation-routes/${id}`);
   }
 
-  /* ----------  MAPPED REPORTS (solo lectura — geo-service)  ---------- */
-  /** El BFF solo expone lectura; la creación/eliminación las gestiona report-service internamente. */
+  /* ----------  MAPPED REPORTS (geo-service)  ---------- */
   getMappedReports(): Observable<MappedReportResponse[]> {
     return this.http.get<MappedReportResponse[]>(`${this.apiUrl}/api/geo`);
+  }
+
+  /** Borrado lógico: al finalizar un incendio, deja de aparecer en el mapa para siempre. */
+  deleteMappedReport(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/api/geo/${id}`);
   }
 }

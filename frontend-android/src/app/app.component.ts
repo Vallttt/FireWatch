@@ -128,7 +128,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
           if (latestTime > this.lastAlertTimestamp) {
             this.lastAlertTimestamp = latestTime;
-            this.showPushNotification(latest.tipoAlerta, latest.mensaje);
+            const titulo = latest.nivelEmergencia ? `Incendio nivel ${latest.nivelEmergencia}` : 'Nueva alerta';
+            this.showPushNotification(titulo, latest.mensaje);
           }
         },
         error: () => { /* silent in background */ }
@@ -141,11 +142,13 @@ export class AppComponent implements OnInit, OnDestroy {
       await LocalNotifications.schedule({
         notifications: [
           {
+            // Sin smallIcon/sound personalizados: esos recursos (ic_notification,
+            // beep.wav) no existen en res/, y referenciar un recurso inexistente
+            // hace que la notificación nunca se muestre. Se deja que el plugin
+            // use sus valores por defecto (ícono de la app, sonido del sistema).
             id: Date.now(),
-            title: `⚠️ Valle del Sol Alert: ${title}`,
+            title: `🔥 Valle del Sol: ${title}`,
             body: body.length > 100 ? body.substring(0, 100) + '…' : body,
-            smallIcon: 'ic_notification',
-            sound: 'beep.wav',
             actionTypeId: '',
             extra: null
           }

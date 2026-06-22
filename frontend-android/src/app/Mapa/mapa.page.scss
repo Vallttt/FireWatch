@@ -267,6 +267,14 @@
 /* ==========================================================================
    FORMULARIO CREAR BRIGADA
    ========================================================================== */
+.brigade-zone-row {
+  margin-bottom: 8px;
+}
+
+.brigade-zone-select {
+  width: 100%;
+}
+
 .create-brigade-row {
   display: flex;
   gap: 8px;

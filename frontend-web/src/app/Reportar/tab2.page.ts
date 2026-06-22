@@ -204,12 +204,14 @@ export class Tab2Page implements OnInit {
 
       const esProvincia = zone.zoneType === 'PROVINCE';
 
+      // Comunas: solo borde coloreado de referencia, sin relleno (igual que en
+      // el Mapa de Emergencias) — no son zonas operativas reales.
       const layer = L.geoJSON(zone.geometry, {
         style: {
           color: zone.color || '#3388ff',
           weight: 2,
           dashArray: esProvincia ? '6 4' : undefined,
-          fillOpacity: esProvincia ? 0 : 0.2
+          fillOpacity: 0
         }
       }).addTo(this.map!);
 
@@ -217,7 +219,10 @@ export class Tab2Page implements OnInit {
 
       if (esProvincia) {
         this.mainBounds = layer.getBounds();
-        this.map!.fitBounds(this.mainBounds, { padding: [20, 20], animate: false });
+        // No se hace fitBounds a la Región completa aquí tampoco: su
+        // territorio (~150km) es mucho más alto que este mapa, así que
+        // encajarlo entero aleja demasiado la vista. Se deja el zoom inicial
+        // (ver loadMap(), centrado en la posición del reporte).
       }
     });
   }
@@ -306,20 +311,47 @@ export class Tab2Page implements OnInit {
       await this.showToast('Por favor agregue una descripción del incidente', 'warning'); return;
     }
 
-    const userId    = localStorage.getItem('userId')    || undefined;
-    const userEmail = localStorage.getItem('userEmail') || 'Anónimo';
-
-    const zona = this.zonesAssetService.findZoneContaining(this.latLng.lat, this.latLng.lng, this.zones);
-    if (!zona) {
+    const comuna = this.zonesAssetService.findZoneContaining(this.latLng.lat, this.latLng.lng, this.zones);
+    if (!comuna) {
       await this.showToast('No puedes enviar reportes fuera del área de cobertura (Santiago y comunas cercanas).', 'warning');
       return;
     }
-    this.zonaSeleccionada = zona;
+    this.zonaSeleccionada = comuna;
+
+    // El reporte tiene que asociarse a una zona REAL de zone-service (no a la
+    // comuna estática del frontend): geo-service valida el zoneId contra
+    // zone-service al sincronizar el reporte, y si no existe ahí la
+    // sincronización falla en silencio y el incendio nunca aparece en el mapa.
+    // Se busca la zona operativa real que contiene el punto y, si no hay
+    // ninguna, se usa la zona principal (siempre existe una vez que el admin
+    // creó su primera zona).
+    this.geoService.getZones().subscribe({
+      next: (zones) => {
+        const zonaReal = zones.find(z => z.zoneType === 'OPERATIONAL' &&
+          this.pointInZoneGeoJson(this.latLng.lng, this.latLng.lat, z.geoJson))
+          || zones.find(z => z.zoneType === 'MAIN');
+
+        if (!zonaReal) {
+          this.showToast('El sistema de zonas aún no está configurado. Contacta al administrador.', 'danger');
+          return;
+        }
+
+        this.enviarReporte(zonaReal.id, comuna);
+      },
+      error: async () => {
+        await this.showToast('No se pudo verificar la zona del reporte. Intenta de nuevo.', 'danger');
+      }
+    });
+  }
+
+  private enviarReporte(zoneIdReal: string, comuna: ComunaZone) {
+    const userId    = localStorage.getItem('userId')    || undefined;
+    const userEmail = localStorage.getItem('userEmail') || 'Anónimo';
 
     this.reportService.crearReporte({
       userId, usuarioReportante: userEmail,
       descripcion: this.descripcion,
-      zoneId: zona.id,
+      zoneId: zoneIdReal,
       longitude: this.latLng.lng, latitude: this.latLng.lat,
       severity: this.mapSeverity(this.severidad)
     }).subscribe({
@@ -349,7 +381,7 @@ export class Tab2Page implements OnInit {
 
         // Si el reporte cae dentro de una zona operativa real que aún no
         // tiene ruta de evacuación, se genera sola (el admin no la crea a mano).
-        this.tryAutoGenerateEvacuationRoute(this.latLng.lat, this.latLng.lng, zona);
+        this.tryAutoGenerateEvacuationRoute(this.latLng.lat, this.latLng.lng, comuna);
       },
       error: async (err) => {
         console.error('Error submitting report', err);

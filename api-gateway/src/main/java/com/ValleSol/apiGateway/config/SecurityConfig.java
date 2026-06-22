@@ -43,11 +43,16 @@ import java.util.List;
  *   /api/users/**                          (gestión de usuarios)
  *   POST|PUT|DELETE /api/zones/**          (CRUD de zonas)
  *   POST|PUT|DELETE /api/brigades/**       (CRUD de brigadas)
- *   POST|PUT|DELETE /api/evacuation-routes/** (CRUD de rutas)
+ *   PUT|DELETE /api/evacuation-routes/**   (editar/eliminar rutas)
  *   PATCH /api/incidentes/**               (cambiar estado de un incidente)
  *   DELETE /api/reportes/**                (eliminar reporte)
  *   DELETE /api/evidencias/**              (eliminar evidencias)
+ *   DELETE /api/geo/**                     (quitar incendio finalizado del mapa)
  *   POST|DELETE /api/alertas/**            (emitir / eliminar alertas)
+ *
+ * Cualquier usuario autenticado (USER o ADMIN):
+ *   POST /api/evacuation-routes/**  — la ruta se genera sola desde la sesión
+ *   del ciudadano al registrar su reporte, no hay creación manual por admin.
  *
  * Cualquier otro request — solo requiere un JWT válido (USER o ADMIN).
  */
@@ -87,13 +92,18 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.PUT,    "/api/brigades/**").hasRole("ADMIN")
                         .pathMatchers(HttpMethod.DELETE, "/api/brigades/**").hasRole("ADMIN")
 
-                        .pathMatchers(HttpMethod.POST,   "/api/evacuation-routes/**").hasRole("ADMIN")
+                        // POST queda abierto a cualquier usuario autenticado (no solo ADMIN):
+                        // la ruta de evacuación se genera sola, desde la sesión del propio
+                        // ciudadano, al registrar su reporte (no hay creación manual por el
+                        // admin). Editar/eliminar rutas sigue siendo exclusivo de ADMIN.
                         .pathMatchers(HttpMethod.PUT,    "/api/evacuation-routes/**").hasRole("ADMIN")
                         .pathMatchers(HttpMethod.DELETE, "/api/evacuation-routes/**").hasRole("ADMIN")
 
                         .pathMatchers(HttpMethod.PATCH,  "/api/incidentes/**").hasRole("ADMIN")
                         .pathMatchers(HttpMethod.DELETE, "/api/reportes/**").hasRole("ADMIN")
                         .pathMatchers(HttpMethod.DELETE, "/api/evidencias/**").hasRole("ADMIN")
+                        // Borrado lógico del incendio en el mapa al marcarlo "Finalizado" (solo admin).
+                        .pathMatchers(HttpMethod.DELETE, "/api/geo/**").hasRole("ADMIN")
 
                         .pathMatchers(HttpMethod.POST,   "/api/alertas/**").hasRole("ADMIN")
                         .pathMatchers(HttpMethod.DELETE, "/api/alertas/**").hasRole("ADMIN")

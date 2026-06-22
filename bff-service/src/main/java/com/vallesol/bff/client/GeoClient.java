@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -28,5 +29,13 @@ public class GeoClient {
                 .body(new ParameterizedTypeReference<>() {});
 
         return response.getData();
+    }
+
+    /** Borrado lógico (isActive=false) — deja de aparecer en GET /api/geo y /api/map-data. */
+    public void deleteMappedReport(UUID id) {
+        restClient.delete()
+                .uri(geoServiceUrl + "/api/geo/" + id)
+                .retrieve()
+                .toBodilessEntity();
     }
 }

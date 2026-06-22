@@ -23,7 +23,6 @@ import {
 } from '../services/geo.service';
 import { ReportService, ReporteResponse } from '../services/report.service';
 import { ZonesAssetService, ComunaZone } from '../services/zones-asset.service';
-import { GeolocationService } from '../services/geolocation.service';
 
 @Component({
   selector: 'app-mapa',
@@ -44,20 +43,24 @@ export class MapaPage implements OnInit {
   public focoSeleccionado: any = null;
   public zones: ComunaZone[] = [];
   public zoneLayers: L.Layer[] = [];
+  public routeLayers: L.Layer[] = [];
+  private mapResizeObserver: ResizeObserver | null = null;
 
   public brigadasDisponibles: any[] = [];
   public brigadasOcupadas: { id: string; nombre: string; tiempoMinutos: number; emergenciaId: number }[] = [];
   public nuevaBrigadaNombre = '';
+  /** Zona real a la que se asigna la brigada que se está creando. */
+  public newBrigadaZoneId = '';
 
   public emergencias: any[] = [];
   public historialIncendios: ReporteResponse[] = [];
   private mainZoneId: string | null = null;
 
-  /** Ruta de evacuación real de la comuna donde está el ciudadano (solo usuario, no admin). */
-  public citizenZone: ComunaZone | null = null;
+  /** Ruta de evacuación ligada al reporte que el propio ciudadano registró (no a su GPS). */
+  public miReporteActivo: ReporteResponse | null = null;
+  public miZonaNombre: string | null = null;
   public citizenEvacuationRoutes: EvacuationResponse[] = [];
-  public loadingCitizenRoute = false;
-  public citizenLocationError: string | null = null;
+  public loadingMyRoute = false;
   private citizenRouteLayers: L.Layer[] = [];
 
   /* ----------  GESTIÓN DE ZONAS Y RUTAS (admin)  ---------- */
@@ -86,8 +89,7 @@ export class MapaPage implements OnInit {
     private toastController: ToastController,
     private geoService: GeoService,
     private reportService: ReportService,
-    private zonesAssetService: ZonesAssetService,
-    private geolocationService: GeolocationService
+    private zonesAssetService: ZonesAssetService
   ) {
     addIcons({
       flame, ellipse, shieldHalfOutline,
@@ -106,6 +108,21 @@ export class MapaPage implements OnInit {
     this.loadBackendData();
 
     if (this.isAdmin) { this.loadBackendZonesAndRoutes(); }
+    else { this.loadMyEvacuationRoute(); }
+  }
+
+  /**
+   * Cada vez que se vuelve a esta página (p.ej. tras registrar un reporte en
+   * la pestaña Reportar) se refrescan incendios, zonas y la ruta personal del
+   * ciudadano — de lo contrario quedarían con los datos de la primera carga.
+   */
+  ionViewDidEnter() {
+    setTimeout(() => {
+      this.initSatelliteMap();
+      this.loadBackendData();
+      if (this.isAdmin) { this.loadBackendZonesAndRoutes(); }
+      else { this.loadMyEvacuationRoute(); }
+    }, 300);
   }
 
   /** Límites comunales reales (asset local — zone-service aún no tiene datos reales). */
@@ -117,51 +134,98 @@ export class MapaPage implements OnInit {
         const region = zones.find(z => z.zoneType === 'PROVINCE');
         this.mainZoneId = region ? region.id : null;
         if (this.map) { this.renderMapLayers(); }
-
-        if (!this.isAdmin) { this.loadCitizenEvacuationRoute(); }
       },
       error: (err) => console.warn('No se pudieron cargar los límites comunales', err)
     });
   }
 
   /**
-   * Ubica al ciudadano por GPS, determina en qué comuna está y trae del
-   * backend (geo-service) la ruta de evacuación real configurada para esa
-   * zona. Solo aplica a ciudadanos — el admin gestiona rutas, no las recibe.
+   * La ruta de evacuación del ciudadano está ligada al REPORTE que él mismo
+   * registró, no a su ubicación GPS actual: se busca su reporte más reciente,
+   * se determina en qué zona operativa real (creada por el admin) cae, y se
+   * trae la ruta de esa zona. Si el ciudadano no ha reportado nada, no se
+   * muestra ninguna ruta — solo verá los incendios reportados en el mapa.
    */
-  async loadCitizenEvacuationRoute() {
-    this.loadingCitizenRoute = true;
-    this.citizenLocationError = null;
-
-    try {
-      const pos = await this.geolocationService.getCurrentPosition();
-      const zona = this.zonesAssetService.findZoneContaining(pos.lat, pos.lng, this.zones);
-
-      if (!zona) {
-        this.citizenZone = null;
-        this.citizenEvacuationRoutes = [];
-        this.citizenLocationError = 'Tu ubicación actual está fuera del área de cobertura (Santiago y comunas cercanas).';
-        this.loadingCitizenRoute = false;
-        return;
-      }
-
-      this.citizenZone = zona;
-      this.geoService.getEvacuationRoutesByZone(zona.id).subscribe({
-        next: (rutas) => {
-          this.citizenEvacuationRoutes = rutas || [];
-          this.loadingCitizenRoute = false;
-          if (this.map) { this.renderCitizenRoute(); }
-        },
-        error: (err) => {
-          console.warn('No se pudo obtener la ruta de evacuación de la zona', err);
-          this.citizenEvacuationRoutes = [];
-          this.loadingCitizenRoute = false;
-        }
-      });
-    } catch (err: any) {
-      this.citizenLocationError = err?.message || 'No se pudo obtener tu ubicación.';
-      this.loadingCitizenRoute = false;
+  loadMyEvacuationRoute() {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      this.miReporteActivo = null;
+      this.miZonaNombre = null;
+      this.citizenEvacuationRoutes = [];
+      return;
     }
+
+    this.loadingMyRoute = true;
+    this.reportService.listarReportes().subscribe({
+      next: (reportes) => {
+        const misReportes = reportes
+          .filter(r => r.usuarioId === userId)
+          .sort((a, b) => new Date(b.fechaIncidente).getTime() - new Date(a.fechaIncidente).getTime());
+
+        this.miReporteActivo = misReportes[0] || null;
+
+        if (!this.miReporteActivo) {
+          this.miZonaNombre = null;
+          this.citizenEvacuationRoutes = [];
+          this.loadingMyRoute = false;
+          if (this.map) { this.renderCitizenRoute(); }
+          return;
+        }
+
+        const miReporte = this.miReporteActivo;
+        this.geoService.getZones().subscribe({
+          next: (zones) => {
+            const zona = zones.find(z => z.zoneType === 'OPERATIONAL' &&
+              this.pointInZoneGeoJson(miReporte.longitude, miReporte.latitude, z.geoJson));
+
+            if (!zona) {
+              this.miZonaNombre = null;
+              this.citizenEvacuationRoutes = [];
+              this.loadingMyRoute = false;
+              if (this.map) { this.renderCitizenRoute(); }
+              return;
+            }
+
+            this.miZonaNombre = zona.name;
+            this.geoService.getEvacuationRoutesByZone(zona.id).subscribe({
+              next: (rutas) => {
+                this.citizenEvacuationRoutes = rutas || [];
+                this.loadingMyRoute = false;
+                if (this.map) { this.renderCitizenRoute(); }
+              },
+              error: (err) => {
+                console.warn('No se pudo obtener la ruta de evacuación de la zona', err);
+                this.citizenEvacuationRoutes = [];
+                this.loadingMyRoute = false;
+              }
+            });
+          },
+          error: (err) => {
+            console.warn('No se pudieron cargar las zonas para ubicar tu reporte', err);
+            this.loadingMyRoute = false;
+          }
+        });
+      },
+      error: (err) => {
+        console.warn('No se pudieron cargar tus reportes', err);
+        this.loadingMyRoute = false;
+      }
+    });
+  }
+
+  private pointInZoneGeoJson(lng: number, lat: number, geoJson: string): boolean {
+    let geometry: any;
+    try { geometry = JSON.parse(geoJson); } catch { return false; }
+    if (geometry.type !== 'Polygon') return false;
+
+    const ring = geometry.coordinates[0];
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i]; const [xj, yj] = ring[j];
+      const intersect = ((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
   }
 
   /** Dibuja en el mapa, resaltada, la ruta de evacuación de la zona del ciudadano. */
@@ -176,7 +240,7 @@ export class MapaPage implements OnInit {
       const geo = JSON.parse(route.geoJson);
 
       const layer = L.geoJSON(geo, {
-        style: { color: '#ff6a00', weight: 6, opacity: 0.95, dashArray: '1' }
+        style: { color: '#ff6a00', weight: 5, opacity: 0.95, dashArray: '1' }
       }).addTo(this.map!);
       layer.bindPopup(`Tu ruta de evacuación: ${route.name}`);
       this.citizenRouteLayers.push(layer);
@@ -190,11 +254,26 @@ export class MapaPage implements OnInit {
      ================================================================ */
   private loadBackendZonesAndRoutes() {
     this.geoService.getZones().subscribe({
-      next: (zones) => { this.backendZones = zones; },
+      next: (zones) => {
+        this.backendZones = zones;
+        if (this.map) { this.renderMapLayers(); }
+
+        // Preselecciona una zona para el formulario de "nueva brigada" (prioriza
+        // una zona operativa real sobre la región completa).
+        if (!this.newBrigadaZoneId || !zones.some(z => z.id === this.newBrigadaZoneId)) {
+          const preferida = zones.find(z => z.zoneType === 'OPERATIONAL') || zones[0];
+          this.newBrigadaZoneId = preferida ? preferida.id : '';
+        }
+
+        this.autoAssignBrigades();
+      },
       error: (err) => console.warn('No se pudieron cargar las zonas del backend', err)
     });
     this.geoService.getEvacuationRoutes().subscribe({
-      next: (routes) => { this.backendRoutes = routes; },
+      next: (routes) => {
+        this.backendRoutes = routes;
+        if (this.map) { this.renderMapLayers(); }
+      },
       error: (err) => console.warn('No se pudieron cargar las rutas del backend', err)
     });
   }
@@ -420,11 +499,14 @@ export class MapaPage implements OnInit {
     if (!this.map) return;
 
     this.zoneLayers.forEach((layer: L.Layer) => layer.remove());
+    this.routeLayers.forEach((layer: L.Layer) => layer.remove());
     this.zoneLayers = [];
+    this.routeLayers = [];
 
+    // Comunas predefinidas: solo borde coloreado de referencia, sin relleno
+    // (no son zonas operativas reales, son solo contexto geográfico).
     this.zones.forEach((zone) => {
       if (!zone.geometry) return;
-
       const esProvincia = zone.zoneType === 'PROVINCE';
 
       const layer = L.geoJSON(zone.geometry, {
@@ -432,14 +514,78 @@ export class MapaPage implements OnInit {
           color: zone.color || '#3388ff',
           weight: 2,
           dashArray: esProvincia ? '6 4' : undefined,
-          fillOpacity: esProvincia ? 0 : 0.22
+          fillOpacity: 0
         }
       }).addTo(this.map!);
 
       this.zoneLayers.push(layer);
+      // No se hace fitBounds a la Región completa: su territorio real (~150km)
+      // es mucho más alto que el contenedor del mapa, así que encajarlo entero
+      // fuerza un zoom muy alejado y las comunas urbanas (lo relevante acá)
+      // terminan viéndose como un punto ilegible. El zoom inicial centrado en
+      // Santiago ya es el adecuado para este mapa.
+    });
 
-      if (esProvincia) {
-        this.map!.fitBounds(layer.getBounds(), { padding: [20, 20], animate: false });
+    // Zonas operativas reales (dibujadas por el admin) y sus rutas de
+    // evacuación: visión exclusiva del admin — el ciudadano solo ve su
+    // propia ruta (renderCitizenRoute), nunca las zonas ni el resto de rutas.
+    if (!this.isAdmin) return;
+
+    this.backendZones.forEach((zone) => {
+      if (!zone.geoJson) return;
+      let geo: any;
+      try { geo = JSON.parse(zone.geoJson); } catch { return; }
+
+      const layer = L.geoJSON(geo, {
+        style: {
+          color: zone.color || '#3388ff',
+          weight: 2,
+          fillOpacity: 0.15
+        }
+      }).addTo(this.map!);
+      // Sin popup/etiqueta al hacer clic en la zona — el usuario pidió
+      // explícitamente que nunca aparezca ninguna etiqueta sobre el mapa.
+      this.zoneLayers.push(layer);
+    });
+
+    this.backendRoutes.forEach((route) => {
+      if (!route.geoJson) return;
+
+      const geo = JSON.parse(route.geoJson);
+
+      const layer = L.geoJSON(geo, {
+        style: {
+          color: '#0066ff',
+          weight: 5,
+          opacity: 0.9
+        }
+      }).addTo(this.map!);
+
+      layer.bindPopup(route.name);
+      this.routeLayers.push(layer);
+
+      if (geo.type === 'LineString' && geo.coordinates.length >= 2) {
+        const start = geo.coordinates[0];
+        const end = geo.coordinates[geo.coordinates.length - 1];
+
+        const startMarker = L.circleMarker([start[1], start[0]], {
+          radius: 7,
+          color: '#00aa55',
+          fillColor: '#00ff88',
+          fillOpacity: 1,
+          weight: 2
+        }).addTo(this.map!);
+
+        const endMarker = L.circleMarker([end[1], end[0]], {
+          radius: 8,
+          color: '#cc0000',
+          fillColor: '#ff3333',
+          fillOpacity: 1,
+          weight: 2
+        }).addTo(this.map!);
+
+        this.routeLayers.push(startMarker);
+        this.routeLayers.push(endMarker);
       }
     });
   }
@@ -454,7 +600,7 @@ export class MapaPage implements OnInit {
 
         this.brigadasDisponibles = (data.brigades || [])
           .filter(b => b.status === 'AVAILABLE')
-          .map(b => ({ id: b.id, nombre: b.name, tiempoMinutos: 10, backendId: b.id }));
+          .map(b => ({ id: b.id, nombre: b.name, tiempoMinutos: 10, backendId: b.id, zoneId: b.zoneId }));
 
         this.emergencias = (data.reports || [])
           .filter(r => r.reportStatus === 'ACTIVE')
@@ -485,24 +631,28 @@ export class MapaPage implements OnInit {
                 nombre: brigade.name,
                 tiempoMinutos: 10,
                 backendId: brigade.id,
+                zoneId: brigade.zoneId,
                 emergenciaId: emergencia.id
               });
-            } else if (this.mainZoneId) {
+            } else {
+              // Brigade DEPLOYED with no active fire → reset to AVAILABLE
               this.geoService.updateBrigade(brigade.id, {
                 name: brigade.name,
                 institution: brigade.institution || 'Valle del Sol',
                 status: 'AVAILABLE',
                 latitude: -33.46,
                 longitude: -70.65,
-                zoneId: this.mainZoneId
+                zoneId: brigade.zoneId
               }).subscribe({
                 next: () => {
                   this.brigadasDisponibles.push({
                     id: brigade.id,
                     nombre: brigade.name,
                     tiempoMinutos: 10,
-                    backendId: brigade.id
+                    backendId: brigade.id,
+                    zoneId: brigade.zoneId
                   });
+                  this.autoAssignBrigades();
                 },
                 error: (err) => console.warn('Could not reset orphaned brigade', err)
               });
@@ -510,6 +660,7 @@ export class MapaPage implements OnInit {
           });
 
         this.renderMarkers();
+        this.autoAssignBrigades();
       },
       error: (err) => {
         console.warn('Could not connect to Geo Service.', err);
@@ -558,6 +709,15 @@ export class MapaPage implements OnInit {
 
     this.map.on('click', (e: L.LeafletMouseEvent) => this.onMapClickForDrawing(e));
 
+    // El contenedor Ionic puede cambiar de tamaño (rotación, contenido que se agrega
+    // tras cargar el backend); invalidateSize() mantiene a Leaflet sincronizado con
+    // el tamaño real para que los tiles se recalculen bien.
+    const mapContainer = document.getElementById('globalMap');
+    if (mapContainer) {
+      this.mapResizeObserver = new ResizeObserver(() => this.map?.invalidateSize());
+      this.mapResizeObserver.observe(mapContainer);
+    }
+
     if (this.zones.length > 0) { this.renderMapLayers(); }
     this.renderMarkers();
     this.renderCitizenRoute();
@@ -598,25 +758,64 @@ export class MapaPage implements OnInit {
 
   async assignBrigade(selectedBrigade: any) {
     if (!this.focoSeleccionado || this.focoSeleccionado.brigada) return;
+    this.dispatchBrigade(selectedBrigade, this.focoSeleccionado);
+    await this.showToast(`${selectedBrigade.nombre} despachada`, 'success');
+  }
 
-    if (selectedBrigade.backendId && this.mainZoneId) {
-      this.geoService.updateBrigade(selectedBrigade.backendId, {
-        name: selectedBrigade.nombre,
+  /**
+   * Despacha una brigada hacia un foco: marca DEPLOYED en el backend
+   * (conservando la zona real de la brigada, no la región completa) y mueve
+   * la brigada de "disponibles" a "ocupadas" localmente. La usan tanto el
+   * despacho manual (assignBrigade) como la auto-asignación por zona.
+   */
+  private dispatchBrigade(brigada: any, fuego: any) {
+    if (brigada.backendId) {
+      this.geoService.updateBrigade(brigada.backendId, {
+        name: brigada.nombre,
         institution: 'Valle del Sol',
         status: 'DEPLOYED',
-        latitude: this.focoSeleccionado.lat,
-        longitude: this.focoSeleccionado.lng,
-        zoneId: this.mainZoneId
+        latitude: fuego.lat,
+        longitude: fuego.lng,
+        zoneId: brigada.zoneId || this.mainZoneId
       }).subscribe({
         error: (err) => console.warn('Could not update brigade in backend', err)
       });
     }
 
-    this.focoSeleccionado.brigada = selectedBrigade.nombre;
-    this.brigadasOcupadas.push({ ...selectedBrigade, emergenciaId: this.focoSeleccionado.id });
-    this.brigadasDisponibles = this.brigadasDisponibles.filter(b => b.id !== selectedBrigade.id);
+    fuego.brigada = brigada.nombre;
+    this.brigadasOcupadas.push({ ...brigada, emergenciaId: fuego.id });
+    this.brigadasDisponibles = this.brigadasDisponibles.filter(b => b.id !== brigada.id);
     this.renderMarkers();
-    await this.showToast(`${selectedBrigade.nombre} despachada`, 'success');
+  }
+
+  /**
+   * Despacho automático: una brigada disponible cuya zona contiene un foco
+   * activo sin brigada asignada se despacha sola (prioriza una zona
+   * operativa específica sobre la zona principal, que cubre toda la región).
+   */
+  private autoAssignBrigades() {
+    if (!this.isAdmin || this.backendZones.length === 0) return;
+
+    this.emergencias.forEach((fuego) => {
+      if (fuego.brigada || fuego.estado === 'finalizado') return;
+
+      const zonaDe = (brigada: any) => this.backendZones.find(z => z.id === brigada.zoneId);
+
+      const candidata =
+        this.brigadasDisponibles.find(b => {
+          const zona = zonaDe(b);
+          return zona?.zoneType === 'OPERATIONAL' && this.pointInZoneGeoJson(fuego.lng, fuego.lat, zona.geoJson);
+        }) ||
+        this.brigadasDisponibles.find(b => {
+          const zona = zonaDe(b);
+          return zona?.zoneType === 'MAIN' && this.pointInZoneGeoJson(fuego.lng, fuego.lat, zona.geoJson);
+        });
+
+      if (candidata) {
+        this.dispatchBrigade(candidata, fuego);
+        this.showToast(`${candidata.nombre} despachada automáticamente a un incendio en su zona`, 'success');
+      }
+    });
   }
 
   async unassignBrigade() {
@@ -630,24 +829,18 @@ export class MapaPage implements OnInit {
   private returnBrigade(emergencia: any) {
     const occupied = this.brigadasOcupadas.find(b => b.emergenciaId === emergencia.id);
     if (occupied) {
-      if ((occupied as any).backendId && this.mainZoneId) {
+      const zoneId = (occupied as any).zoneId || this.mainZoneId;
+
+      // Update in backend (conserva la zona real de la brigada, no la región completa)
+      if ((occupied as any).backendId && zoneId) {
         this.geoService.updateBrigade((occupied as any).backendId, {
           name: occupied.nombre,
           institution: 'Valle del Sol',
           status: 'AVAILABLE',
           latitude: -33.46,
           longitude: -70.65,
-          zoneId: this.mainZoneId
+          zoneId
         }).subscribe({
-          next: () => {
-            this.geoService.getBrigades().subscribe({
-              next: (brigades) => {
-                this.brigadasDisponibles = brigades
-                  .filter(b => b.status === 'AVAILABLE')
-                  .map(b => ({ id: b.id, nombre: b.name, tiempoMinutos: 10, backendId: b.id }));
-              }
-            });
-          },
           error: (err) => console.warn('Could not update brigade in backend', err)
         });
       }
@@ -655,7 +848,9 @@ export class MapaPage implements OnInit {
       this.brigadasDisponibles.push({
         id: occupied.id,
         nombre: occupied.nombre,
-        tiempoMinutos: occupied.tiempoMinutos
+        tiempoMinutos: occupied.tiempoMinutos,
+        backendId: (occupied as any).backendId,
+        zoneId
       });
       this.brigadasOcupadas = this.brigadasOcupadas.filter(b => b.emergenciaId !== emergencia.id);
     }
@@ -672,8 +867,7 @@ export class MapaPage implements OnInit {
     if (newStatus === 'finalizado') {
       const foco = this.focoSeleccionado;
 
-      // geo-service no expone borrado de mapped-reports; el marcador se
-      // retira solo de la vista local (ver más abajo).
+      // Mark INACTIVE in Incident Service (via report.service) → updates dashboard.
       if (foco.externalReportId) {
         this.reportService.actualizarEstado(foco.externalReportId, { estado: 'INACTIVE' }).subscribe({
           next: (updated) => {
@@ -681,6 +875,15 @@ export class MapaPage implements OnInit {
             if (idx !== -1) this.historialIncendios[idx] = updated;
           },
           error: (err) => console.warn('Could not update status in Report Service', err)
+        });
+      }
+
+      // Borrado lógico en geo-service: sin esto, el incendio queda con
+      // reportStatus ACTIVE para siempre ahí, y vuelve a aparecer en el mapa
+      // cada vez que se recargan los datos (p.ej. al volver a esta página).
+      if (foco.backendId) {
+        this.geoService.deleteMappedReport(foco.backendId).subscribe({
+          error: (err) => console.warn('No se pudo quitar el incendio del mapa en el backend', err)
         });
       }
     }
@@ -706,8 +909,8 @@ export class MapaPage implements OnInit {
 
     const nombre = this.nuevaBrigadaNombre.trim();
 
-    if (!this.mainZoneId) {
-      await this.showToast('No se pudo determinar la zona principal. Intenta de nuevo.', 'danger');
+    if (!this.newBrigadaZoneId) {
+      await this.showToast('Crea primero una zona para poder asignarle una brigada.', 'danger');
       return;
     }
 
@@ -717,17 +920,19 @@ export class MapaPage implements OnInit {
       status: 'AVAILABLE',
       latitude: -33.46,
       longitude: -70.65,
-      zoneId: this.mainZoneId
+      zoneId: this.newBrigadaZoneId
     }).subscribe({
       next: (res) => {
         this.brigadasDisponibles.push({
           id: res.id,
           nombre: res.name,
           tiempoMinutos: 10,
-          backendId: res.id
+          backendId: res.id,
+          zoneId: res.zoneId
         });
         this.nuevaBrigadaNombre = '';
         this.showToast('Brigada creada', 'success');
+        this.autoAssignBrigades();
       },
       error: (err) => {
         console.error('Error creating brigade in backend', err);
@@ -763,10 +968,15 @@ export class MapaPage implements OnInit {
   }
 
   async deleteEmergency(emergencia: any) {
-    // geo-service no expone borrado de mapped-reports; se retira solo de la vista local.
     if (emergencia.brigada) { this.returnBrigade(emergencia); }
 
     if (this.focoSeleccionado?.id === emergencia.id) { this.focoSeleccionado = null; }
+
+    if (emergencia.backendId) {
+      this.geoService.deleteMappedReport(emergencia.backendId).subscribe({
+        error: (err) => console.warn('No se pudo quitar el incendio del mapa en el backend', err)
+      });
+    }
 
     this.emergencias = this.emergencias.filter(e => e.id !== emergencia.id);
     this.renderMarkers();
