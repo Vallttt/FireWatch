@@ -19,7 +19,7 @@ import * as L from 'leaflet';
 
 import {
   GeoService, BrigadeResponse, MappedReportResponse, EvacuationResponse,
-  ZoneResponse, ZoneType
+  ZoneResponse
 } from '../services/geo.service';
 import { ReportService, ReporteResponse } from '../services/report.service';
 import { ZonesAssetService, ComunaZone } from '../services/zones-asset.service';
@@ -65,12 +65,15 @@ export class MapaPage implements OnInit {
   public backendRoutes: EvacuationResponse[] = [];
 
   public drawingMode: 'none' | 'zone' | 'route' = 'none';
-  public selectedComunaForZone: ComunaZone | null = null;
+  /** Comuna predefinida (límite real) dentro de la cual el admin dibuja la zona. */
+  public selectedComunaContext: ComunaZone | null = null;
+  public drawingPoints: L.LatLng[] = [];
+  private adminDrawingLayer: L.Layer | null = null;
+  private adminDrawingMarkers: L.CircleMarker[] = [];
 
   public showZoneForm = false;
   public newZoneName = '';
   public newZoneDescription = '';
-  public newZoneType: ZoneType = 'OPERATIONAL';
   public newZoneColor = '#3388ff';
 
   public showRouteForm = false;
@@ -204,11 +207,66 @@ export class MapaPage implements OnInit {
     return this.backendZones.filter(z => z.zoneType === 'OPERATIONAL');
   }
 
+  /** Comunas predefinidas seleccionables como contexto para dibujar una zona (todas salvo la región). */
+  get operationalComunas(): ComunaZone[] {
+    return this.zones.filter(z => z.zoneType !== 'PROVINCE');
+  }
+
+  get hasMainZone(): boolean {
+    return this.backendZones.some(z => z.zoneType === 'MAIN');
+  }
+
   async startDrawZone() {
+    if (!this.hasMainZone) {
+      const ok = await this.ensureRegionMainZone();
+      if (!ok) return;
+    }
     this.drawingMode = 'zone';
-    this.selectedComunaForZone = null;
+    this.selectedComunaContext = null;
+    this.drawingPoints = [];
     this.showZoneForm = false;
-    await this.showToast('Haz clic sobre una comuna pintada en el mapa para usarla como base de la nueva zona.', 'primary');
+    this.clearAdminDrawing();
+  }
+
+  /**
+   * Región (predefinida, p.ej. "Provincia de Santiago") — se crea una sola vez
+   * como zona principal (MAIN) real en el backend, para que las zonas
+   * operativas que dibuje el admin puedan validarse contra ella.
+   */
+  private async ensureRegionMainZone(): Promise<boolean> {
+    const provincia = this.zones.find(z => z.zoneType === 'PROVINCE');
+    if (!provincia) {
+      await this.showToast('No se encontró la región predefinida.', 'danger');
+      return false;
+    }
+    return new Promise<boolean>((resolve) => {
+      this.geoService.createZone({
+        name: provincia.name,
+        description: 'Región principal (predefinida)',
+        isActive: true,
+        color: provincia.color && /^#([A-Fa-f0-9]{6})$/.test(provincia.color) ? provincia.color : '#3388ff',
+        zoneType: 'MAIN',
+        geoJson: this.simplifyGeometryForBackend(provincia.geometry)
+      }).subscribe({
+        next: async () => {
+          await this.showToast(`Región "${provincia.name}" establecida como zona principal`, 'success');
+          this.loadBackendZonesAndRoutes();
+          resolve(true);
+        },
+        error: async (err) => {
+          const msg = err.error?.message || 'No se pudo establecer la región principal.';
+          await this.showToast(msg, 'danger');
+          resolve(false);
+        }
+      });
+    });
+  }
+
+  /** Comuna predefinida elegida como contexto: solo centra el mapa, no crea nada por sí sola. */
+  onComunaContextSelected() {
+    if (!this.selectedComunaContext || !this.map) return;
+    const layer = L.geoJSON(this.selectedComunaContext.geometry as any);
+    this.map.fitBounds(layer.getBounds(), { padding: [30, 30] });
   }
 
   async startDrawRoute() {
@@ -222,34 +280,62 @@ export class MapaPage implements OnInit {
 
   cancelDrawing() {
     this.drawingMode = 'none';
-    this.selectedComunaForZone = null;
+    this.selectedComunaContext = null;
+    this.drawingPoints = [];
     this.showZoneForm = false;
     this.showRouteForm = false;
     this.newZoneName = '';
     this.newZoneDescription = '';
-    this.newZoneType = 'OPERATIONAL';
     this.newZoneColor = '#3388ff';
     this.newRouteName = '';
     this.newRouteDescription = '';
     this.selectedRouteZoneId = '';
     this.routeTipo = 'ESTRUCTURAL';
     this.routeSeveridad = 'BAJA';
+    this.clearAdminDrawing();
   }
 
-  /** Se llama al hacer clic sobre una comuna ya pintada en el mapa, mientras se está creando una zona. */
-  onComunaLayerClicked(zone: ComunaZone) {
-    if (this.drawingMode !== 'zone' || this.showZoneForm) return;
+  private clearAdminDrawing() {
+    if (this.adminDrawingLayer) { this.adminDrawingLayer.remove(); this.adminDrawingLayer = null; }
+    this.adminDrawingMarkers.forEach(m => m.remove());
+    this.adminDrawingMarkers = [];
+  }
 
-    this.selectedComunaForZone = zone;
-    this.newZoneName = zone.name;
-    this.newZoneType = zone.zoneType === 'OPERATIONAL' ? 'OPERATIONAL' : 'MAIN';
-    this.newZoneColor = zone.color && /^#([A-Fa-f0-9]{6})$/.test(zone.color) ? zone.color : '#3388ff';
+  /** Dibujo de la zona (clic a clic), solo activo una vez elegida la comuna de contexto. */
+  private onMapClickForDrawing(e: L.LeafletMouseEvent) {
+    if (this.drawingMode !== 'zone' || !this.selectedComunaContext || this.showZoneForm) return;
+
+    this.drawingPoints.push(e.latlng);
+    const marker = L.circleMarker(e.latlng, {
+      radius: 5, color: '#ffffff', weight: 2, fillColor: '#ff6a00', fillOpacity: 1
+    }).addTo(this.map!);
+    this.adminDrawingMarkers.push(marker);
+    this.redrawAdminShape();
+  }
+
+  private redrawAdminShape() {
+    if (this.adminDrawingLayer) { this.adminDrawingLayer.remove(); this.adminDrawingLayer = null; }
+    if (this.drawingPoints.length < 2) return;
+    this.adminDrawingLayer = L.polygon(this.drawingPoints, { color: '#ff6a00', weight: 3, fillOpacity: 0.2 }).addTo(this.map!);
+  }
+
+  async finishDrawingZone() {
+    if (this.drawingPoints.length < 3) {
+      await this.showToast('Necesitas al menos 3 puntos para dibujar la zona.', 'warning');
+      return;
+    }
     this.showZoneForm = true;
   }
 
+  private pointsToPolygonGeoJson(): string {
+    const ring = this.drawingPoints.map(p => [p.lng, p.lat]);
+    ring.push(ring[0]);
+    return JSON.stringify({ type: 'Polygon', coordinates: [ring] });
+  }
+
   async saveZone() {
-    if (!this.selectedComunaForZone) {
-      await this.showToast('Haz clic sobre una comuna pintada en el mapa primero.', 'warning'); return;
+    if (this.drawingPoints.length < 3) {
+      await this.showToast('Dibuja la zona en el mapa primero.', 'warning'); return;
     }
     if (!this.newZoneName || this.newZoneName.trim().length < 4) {
       await this.showToast('El nombre debe tener al menos 4 caracteres.', 'warning'); return;
@@ -266,8 +352,8 @@ export class MapaPage implements OnInit {
       description: this.newZoneDescription.trim(),
       isActive: true,
       color: this.newZoneColor,
-      zoneType: this.newZoneType,
-      geoJson: this.simplifyGeometryForBackend(this.selectedComunaForZone.geometry)
+      zoneType: 'OPERATIONAL',
+      geoJson: this.pointsToPolygonGeoJson()
     }).subscribe({
       next: async () => {
         await this.showToast('Zona creada correctamente', 'success');
@@ -275,7 +361,7 @@ export class MapaPage implements OnInit {
         this.loadBackendZonesAndRoutes();
       },
       error: async (err) => {
-        const msg = err.error?.message || 'No se pudo crear la zona. Verifica que la comuna esté dentro de la zona principal (si es operativa).';
+        const msg = err.error?.message || 'No se pudo crear la zona. Verifica que el polígono esté dentro de la región principal.';
         await this.showToast(msg, 'danger');
       }
     });
@@ -449,7 +535,6 @@ export class MapaPage implements OnInit {
       }).addTo(this.map!);
 
       layer.bindPopup(`${zone.name} (${zone.zoneType})`);
-      layer.on('click', () => this.ngZone.run(() => this.onComunaLayerClicked(zone)));
       this.zoneLayers.push(layer);
 
       if (esPrincipal) {
@@ -569,6 +654,8 @@ export class MapaPage implements OnInit {
       attribution: '© OpenStreetMap · FireWatch',
       maxZoom: 18
     }).addTo(this.map);
+
+    this.map.on('click', (e: L.LeafletMouseEvent) => this.onMapClickForDrawing(e));
 
     if (this.zones.length > 0) { this.renderMapLayers(); }
     this.renderMarkers();

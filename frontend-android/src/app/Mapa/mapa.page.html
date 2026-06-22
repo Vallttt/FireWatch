@@ -247,7 +247,7 @@
         <ion-icon name="add-circle-outline"></ion-icon>
         <ion-card-title>Zonas y rutas de evacuación</ion-card-title>
       </div>
-      <p class="subtitle">Usa las comunas pintadas en el mapa para crear zonas y sus rutas</p>
+      <p class="subtitle">Región → Comuna (predefinidas) → Zona (la dibujas tú)</p>
     </ion-card-header>
 
     <ion-card-content>
@@ -256,7 +256,7 @@
       <div class="create-brigade-row" *ngIf="drawingMode === 'none'">
         <button type="button" class="action-btn outline" (click)="startDrawZone()">
           <ion-icon name="add-circle-outline"></ion-icon>
-          Crear zona desde comuna
+          Crear zona
         </button>
         <button type="button" class="action-btn outline" (click)="startDrawRoute()">
           <ion-icon name="exit-outline"></ion-icon>
@@ -264,26 +264,41 @@
         </button>
       </div>
 
-      <!-- Esperando que el admin haga clic sobre una comuna -->
-      <div *ngIf="drawingMode === 'zone' && !showZoneForm">
-        <p>Haz clic sobre una de las comunas pintadas en el mapa para usarla como base de la nueva zona.</p>
+      <!-- Paso 1: elegir la comuna (predefinida) donde se va a dibujar la zona -->
+      <div *ngIf="drawingMode === 'zone' && !selectedComunaContext">
+        <p>Selecciona la comuna donde quieres dibujar la zona:</p>
+        <select class="brigade-input" (change)="onComunaContextSelected()" [(ngModel)]="selectedComunaContext">
+          <option [ngValue]="null" disabled selected>Selecciona una comuna</option>
+          <option *ngFor="let c of operationalComunas" [ngValue]="c">{{ c.name }}</option>
+        </select>
+        <br><br>
         <button type="button" class="action-btn finalizado" (click)="cancelDrawing()">
           <ion-icon name="close-circle-outline"></ion-icon>
           Cancelar
         </button>
       </div>
 
-      <!-- Formulario: nueva zona (comuna ya seleccionada) -->
+      <!-- Paso 2: dibujar la zona dentro de la comuna elegida -->
+      <div *ngIf="drawingMode === 'zone' && selectedComunaContext && !showZoneForm">
+        <p>Comuna: <strong>{{ selectedComunaContext.name }}</strong>. Haz clic en el mapa para marcar los vértices de la zona ({{ drawingPoints.length }} puntos, mínimo 3).</p>
+        <div class="create-brigade-row">
+          <button type="button" class="action-btn controlado" (click)="finishDrawingZone()">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            Finalizar
+          </button>
+          <button type="button" class="action-btn finalizado" (click)="cancelDrawing()">
+            <ion-icon name="close-circle-outline"></ion-icon>
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <!-- Paso 3: formulario de la zona dibujada -->
       <div *ngIf="showZoneForm">
-        <p *ngIf="selectedComunaForZone">Comuna seleccionada: <strong>{{ selectedComunaForZone.name }}</strong></p>
+        <p>Comuna: <strong>{{ selectedComunaContext?.name }}</strong></p>
         <input type="text" class="brigade-input" placeholder="Nombre de la zona" [(ngModel)]="newZoneName">
         <br><br>
         <textarea class="brigade-input" rows="2" placeholder="Descripción" [(ngModel)]="newZoneDescription"></textarea>
-        <br><br>
-        <select class="brigade-input" [(ngModel)]="newZoneType">
-          <option value="MAIN">Principal (MAIN)</option>
-          <option value="OPERATIONAL">Operativa</option>
-        </select>
         <br><br>
         <input type="color" class="brigade-input" [(ngModel)]="newZoneColor">
         <div class="create-brigade-row">
