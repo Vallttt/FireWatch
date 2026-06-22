@@ -48,10 +48,10 @@ public class EvacuationRouteService {
             );
         }
 
-        if (!zoneGeometry.contains(routeGeometry)) {
+        if (!zoneGeometry.intersects(routeGeometry)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "La ruta debe estar dentro de la zona asignada"
+                    "La ruta debe partir desde la zona asignada"
             );
         }
 
@@ -125,10 +125,10 @@ public class EvacuationRouteService {
             );
         }
 
-        if (!zoneGeometry.contains(routeGeometry)) {
+        if (!zoneGeometry.intersects(routeGeometry)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "La ruta debe estar dentro de la zona asignada"
+                    "La ruta debe partir desde la zona asignada"
             );
         }
 

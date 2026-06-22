@@ -259,7 +259,7 @@
         </button>
         <button type="button" class="action-btn outline" (click)="startDrawRoute()">
           <ion-icon name="exit-outline"></ion-icon>
-          Generar ruta automática
+          Trazar ruta de evacuación
         </button>
       </div>
 
@@ -314,9 +314,8 @@
         </div>
       </div>
 
-      <!-- Formulario: ruta automática -->
-      <div *ngIf="showRouteForm">
-        <p>La ruta se calcula automáticamente desde el centro de la zona hasta su borde más cercano (debe quedar dentro de la zona).</p>
+      <!-- Paso 1: elegir zona/tipo/severidad y marcar el punto de encuentro -->
+      <div *ngIf="drawingMode === 'route' && !showRouteForm && !calculatingRoute">
         <select class="brigade-input" [(ngModel)]="selectedRouteZoneId">
           <option value="" disabled selected>Selecciona la zona operativa</option>
           <option *ngFor="let z of backendOperationalZones" [value]="z.id">{{ z.name }}</option>
@@ -334,13 +333,28 @@
           <option value="ALTA">Severidad alta</option>
         </select>
         <br><br>
+        <p *ngIf="selectedRouteZoneId">Haz clic en el mapa para marcar el punto de encuentro (el destino seguro de la evacuación). Se calculará el camino real por calles desde la zona hasta ese punto.</p>
+        <button type="button" class="action-btn finalizado" (click)="cancelDrawing()">
+          <ion-icon name="close-circle-outline"></ion-icon>
+          Cancelar
+        </button>
+      </div>
+
+      <!-- Calculando la ruta real -->
+      <div *ngIf="calculatingRoute">
+        <p>Calculando el camino real por calles…</p>
+      </div>
+
+      <!-- Paso 2: ruta real calculada, falta nombre/descripcion -->
+      <div *ngIf="showRouteForm">
+        <p>Ruta calculada por calles reales. Puedes ajustar el nombre y la descripción:</p>
         <input type="text" class="brigade-input" placeholder="Nombre de la ruta (opcional)" [(ngModel)]="newRouteName">
         <br><br>
         <textarea class="brigade-input" rows="2" placeholder="Descripción (opcional, se genera automáticamente)" [(ngModel)]="newRouteDescription"></textarea>
         <div class="create-brigade-row">
           <button type="button" class="action-btn controlado" (click)="saveRoute()">
             <ion-icon name="checkmark-circle-outline"></ion-icon>
-            Generar y guardar
+            Guardar ruta
           </button>
           <button type="button" class="action-btn finalizado" (click)="cancelDrawing()">
             <ion-icon name="close-circle-outline"></ion-icon>
