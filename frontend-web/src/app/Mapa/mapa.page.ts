@@ -67,6 +67,8 @@ export class MapaPage implements OnInit {
   public backendRoutes: EvacuationResponse[] = [];
 
   public drawingMode: 'none' | 'zone' | 'route' = 'none';
+  /** Región predefinida (límite real) elegida para establecer la zona principal. */
+  public selectedRegionContext: ComunaZone | null = null;
   /** Comuna predefinida (límite real) dentro de la cual el admin dibuja la zona. */
   public selectedComunaContext: ComunaZone | null = null;
   public drawingPoints: L.LatLng[] = [];
@@ -120,8 +122,9 @@ export class MapaPage implements OnInit {
     this.zonesAssetService.getZones().subscribe({
       next: (zones) => {
         this.zones = zones;
-        const main = zones.find(z => z.zoneType === 'MAIN');
-        this.mainZoneId = main ? main.id : null;
+        // Placeholder de zoneId para brigadas (no son zonas reales en este MVP) — se usa la región como referencia.
+        const region = zones.find(z => z.zoneType === 'PROVINCE');
+        this.mainZoneId = region ? region.id : null;
         if (this.map) { this.renderMapLayers(); }
 
         if (!this.isAdmin) { this.loadCitizenEvacuationRoute(); }
@@ -592,6 +595,11 @@ export class MapaPage implements OnInit {
     return this.backendZones.filter(z => z.zoneType === 'OPERATIONAL');
   }
 
+  /** Regiones predefinidas (por ahora solo la Región Metropolitana). */
+  get regiones(): ComunaZone[] {
+    return this.zones.filter(z => z.zoneType === 'PROVINCE');
+  }
+
   /** Comunas predefinidas seleccionables como contexto para dibujar una zona (todas salvo la región). */
   get operationalComunas(): ComunaZone[] {
     return this.zones.filter(z => z.zoneType !== 'PROVINCE');
@@ -601,12 +609,9 @@ export class MapaPage implements OnInit {
     return this.backendZones.some(z => z.zoneType === 'MAIN');
   }
 
-  async startDrawZone() {
-    if (!this.hasMainZone) {
-      const ok = await this.ensureRegionMainZone();
-      if (!ok) return;
-    }
+  startDrawZone() {
     this.drawingMode = 'zone';
+    this.selectedRegionContext = this.regiones.length === 1 ? this.regiones[0] : null;
     this.selectedComunaContext = null;
     this.drawingPoints = [];
     this.showZoneForm = false;
@@ -614,27 +619,22 @@ export class MapaPage implements OnInit {
   }
 
   /**
-   * Región (predefinida, p.ej. "Provincia de Santiago") — se crea una sola vez
-   * como zona principal (MAIN) real en el backend, para que las zonas
+   * Región (predefinida, p.ej. "Región Metropolitana") — se establece una sola
+   * vez como zona principal (MAIN) real en el backend, para que las zonas
    * operativas que dibuje el admin puedan validarse contra ella.
    */
-  private async ensureRegionMainZone(): Promise<boolean> {
-    const provincia = this.zones.find(z => z.zoneType === 'PROVINCE');
-    if (!provincia) {
-      await this.showToast('No se encontró la región predefinida.', 'danger');
-      return false;
-    }
+  private async ensureRegionMainZone(region: ComunaZone): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
       this.geoService.createZone({
-        name: provincia.name,
+        name: region.name,
         description: 'Región principal (predefinida)',
         isActive: true,
-        color: provincia.color && /^#([A-Fa-f0-9]{6})$/.test(provincia.color) ? provincia.color : '#3388ff',
+        color: region.color && /^#([A-Fa-f0-9]{6})$/.test(region.color) ? region.color : '#3388ff',
         zoneType: 'MAIN',
-        geoJson: this.simplifyGeometryForBackend(provincia.geometry)
+        geoJson: this.simplifyGeometryForBackend(region.geometry)
       }).subscribe({
         next: async () => {
-          await this.showToast(`Región "${provincia.name}" establecida como zona principal`, 'success');
+          await this.showToast(`Región "${region.name}" establecida como zona principal`, 'success');
           this.loadBackendZonesAndRoutes();
           resolve(true);
         },
@@ -665,6 +665,7 @@ export class MapaPage implements OnInit {
 
   cancelDrawing() {
     this.drawingMode = 'none';
+    this.selectedRegionContext = null;
     this.selectedComunaContext = null;
     this.drawingPoints = [];
     this.showZoneForm = false;
@@ -730,6 +731,14 @@ export class MapaPage implements OnInit {
     }
     if (!/^#([A-Fa-f0-9]{6})$/.test(this.newZoneColor)) {
       await this.showToast('El color debe tener formato #RRGGBB.', 'warning'); return;
+    }
+
+    if (!this.hasMainZone) {
+      if (!this.selectedRegionContext) {
+        await this.showToast('Selecciona la región primero.', 'warning'); return;
+      }
+      const ok = await this.ensureRegionMainZone(this.selectedRegionContext);
+      if (!ok) return;
     }
 
     this.geoService.createZone({
@@ -910,23 +919,21 @@ export class MapaPage implements OnInit {
   this.zones.forEach((zone) => {
     if (!zone.geometry) return;
 
-    // Provincia de Santiago: solo contorno de referencia, sin relleno
-    const esProvincia = zone.zoneType === 'PROVINCE';
-    const esPrincipal = zone.zoneType === 'MAIN';
+    // Región Metropolitana: solo contorno de referencia, sin relleno
+    const esRegion = zone.zoneType === 'PROVINCE';
 
     const layer = L.geoJSON(zone.geometry, {
       style: {
         color: zone.color || '#3388ff',
-        weight: esProvincia ? 2 : (esPrincipal ? 4 : 2),
-        dashArray: esProvincia ? '6 4' : undefined,
-        fillOpacity: esProvincia ? 0 : (esPrincipal ? 0.06 : 0.22)
+        weight: esRegion ? 2 : 2,
+        dashArray: esRegion ? '6 4' : undefined,
+        fillOpacity: esRegion ? 0 : 0.22
       }
     }).addTo(this.map!);
 
-    layer.bindPopup(`${zone.name} (${zone.zoneType})`);
     this.zoneLayers.push(layer);
 
-    if (esPrincipal) {
+    if (esRegion) {
       this.map!.fitBounds(layer.getBounds(), {
         padding: [20, 20],
         animate: false

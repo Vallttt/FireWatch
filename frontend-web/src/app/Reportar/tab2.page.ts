@@ -201,21 +201,19 @@ export class Tab2Page implements OnInit {
       if (!zone.geometry) return;
 
       const esProvincia = zone.zoneType === 'PROVINCE';
-      const esPrincipal = zone.zoneType === 'MAIN';
 
       const layer = L.geoJSON(zone.geometry, {
         style: {
           color: zone.color || '#3388ff',
-          weight: esProvincia ? 2 : (esPrincipal ? 4 : 2),
+          weight: 2,
           dashArray: esProvincia ? '6 4' : undefined,
-          fillOpacity: esProvincia ? 0 : (esPrincipal ? 0.06 : 0.2)
+          fillOpacity: esProvincia ? 0 : 0.2
         }
       }).addTo(this.map!);
 
-      layer.bindPopup(`${zone.name} (${zone.zoneType})`);
       this.zoneLayers.push(layer);
 
-      if (esPrincipal) {
+      if (esProvincia) {
         this.mainBounds = layer.getBounds();
         this.map!.fitBounds(this.mainBounds, { padding: [20, 20], animate: false });
       }

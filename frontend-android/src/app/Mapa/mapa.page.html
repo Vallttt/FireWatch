@@ -247,7 +247,6 @@
         <ion-icon name="add-circle-outline"></ion-icon>
         <ion-card-title>Zonas y rutas de evacuación</ion-card-title>
       </div>
-      <p class="subtitle">Región → Comuna (predefinidas) → Zona (la dibujas tú)</p>
     </ion-card-header>
 
     <ion-card-content>
@@ -264,25 +263,27 @@
         </button>
       </div>
 
-      <!-- Paso 1: elegir la comuna (predefinida) donde se va a dibujar la zona -->
-      <div *ngIf="drawingMode === 'zone' && !selectedComunaContext">
-        <p>Selecciona la comuna donde quieres dibujar la zona:</p>
+      <!-- Paso 1: elegir región y comuna (predefinidas) donde se va a dibujar la zona -->
+      <div *ngIf="drawingMode === 'zone' && !showZoneForm">
+        <p>Selecciona la región:</p>
+        <select class="brigade-input" [(ngModel)]="selectedRegionContext">
+          <option [ngValue]="null" disabled selected>Selecciona una región</option>
+          <option *ngFor="let r of regiones" [ngValue]="r">{{ r.name }}</option>
+        </select>
+        <br><br>
+        <p>Selecciona la comuna:</p>
         <select class="brigade-input" (change)="onComunaContextSelected()" [(ngModel)]="selectedComunaContext">
           <option [ngValue]="null" disabled selected>Selecciona una comuna</option>
           <option *ngFor="let c of operationalComunas" [ngValue]="c">{{ c.name }}</option>
         </select>
         <br><br>
-        <button type="button" class="action-btn finalizado" (click)="cancelDrawing()">
-          <ion-icon name="close-circle-outline"></ion-icon>
-          Cancelar
-        </button>
-      </div>
 
-      <!-- Paso 2: dibujar la zona dentro de la comuna elegida -->
-      <div *ngIf="drawingMode === 'zone' && selectedComunaContext && !showZoneForm">
-        <p>Comuna: <strong>{{ selectedComunaContext.name }}</strong>. Haz clic en el mapa para marcar los vértices de la zona ({{ drawingPoints.length }} puntos, mínimo 3).</p>
+        <div *ngIf="selectedComunaContext">
+          <p>Comuna: <strong>{{ selectedComunaContext.name }}</strong>. Haz clic en el mapa para marcar los vértices de la zona ({{ drawingPoints.length }} puntos, mínimo 3).</p>
+        </div>
+
         <div class="create-brigade-row">
-          <button type="button" class="action-btn controlado" (click)="finishDrawingZone()">
+          <button type="button" class="action-btn controlado" *ngIf="selectedComunaContext" (click)="finishDrawingZone()">
             <ion-icon name="checkmark-circle-outline"></ion-icon>
             Finalizar
           </button>
