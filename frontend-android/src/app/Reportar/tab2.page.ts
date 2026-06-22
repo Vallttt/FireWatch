@@ -25,6 +25,7 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { ReportService, ReporteResponse, ReporteMediaItem, SeverityLevel } from '../services/report.service';
 import { GeolocationService } from '../services/geolocation.service';
 import { ZonesAssetService, ComunaZone } from '../services/zones-asset.service';
+import { GeoService, ZoneResponse } from '../services/geo.service';
 
 export interface MediaPreview {
   url: string;
@@ -92,7 +93,8 @@ export class Tab2Page implements OnInit {
     private toastController: ToastController,
     private reportService: ReportService,
     private geoSvc: GeolocationService,
-    private zonesAssetService: ZonesAssetService
+    private zonesAssetService: ZonesAssetService,
+    private geoService: GeoService
   ) {
     addIcons({
       ellipse, locationOutline, navigate, timerOutline, listOutline,
@@ -326,6 +328,10 @@ export class Tab2Page implements OnInit {
         this.descripcion = ''; this.clasificacionInicial = '';
         this.tipoDesc = ''; this.severidad = 'media';
         this.clearMedia();
+
+        // Si el reporte cae dentro de una zona operativa real que aún no
+        // tiene ruta de evacuación, se genera sola (el admin no la crea a mano).
+        this.tryAutoGenerateEvacuationRoute(this.latLng.lat, this.latLng.lng, zona);
       },
       error: async (err) => {
         console.error('Error submitting report', err);
@@ -333,6 +339,92 @@ export class Tab2Page implements OnInit {
         await this.showToast(msg, 'danger');
       }
     });
+  }
+
+  /**
+   * Cuando se registra un reporte, si su ubicación cae dentro de una zona
+   * operativa real (creada por el admin) que aún no tiene ruta de evacuación,
+   * se genera sola: origen = centro de la zona, destino = centro de la comuna
+   * donde está (el "punto de encuentro"), camino real por calles vía OSRM. No
+   * hay creación manual de rutas — el admin solo crea zonas.
+   */
+  private tryAutoGenerateEvacuationRoute(lat: number, lng: number, comuna: ComunaZone) {
+    this.geoService.getZones().subscribe({
+      next: (zones) => {
+        const zona = zones.find(z => z.zoneType === 'OPERATIONAL' && this.pointInZoneGeoJson(lng, lat, z.geoJson));
+        if (!zona) return;
+
+        this.geoService.getEvacuationRoutesByZone(zona.id).subscribe({
+          next: (rutas) => {
+            if (rutas.length === 0) { this.generateAutoRoute(zona, comuna); }
+          },
+          error: () => this.generateAutoRoute(zona, comuna)
+        });
+      },
+      error: (err) => console.warn('No se pudieron revisar las zonas para la ruta automática', err)
+    });
+  }
+
+  private pointInZoneGeoJson(lng: number, lat: number, geoJson: string): boolean {
+    let geometry: any;
+    try { geometry = JSON.parse(geoJson); } catch { return false; }
+    if (geometry.type !== 'Polygon') return false;
+
+    const ring = geometry.coordinates[0];
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i]; const [xj, yj] = ring[j];
+      const intersect = ((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  private computeCentroid(geometry: any): [number, number] | null {
+    let ring: number[][] | null = null;
+    if (geometry.type === 'Polygon') {
+      ring = geometry.coordinates[0];
+    } else if (geometry.type === 'MultiPolygon') {
+      ring = geometry.coordinates.reduce((best: number[][] | null, poly: number[][][]) =>
+        (!best || poly[0].length > best.length) ? poly[0] : best, null);
+    }
+    if (!ring || ring.length < 3) return null;
+
+    const pts = ring.slice(0, ring.length - 1);
+    const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+    const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+    return [cx, cy];
+  }
+
+  private async generateAutoRoute(zona: ZoneResponse, comuna: ComunaZone) {
+    let zoneGeometry: any;
+    try { zoneGeometry = JSON.parse(zona.geoJson); } catch { return; }
+
+    const origin = this.computeCentroid(zoneGeometry);
+    const destino = this.computeCentroid(comuna.geometry as any);
+    if (!origin || !destino) return;
+
+    try {
+      const url = `https://router.project-osrm.org/route/v1/foot/${origin[0]},${origin[1]};${destino[0]},${destino[1]}?overview=full&geometries=geojson`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.code !== 'Ok' || !data.routes?.[0]) return;
+
+      // El backend limita el nombre a 50 caracteres (min 4) — se recorta si la zona tiene un nombre largo.
+      let name = `Ruta — ${zona.name}`;
+      if (name.length > 50) { name = name.slice(0, 50); }
+
+      this.geoService.createEvacuationRoute({
+        name,
+        description: `Ruta de evacuación generada automáticamente al registrarse un reporte en la zona ${zona.name}, hacia ${comuna.name}.`,
+        geoJson: JSON.stringify(data.routes[0].geometry),
+        zoneId: zona.id
+      }).subscribe({
+        error: (err) => console.warn('No se pudo generar la ruta automática', err)
+      });
+    } catch (err) {
+      console.warn('No se pudo calcular la ruta automática (¿sin conexión?)', err);
+    }
   }
 
   // ------------------------------------------------------------------ //

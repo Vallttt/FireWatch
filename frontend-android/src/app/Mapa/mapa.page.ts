@@ -64,7 +64,7 @@ export class MapaPage implements OnInit {
   public backendZones: ZoneResponse[] = [];
   public backendRoutes: EvacuationResponse[] = [];
 
-  public drawingMode: 'none' | 'zone' | 'route' = 'none';
+  public drawingMode: 'none' | 'zone' = 'none';
   /** Región predefinida (límite real) elegida para establecer la zona principal. */
   public selectedRegionContext: ComunaZone | null = null;
   /** Comuna predefinida (límite real) dentro de la cual el admin dibuja la zona. */
@@ -77,17 +77,6 @@ export class MapaPage implements OnInit {
   public newZoneName = '';
   public newZoneDescription = '';
   public newZoneColor = '#3388ff';
-
-  public showRouteForm = false;
-  public newRouteName = '';
-  public newRouteDescription = '';
-  public selectedRouteZoneId = '';
-  public routeTipo: 'ESTRUCTURAL' | 'FORESTAL' | 'URBANO' = 'ESTRUCTURAL';
-  public routeSeveridad: 'BAJA' | 'MEDIA' | 'ALTA' = 'BAJA';
-  /** Punto de encuentro/destino elegido por el admin para la ruta real. */
-  public routeDestination: L.LatLng | null = null;
-  public routeGeoJsonPreview: string | null = null;
-  public calculatingRoute = false;
 
   private marcadoresLeaflet: L.Marker[] = [];
   private backendLoaded = false;
@@ -273,37 +262,15 @@ export class MapaPage implements OnInit {
     this.map.fitBounds(layer.getBounds(), { padding: [30, 30] });
   }
 
-  async startDrawRoute() {
-    if (this.backendOperationalZones.length === 0) {
-      await this.showToast('Primero debes crear una zona operativa.', 'warning');
-      return;
-    }
-    this.drawingMode = 'route';
-    this.selectedRouteZoneId = '';
-    this.routeDestination = null;
-    this.routeGeoJsonPreview = null;
-    this.showRouteForm = false;
-    this.clearAdminDrawing();
-  }
-
   cancelDrawing() {
     this.drawingMode = 'none';
     this.selectedRegionContext = null;
     this.selectedComunaContext = null;
     this.drawingPoints = [];
     this.showZoneForm = false;
-    this.showRouteForm = false;
     this.newZoneName = '';
     this.newZoneDescription = '';
     this.newZoneColor = '#3388ff';
-    this.newRouteName = '';
-    this.newRouteDescription = '';
-    this.selectedRouteZoneId = '';
-    this.routeTipo = 'ESTRUCTURAL';
-    this.routeSeveridad = 'BAJA';
-    this.routeDestination = null;
-    this.routeGeoJsonPreview = null;
-    this.calculatingRoute = false;
     this.clearAdminDrawing();
   }
 
@@ -313,97 +280,16 @@ export class MapaPage implements OnInit {
     this.adminDrawingMarkers = [];
   }
 
-  /** Dibujo de la zona (clic a clic) o elección del punto de encuentro para la ruta. */
+  /** Dibujo de la zona (clic a clic), solo activo una vez elegida la comuna de contexto. */
   private onMapClickForDrawing(e: L.LeafletMouseEvent) {
-    if (this.drawingMode === 'zone') {
-      if (!this.selectedComunaContext || this.showZoneForm) return;
+    if (this.drawingMode !== 'zone' || !this.selectedComunaContext || this.showZoneForm) return;
 
-      this.drawingPoints.push(e.latlng);
-      const marker = L.circleMarker(e.latlng, {
-        radius: 5, color: '#ffffff', weight: 2, fillColor: '#ff6a00', fillOpacity: 1
-      }).addTo(this.map!);
-      this.adminDrawingMarkers.push(marker);
-      this.redrawAdminShape();
-      return;
-    }
-
-    if (this.drawingMode === 'route') {
-      if (!this.selectedRouteZoneId || this.showRouteForm || this.calculatingRoute) return;
-
-      this.clearAdminDrawing();
-      this.routeDestination = e.latlng;
-      const marker = L.circleMarker(e.latlng, {
-        radius: 7, color: '#ffffff', weight: 2, fillColor: '#16a34a', fillOpacity: 1
-      }).addTo(this.map!);
-      this.adminDrawingMarkers.push(marker);
-      this.computeRealRoute();
-    }
-  }
-
-  /** Centro (promedio de vértices) de la geometría de una zona, usado como origen de la ruta. */
-  private computeZoneCentroid(geoJson: string): [number, number] | null {
-    let geometry: any;
-    try { geometry = JSON.parse(geoJson); } catch { return null; }
-
-    let ring: number[][] | null = null;
-    if (geometry.type === 'Polygon') {
-      ring = geometry.coordinates[0];
-    } else if (geometry.type === 'MultiPolygon') {
-      ring = geometry.coordinates.reduce((best: number[][] | null, poly: number[][][]) =>
-        (!best || poly[0].length > best.length) ? poly[0] : best, null);
-    }
-    if (!ring || ring.length < 3) return null;
-
-    const pts = ring.slice(0, ring.length - 1);
-    const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
-    const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-    return [cx, cy];
-  }
-
-  /**
-   * Calcula la ruta real por calles (a pie) desde el centro de la zona hasta el
-   * punto de encuentro elegido, usando el servicio público de OSRM. El backend
-   * ahora solo exige que la ruta toque la zona (no que quede encerrada en ella),
-   * porque una ruta de evacuación real sale hacia un punto seguro afuera.
-   */
-  private async computeRealRoute() {
-    if (!this.routeDestination) return;
-    const zona = this.backendZones.find(z => z.id === this.selectedRouteZoneId);
-    if (!zona) {
-      await this.showToast('La zona seleccionada ya no existe.', 'danger');
-      return;
-    }
-    const centroid = this.computeZoneCentroid(zona.geoJson);
-    if (!centroid) {
-      await this.showToast('No se pudo calcular el centro de la zona.', 'danger');
-      return;
-    }
-
-    this.calculatingRoute = true;
-    try {
-      const url = `https://router.project-osrm.org/route/v1/foot/${centroid[0]},${centroid[1]};${this.routeDestination.lng},${this.routeDestination.lat}?overview=full&geometries=geojson`;
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.code !== 'Ok' || !data.routes?.[0]) {
-        this.calculatingRoute = false;
-        await this.showToast('No se encontró un camino real entre la zona y el punto elegido. Intenta con otro punto.', 'danger');
-        return;
-      }
-
-      const geometry = data.routes[0].geometry;
-      this.routeGeoJsonPreview = JSON.stringify(geometry);
-
-      if (this.adminDrawingLayer) { this.adminDrawingLayer.remove(); }
-      this.adminDrawingLayer = L.geoJSON(geometry, { style: { color: '#16a34a', weight: 5 } }).addTo(this.map!);
-      this.map!.fitBounds((this.adminDrawingLayer as L.GeoJSON).getBounds(), { padding: [40, 40] });
-
-      this.calculatingRoute = false;
-      this.showRouteForm = true;
-    } catch {
-      this.calculatingRoute = false;
-      await this.showToast('No se pudo calcular la ruta real. Verifica tu conexión a internet.', 'danger');
-    }
+    this.drawingPoints.push(e.latlng);
+    const marker = L.circleMarker(e.latlng, {
+      radius: 5, color: '#ffffff', weight: 2, fillColor: '#ff6a00', fillOpacity: 1
+    }).addTo(this.map!);
+    this.adminDrawingMarkers.push(marker);
+    this.redrawAdminShape();
   }
 
   private redrawAdminShape() {
@@ -508,43 +394,6 @@ export class MapaPage implements OnInit {
     }
 
     return JSON.stringify(result);
-  }
-
-  async saveRoute() {
-    if (!this.selectedRouteZoneId) {
-      await this.showToast('Selecciona la zona operativa a la que pertenece la ruta.', 'warning'); return;
-    }
-    if (!this.routeGeoJsonPreview) {
-      await this.showToast('Marca el punto de encuentro en el mapa primero.', 'warning'); return;
-    }
-
-    const zona = this.backendZones.find(z => z.id === this.selectedRouteZoneId);
-    if (!zona) {
-      await this.showToast('La zona seleccionada ya no existe.', 'danger'); return;
-    }
-
-    const tipoLabel = { ESTRUCTURAL: 'estructural', FORESTAL: 'forestal', URBANO: 'urbano' }[this.routeTipo];
-    const severidadLabel = { BAJA: 'baja', MEDIA: 'media', ALTA: 'alta' }[this.routeSeveridad];
-    const name = this.newRouteName.trim() || `Ruta de evacuación — ${zona.name}`;
-    const description = this.newRouteDescription.trim() ||
-      `Ruta de evacuación por calles reales para incidente ${tipoLabel} de severidad ${severidadLabel} en la zona ${zona.name}.`;
-
-    this.geoService.createEvacuationRoute({
-      name,
-      description,
-      geoJson: this.routeGeoJsonPreview,
-      zoneId: this.selectedRouteZoneId
-    }).subscribe({
-      next: async () => {
-        await this.showToast('Ruta de evacuación generada correctamente', 'success');
-        this.cancelDrawing();
-        this.loadBackendZonesAndRoutes();
-      },
-      error: async (err) => {
-        const msg = err.error?.message || 'No se pudo crear la ruta.';
-        await this.showToast(msg, 'danger');
-      }
-    });
   }
 
   async deleteBackendZone(zone: ZoneResponse) {
