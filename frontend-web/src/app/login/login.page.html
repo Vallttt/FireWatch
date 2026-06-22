@@ -64,7 +64,9 @@
           {{ loading ? 'Verificando…' : 'Iniciar sesión' }}
         </ion-button>
 
-        <p class="form-help">¿Olvidaste tu contraseña?</p>
+        <p class="form-help forgot-link" (click)="goForgotPassword()">
+          ¿Olvidaste tu contraseña?
+        </p>
       </div>
 
       <!-- registrarse -->

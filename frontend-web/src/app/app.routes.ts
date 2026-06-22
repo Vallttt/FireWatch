@@ -12,6 +12,12 @@ export const routes: Routes = [
     path: 'login',
     loadComponent: () => import('./login/login.page').then( m => m.LoginPage)
   },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./forgot-password/forgot-password.page')
+      .then(m => m.ForgotPasswordPage)
+  },
   {//ruta del dashboard
     path: 'dashboard',
     canActivate: [authGuard],

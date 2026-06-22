@@ -86,4 +86,20 @@ public class UserClient {
                 .retrieve()
                 .toBodilessEntity();
     }
+
+    public Object forgotPassword(Object request) {
+    return restClient.post()
+            .uri(userServiceUrl + "/api/auth/password/forgot")
+            .body(request)
+            .retrieve()
+            .body(Object.class);
+}
+
+    public Object resetPassword(Object request) {
+        return restClient.post()
+                .uri(userServiceUrl + "/api/auth/password/reset")
+                .body(request)
+                .retrieve()
+                .body(Object.class);
+    }
 }

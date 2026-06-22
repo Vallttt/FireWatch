@@ -37,6 +37,16 @@ export interface RegisterResponse {
   role: 'USER' | 'ADMIN';
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  code: string;
+  newPassword: string;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Service                                                            */
 /* ------------------------------------------------------------------ */
@@ -45,6 +55,7 @@ export class AuthService {
 
   private authUrl = `${environment.apiGateway}/auth`;
   private usersUrl = `${environment.apiGateway}/api/users`;
+  private passwordUrl = `${environment.apiGateway}/api/auth/password`;
 
   constructor(private http: HttpClient) {}
 
@@ -69,6 +80,18 @@ export class AuthService {
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userRole');
     localStorage.removeItem('emergencyMode');
+  }
+
+  forgotPassword(email: string) {
+  return this.http.post('/api/users/password/forgot', { email });
+  }
+
+  resetPassword(email: string, code: string, newPassword: string) {
+    return this.http.post('/api/users/password/reset', {
+      email,
+      code,
+      newPassword
+    });
   }
 
   getToken(): string | null {
