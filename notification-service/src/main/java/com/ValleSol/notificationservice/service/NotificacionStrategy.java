@@ -86,6 +86,7 @@ public class NotificacionStrategy {
                 notif.setTipoDestinatario(tipoDestinatario.name());
                 notif.setUsuarioId(user.getId() != null ? UUID.fromString(user.getId()) : null);
                 notif.setFechaEnvio(LocalDateTime.now());
+                notif.setUsuarioRemitente(event.getUsuarioRemitente());
                 repository.save(notif);
 
                 // Send real email for all channels except PUSH (FCM pending)

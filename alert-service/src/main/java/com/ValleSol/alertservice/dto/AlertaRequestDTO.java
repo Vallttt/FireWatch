@@ -27,4 +27,5 @@ public class AlertaRequestDTO {
     private UUID zoneId;
     private String zoneName;
     private LocalDateTime fechaReporte;
+    private String usuarioRemitente;
 }

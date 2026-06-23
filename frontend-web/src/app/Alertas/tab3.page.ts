@@ -152,10 +152,13 @@ export class Tab3Page {
 
     this.loading = true;
 
+    const userEmail = localStorage.getItem('userEmail') || 'sistema@valledelsol.cl';
+
     this.alertService.enviarAlerta({
       mensaje: this.mensaje,
       tipo: this.tipo || 'General',
-      canalEmail: this.canalMail
+      canalEmail: this.canalMail,
+      usuarioRemitente: userEmail
     }).subscribe({
       next: async () => {
         this.loading = false;

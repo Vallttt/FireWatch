@@ -32,6 +32,7 @@ public class AlertaEventDTO {
     private String zoneName;
     private String zoneId;
     private LocalDateTime fechaReporte;
+    private String usuarioRemitente;
 
 
 }

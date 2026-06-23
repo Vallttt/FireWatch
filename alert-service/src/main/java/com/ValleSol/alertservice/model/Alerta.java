@@ -52,4 +52,7 @@ public class Alerta {
 
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
+
+    @Column(name = "usuario_remitente")
+    private String usuarioRemitente;
 }

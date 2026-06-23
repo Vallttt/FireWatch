@@ -105,10 +105,13 @@ public class BrigadeService {
         BrigadeResponseDTO response = modelMapper.map(brigade, BrigadeResponseDTO.class);
 
         if (brigade.getZoneId() != null) {
-            ZoneResponseDTO zone = zoneClient.findById(brigade.getZoneId());
-
-            response.setZoneId(zone.getId());
-            response.setZoneName(zone.getName());
+            try {
+                ZoneResponseDTO zone = zoneClient.findById(brigade.getZoneId());
+                response.setZoneId(zone.getId());
+                response.setZoneName(zone.getName());
+            } catch (Exception e) {
+                response.setZoneName("Zona no disponible");
+            }
         }
 
         return response;

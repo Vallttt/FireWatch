@@ -44,7 +44,6 @@ export class MapaPage implements OnInit {
   private mapResizeObserver: ResizeObserver | null = null;
   public isAdmin = false;
   public focoSeleccionado: any = null;
-  public routeLayers: L.Layer[] = [];
 
   public brigadasDisponibles: any[] = [];
   public brigadasOcupadas: { id: string; nombre: string; tiempoMinutos: number; emergenciaId: number }[] = [];
@@ -80,6 +79,12 @@ export class MapaPage implements OnInit {
   public newZoneName = '';
   public newZoneDescription = '';
   public newZoneColor = '#3388ff';
+
+  /** Paleta para asignar a cada zona nueva un color distinto y diferenciable en el mapa. */
+  private readonly zonePalette = [
+    '#dc2626', '#2563eb', '#16a34a', '#d97706', '#7c3aed',
+    '#0891b2', '#db2777', '#65a30d', '#ea580c', '#4f46e5'
+  ];
 
   private marcadoresLeaflet: L.Marker[] = [];
   private backendLoaded = false;
@@ -126,11 +131,11 @@ export class MapaPage implements OnInit {
   }
 
   /**
-   * La ruta de evacuación del ciudadano está ligada al REPORTE que él mismo
-   * registró, no a su ubicación GPS actual: se busca su reporte más reciente,
-   * se determina en qué zona operativa real (creada por el admin) cae, y se
-   * trae la ruta de esa zona. Si el ciudadano no ha reportado nada, no se
-   * muestra ninguna ruta — solo verá los incendios reportados en el mapa.
+   * La ruta de evacuación del ciudadano es PERSONAL del REPORTE que él mismo
+   * registró (no compartida con otros reportes de la misma zona): se busca
+   * su reporte más reciente y se trae la ruta generada específicamente para
+   * ese reporte. Si el ciudadano no ha reportado nada, no se muestra
+   * ninguna ruta — solo verá los incendios reportados en el mapa.
    */
   loadMyEvacuationRoute() {
     const userId = localStorage.getItem('userId');
@@ -159,35 +164,25 @@ export class MapaPage implements OnInit {
         }
 
         const miReporte = this.miReporteActivo;
+
+        // Nombre de la zona, directo desde el zoneId del reporte (ya es una zona real).
         this.geoService.getZones().subscribe({
           next: (zones) => {
-            const zona = zones.find(z => z.zoneType === 'OPERATIONAL' &&
-              this.pointInZoneGeoJson(miReporte.longitude, miReporte.latitude, z.geoJson));
+            const zona = zones.find(z => z.id === miReporte.zoneId);
+            this.miZonaNombre = zona ? zona.name : null;
+          },
+          error: () => { this.miZonaNombre = null; }
+        });
 
-            if (!zona) {
-              this.miZonaNombre = null;
-              this.citizenEvacuationRoutes = [];
-              this.loadingMyRoute = false;
-              if (this.map) { this.renderCitizenRoute(); }
-              return;
-            }
-
-            this.miZonaNombre = zona.name;
-            this.geoService.getEvacuationRoutesByZone(zona.id).subscribe({
-              next: (rutas) => {
-                this.citizenEvacuationRoutes = rutas || [];
-                this.loadingMyRoute = false;
-                if (this.map) { this.renderCitizenRoute(); }
-              },
-              error: (err) => {
-                console.warn('No se pudo obtener la ruta de evacuación de la zona', err);
-                this.citizenEvacuationRoutes = [];
-                this.loadingMyRoute = false;
-              }
-            });
+        this.geoService.getEvacuationRoutesByReport(miReporte.id).subscribe({
+          next: (rutas) => {
+            this.citizenEvacuationRoutes = rutas || [];
+            this.loadingMyRoute = false;
+            if (this.map) { this.renderCitizenRoute(); }
           },
           error: (err) => {
-            console.warn('No se pudieron cargar las zonas para ubicar tu reporte', err);
+            console.warn('No se pudo obtener la ruta de evacuación del reporte', err);
+            this.citizenEvacuationRoutes = [];
             this.loadingMyRoute = false;
           }
         });
@@ -226,10 +221,32 @@ export class MapaPage implements OnInit {
       const geo = JSON.parse(route.geoJson);
 
       const layer = L.geoJSON(geo, {
-        style: { color: '#ff6a00', weight: 5, opacity: 0.95, dashArray: '1' }
+        style: { color: '#ff6a00', weight: 5, opacity: 0.95 }
       }).addTo(this.map!);
       layer.bindPopup(`Tu ruta de evacuación: ${route.name}`);
       this.citizenRouteLayers.push(layer);
+
+      // Marca claramente dónde empieza la ruta (el incendio reportado) y dónde
+      // termina (la zona/punto seguro), para que no sea solo una línea sin contexto.
+      if (geo.type === 'LineString' && geo.coordinates.length >= 2) {
+        const start = geo.coordinates[0];
+        const end = geo.coordinates[geo.coordinates.length - 1];
+
+        const startMarker = L.circleMarker([start[1], start[0]], {
+          radius: 8, color: '#cc0000', fillColor: '#ff3333', fillOpacity: 1, weight: 2
+        }).addTo(this.map!).bindPopup('Inicio: tu incendio reportado');
+
+        const safeIcon = L.divIcon({
+          className: 'safe-zone-marker',
+          html: '🚩',
+          iconSize: [28, 28],
+          iconAnchor: [10, 26]
+        });
+        const endMarker = L.marker([end[1], end[0]], { icon: safeIcon })
+          .addTo(this.map!).bindPopup('Zona segura');
+
+        this.citizenRouteLayers.push(startMarker, endMarker);
+      }
 
       this.map!.fitBounds(layer.getBounds(), { padding: [40, 40] });
     });
@@ -566,6 +583,14 @@ export class MapaPage implements OnInit {
           error: (err) => console.warn('No se pudo quitar el incendio del mapa en el backend', err)
         });
       }
+
+      // La ruta de evacuación es personal de este reporte — al finalizar el
+      // incendio, deja de tener sentido y se elimina también.
+      if (foco.externalReportId) {
+        this.geoService.deleteEvacuationRoutesByReport(foco.externalReportId).subscribe({
+          error: (err) => console.warn('No se pudo eliminar la ruta del reporte', err)
+        });
+      }
     }
 
     this.focoSeleccionado.estado = newStatus;
@@ -641,6 +666,11 @@ export class MapaPage implements OnInit {
       next: async () => {
         this.historialIncendios = this.historialIncendios.filter(r => r.id !== reporte.id);
         await this.showToast('Reporte eliminado del historial', 'warning');
+
+        // La ruta de evacuación es personal de este reporte — al eliminarlo, se elimina también.
+        this.geoService.deleteEvacuationRoutesByReport(reporte.id).subscribe({
+          error: (err) => console.warn('No se pudo eliminar la ruta del reporte', err)
+        });
       },
       error: async () => this.showToast('Error al eliminar el reporte', 'danger')
     });
@@ -665,6 +695,13 @@ export class MapaPage implements OnInit {
     if (emergencia.backendId) {
       this.geoService.deleteMappedReport(emergencia.backendId).subscribe({
         error: (err) => console.warn('No se pudo quitar el incendio del mapa en el backend', err)
+      });
+    }
+
+    // La ruta de evacuación es personal de este reporte — al eliminarlo, se elimina también.
+    if (emergencia.externalReportId) {
+      this.geoService.deleteEvacuationRoutesByReport(emergencia.externalReportId).subscribe({
+        error: (err) => console.warn('No se pudo eliminar la ruta del reporte', err)
       });
     }
 
@@ -722,6 +759,11 @@ export class MapaPage implements OnInit {
     this.selectedComunaContext = null;
     this.drawingPoints = [];
     this.showZoneForm = false;
+    // Asigna automáticamente un color distinto a cada zona nueva (recorre la
+    // paleta según cuántas operativas ya existan) para que se diferencien en
+    // el mapa. El admin igual puede cambiarlo en el formulario.
+    const operativas = this.backendZones.filter(z => z.zoneType === 'OPERATIONAL').length;
+    this.newZoneColor = this.zonePalette[operativas % this.zonePalette.length];
     this.clearAdminDrawing();
   }
 
@@ -895,6 +937,29 @@ export class MapaPage implements OnInit {
     return JSON.stringify(result);
   }
 
+  navigateToZone(zone: ZoneResponse) {
+    if (!this.map || !zone.geoJson) return;
+
+    try {
+      const geoJson = JSON.parse(zone.geoJson);
+      const geoLayer = L.geoJSON(geoJson);
+      const bounds = geoLayer.getBounds();
+
+      if (bounds.isValid()) {
+        this.map.fitBounds(bounds, { padding: [50, 50] });
+
+        // Mostrar el nombre de la zona como popup en el centro
+        const center = bounds.getCenter();
+        const popup = L.popup()
+          .setLatLng(center)
+          .setContent(`<strong>${zone.name}</strong>`)
+          .openOn(this.map);
+      }
+    } catch (error) {
+      console.error('Error al navegar a la zona:', error);
+    }
+  }
+
   async deleteBackendZone(zone: ZoneResponse) {
     this.geoService.deleteZone(zone.id).subscribe({
       next: async () => {
@@ -919,10 +984,7 @@ export class MapaPage implements OnInit {
     if (!this.map) return;
 
     this.zoneLayers.forEach((layer: L.Layer) => layer.remove());
-    this.routeLayers.forEach((layer: L.Layer) => layer.remove());
-
     this.zoneLayers = [];
-    this.routeLayers = [];
 
     // Comunas predefinidas: solo borde coloreado de referencia, sin relleno
     // (no son zonas operativas reales, son solo contexto geográfico).
@@ -947,19 +1009,30 @@ export class MapaPage implements OnInit {
       // Santiago ya es el adecuado para este mapa.
     });
 
-    // Zonas operativas reales (dibujadas por el admin) y sus rutas de
-    // evacuación: visión exclusiva del admin — el ciudadano solo ve su
-    // propia ruta (renderCitizenRoute), nunca las zonas ni el resto de rutas.
+    // Zonas operativas reales (dibujadas por el admin): visión exclusiva del
+    // admin. Las rutas de evacuación NUNCA se muestran al admin en el mapa —
+    // son personales de cada ciudadano (ver renderCitizenRoute).
     if (!this.isAdmin) return;
 
+    // Color por zona: se respeta el que el admin haya elegido, pero las zonas
+    // antiguas que quedaron con el azul por defecto (#3388ff) se diferencian
+    // asignándoles un color de la paleta por su posición, así no se ven todas
+    // iguales aunque hayan sido creadas antes de tener color automático.
+    let defaultColorIndex = 0;
     this.backendZones.forEach((zone) => {
       if (!zone.geoJson) return;
       let geo: any;
       try { geo = JSON.parse(zone.geoJson); } catch { return; }
 
+      let color = zone.color;
+      if (!color || color.toLowerCase() === '#3388ff') {
+        color = this.zonePalette[defaultColorIndex % this.zonePalette.length];
+        defaultColorIndex++;
+      }
+
       const layer = L.geoJSON(geo, {
         style: {
-          color: zone.color || '#3388ff',
+          color,
           weight: 2,
           fillOpacity: 0.15
         }
@@ -967,47 +1040,6 @@ export class MapaPage implements OnInit {
       // Sin popup/etiqueta al hacer clic en la zona — el usuario pidió
       // explícitamente que nunca aparezca ninguna etiqueta sobre el mapa.
       this.zoneLayers.push(layer);
-    });
-
-    this.backendRoutes.forEach((route) => {
-      if (!route.geoJson) return;
-
-      const geo = JSON.parse(route.geoJson);
-
-      const layer = L.geoJSON(geo, {
-        style: {
-          color: '#0066ff',
-          weight: 5,
-          opacity: 0.9
-        }
-      }).addTo(this.map!);
-
-      layer.bindPopup(route.name);
-      this.routeLayers.push(layer);
-
-      if (geo.type === 'LineString' && geo.coordinates.length >= 2) {
-        const start = geo.coordinates[0];
-        const end = geo.coordinates[geo.coordinates.length - 1];
-
-        const startMarker = L.circleMarker([start[1], start[0]], {
-          radius: 7,
-          color: '#00aa55',
-          fillColor: '#00ff88',
-          fillOpacity: 1,
-          weight: 2
-        }).addTo(this.map!);
-
-        const endMarker = L.circleMarker([end[1], end[0]], {
-          radius: 8,
-          color: '#cc0000',
-          fillColor: '#ff3333',
-          fillOpacity: 1,
-          weight: 2
-        }).addTo(this.map!);
-
-        this.routeLayers.push(startMarker);
-        this.routeLayers.push(endMarker);
-      }
     });
   }
 }

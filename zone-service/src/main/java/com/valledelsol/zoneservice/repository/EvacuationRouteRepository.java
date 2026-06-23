@@ -14,4 +14,6 @@ public interface EvacuationRouteRepository extends JpaRepository<EvacuationRoute
     List<EvacuationRoute> findByIsActiveTrue();
 
     List<EvacuationRoute> findByZoneIdAndIsActiveTrue(UUID zoneId);
+
+    List<EvacuationRoute> findByReportIdAndIsActiveTrue(String reportId);
 }

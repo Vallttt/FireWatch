@@ -33,13 +33,16 @@ public class ZoneClient {
     }
 
     public ZoneResponseDTO findById(UUID id){
+        try {
+            ApiResponseDTO<ZoneResponseDTO> responseDTO =
+                    restClient.get()
+                            .uri(zoneServiceUrl + "/api/zones/" + id)
+                            .retrieve()
+                            .body(new ParameterizedTypeReference<>() {});
 
-        ApiResponseDTO<ZoneResponseDTO> responseDTO =
-                restClient.get()
-                        .uri(zoneServiceUrl + "/api/zones/" + id)
-                        .retrieve()
-                        .body(new ParameterizedTypeReference<>() {});
-
-        return responseDTO.getData();
+            return responseDTO.getData();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Zona no encontrada: " + id, e);
+        }
     }
 }

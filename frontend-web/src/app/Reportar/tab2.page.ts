@@ -7,7 +7,7 @@ import {
   IonIcon, IonSegment, IonSegmentButton,
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle,
   IonList, IonItem,
-  ToastController
+  ToastController, AlertController
 } from '@ionic/angular/standalone';
 
 import { addIcons } from 'ionicons';
@@ -24,6 +24,7 @@ import { ReportService, ReporteResponse, ReporteMediaItem, SeverityLevel } from 
 import { GeolocationService } from '../services/geolocation.service';
 import { ZonesAssetService, ComunaZone } from '../services/zones-asset.service';
 import { GeoService, ZoneResponse } from '../services/geo.service';
+import { ReportValidatorService, ReportValidation } from '../services/report-validator.service';
 
 export interface MediaPreview {
   url: string;
@@ -49,6 +50,7 @@ export class Tab2Page implements OnInit {
   clasificacionInicial: string = '';
   tipoDesc: string = '';
   severidad: string = 'media';
+  protocolo: string = 'Evacuación';
   descripcion: string = '';
   map: L.Map | undefined;
   marker: L.Marker | undefined;
@@ -74,6 +76,7 @@ export class Tab2Page implements OnInit {
   reporteSeleccionado: ReporteResponse | null = null;
   mediaDelReporte: ReporteMediaItem[] = [];
   cargandoMedia = false;
+  isSubmitting = false;
 
   // estado del lightbox, -1 si está cerrado o el índice del media mostrado si está abierto
   lightboxIndex = -1;
@@ -93,10 +96,12 @@ export class Tab2Page implements OnInit {
 
   constructor(
     private toastController: ToastController,
+    private alertController: AlertController,
     private reportService: ReportService,
     private geoSvc: GeolocationService,
     private zonesAssetService: ZonesAssetService,
-    private geoService: GeoService
+    private geoService: GeoService,
+    private reportValidator: ReportValidatorService
   ) {
     addIcons({
       ellipse, locationOutline, navigate, timerOutline, listOutline,
@@ -307,13 +312,19 @@ export class Tab2Page implements OnInit {
   }
 
   async submitReport() {
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
+
     if (!this.descripcion) {
-      await this.showToast('Por favor agregue una descripción del incidente', 'warning'); return;
+      await this.showToast('Por favor agregue una descripción del incidente', 'warning');
+      this.isSubmitting = false;
+      return;
     }
 
     const comuna = this.zonesAssetService.findZoneContaining(this.latLng.lat, this.latLng.lng, this.zones);
     if (!comuna) {
       await this.showToast('No puedes enviar reportes fuera del área de cobertura (Santiago y comunas cercanas).', 'warning');
+      this.isSubmitting = false;
       return;
     }
     this.zonaSeleccionada = comuna;
@@ -333,6 +344,7 @@ export class Tab2Page implements OnInit {
 
         if (!zonaReal) {
           this.showToast('El sistema de zonas aún no está configurado. Contacta al administrador.', 'danger');
+          this.isSubmitting = false;
           return;
         }
 
@@ -340,6 +352,7 @@ export class Tab2Page implements OnInit {
       },
       error: async () => {
         await this.showToast('No se pudo verificar la zona del reporte. Intenta de nuevo.', 'danger');
+        this.isSubmitting = false;
       }
     });
   }
@@ -353,7 +366,9 @@ export class Tab2Page implements OnInit {
       descripcion: this.descripcion,
       zoneId: zoneIdReal,
       longitude: this.latLng.lng, latitude: this.latLng.lat,
-      severity: this.mapSeverity(this.severidad)
+      severity: this.mapSeverity(this.severidad),
+      tipoIncendio: this.tipoDesc,
+      protocolo: this.protocolo
     }).subscribe({
       next: async (res) => {
         // Subir media si se seleccionó algo, pero no esperar a que termine para mostrar el éxito del reporte
@@ -376,40 +391,37 @@ export class Tab2Page implements OnInit {
           'success'
         );
         this.descripcion = ''; this.clasificacionInicial = '';
-        this.tipoDesc = ''; this.severidad = 'media';
+        this.tipoDesc = ''; this.severidad = 'media'; this.protocolo = 'Evacuación';
         this.clearMedia();
+        this.isSubmitting = false;
 
-        // Si el reporte cae dentro de una zona operativa real que aún no
-        // tiene ruta de evacuación, se genera sola (el admin no la crea a mano).
-        this.tryAutoGenerateEvacuationRoute(this.latLng.lat, this.latLng.lng, comuna);
+        // Se genera una ruta de evacuación PERSONAL para este reporte (no
+        // compartida con otros reportes de la misma zona): el admin no la
+        // crea a mano.
+        this.tryAutoGenerateEvacuationRoute(res.id, this.latLng.lat, this.latLng.lng, comuna, this.tipoDesc, this.severidad);
       },
       error: async (err) => {
         console.error('Error submitting report', err);
         const msg = err.status === 0 ? 'No se pudo conectar con el servidor' : 'Error al enviar el reporte';
         await this.showToast(msg, 'danger');
+        this.isSubmitting = false;
       }
     });
   }
 
   /**
    * Cuando se registra un reporte, si su ubicación cae dentro de una zona
-   * operativa real (creada por el admin) que aún no tiene ruta de evacuación,
-   * se genera sola: origen = centro de la zona, destino = centro de la comuna
-   * donde está (el "punto de encuentro"), camino real por calles vía OSRM. No
-   * hay creación manual de rutas — el admin solo crea zonas.
+   * operativa real (creada por el admin), se genera sola una ruta PERSONAL
+   * para ESE reporte: origen = la ubicación exacta del incendio, destino =
+   * punto seguro a X metros según severidad e tipo. Camino real por calles
+   * vía OSRM. Fuera de una zona operativa no hay ruta posible.
    */
-  private tryAutoGenerateEvacuationRoute(lat: number, lng: number, comuna: ComunaZone) {
+  private tryAutoGenerateEvacuationRoute(reportId: string, lat: number, lng: number, comuna: ComunaZone, tipoIncendio: string, severidad: string) {
     this.geoService.getZones().subscribe({
       next: (zones) => {
         const zona = zones.find(z => z.zoneType === 'OPERATIONAL' && this.pointInZoneGeoJson(lng, lat, z.geoJson));
         if (!zona) return;
-
-        this.geoService.getEvacuationRoutesByZone(zona.id).subscribe({
-          next: (rutas) => {
-            if (rutas.length === 0) { this.generateAutoRoute(zona, comuna); }
-          },
-          error: () => this.generateAutoRoute(zona, comuna)
-        });
+        this.generateAutoRoute(reportId, zona, comuna, lat, lng, tipoIncendio, severidad);
       },
       error: (err) => console.warn('No se pudieron revisar las zonas para la ruta automática', err)
     });
@@ -446,13 +458,51 @@ export class Tab2Page implements OnInit {
     return [cx, cy];
   }
 
-  private async generateAutoRoute(zona: ZoneResponse, comuna: ComunaZone) {
-    let zoneGeometry: any;
-    try { zoneGeometry = JSON.parse(zona.geoJson); } catch { return; }
+  private getSafetyDistance(tipoIncendio: string, severidad: string): number {
+    const distanceMap: Record<string, Record<string, number>> = {
+      'FORESTAL': { 'baja': 300, 'media': 1000, 'alta': 3000, 'critica': 3000 },
+      'URBANO': { 'baja': 100, 'media': 300, 'alta': 500, 'critica': 500 },
+      'ESTRUCTURAL': { 'baja': 50, 'media': 100, 'alta': 200, 'critica': 200 }
+    };
+    return distanceMap[tipoIncendio]?.[severidad] || 200;
+  }
 
-    const origin = this.computeCentroid(zoneGeometry);
-    const destino = this.computeCentroid(comuna.geometry as any);
-    if (!origin || !destino) return;
+  private findSafePoint(origin: [number, number], zona: ZoneResponse, safetyDistanceMeters: number): [number, number] | null {
+    const centroid = this.computeCentroid(JSON.parse(zona.geoJson));
+    if (!centroid) return null;
+
+    // Vector desde origen hacia centroide
+    const dx = centroid[0] - origin[0];
+    const dy = centroid[1] - origin[1];
+    const distToCentroid = Math.sqrt(dx * dx + dy * dy);
+
+    // Si la distancia al centroide es menor que la seguridad, usar el centroide
+    if (distToCentroid < safetyDistanceMeters / 111000) {
+      return centroid;
+    }
+
+    // Calcular punto a safetyDistanceMeters en dirección al centroide
+    const normalizedDx = dx / distToCentroid;
+    const normalizedDy = dy / distToCentroid;
+    const safeDistanceDegrees = safetyDistanceMeters / 111000;
+    const safePoint: [number, number] = [
+      origin[0] + normalizedDx * safeDistanceDegrees,
+      origin[1] + normalizedDy * safeDistanceDegrees
+    ];
+
+    // Verificar si está dentro de la zona; si no, retornar el centroide
+    const inZone = this.pointInZoneGeoJson(safePoint[0], safePoint[1], zona.geoJson);
+    return inZone ? safePoint : centroid;
+  }
+
+  private async generateAutoRoute(reportId: string, zona: ZoneResponse, comuna: ComunaZone, lat: number, lng: number, tipoIncendio: string, severidad: string) {
+    // Origen = la ubicación exacta del incendio
+    const origin: [number, number] = [lng, lat];
+
+    // Calcular distancia segura según severidad e tipo
+    const safetyDistance = this.getSafetyDistance(tipoIncendio, severidad);
+    const destino = this.findSafePoint(origin, zona, safetyDistance);
+    if (!destino) return;
 
     try {
       const url = `https://router.project-osrm.org/route/v1/foot/${origin[0]},${origin[1]};${destino[0]},${destino[1]}?overview=full&geometries=geojson`;
@@ -466,9 +516,10 @@ export class Tab2Page implements OnInit {
 
       this.geoService.createEvacuationRoute({
         name,
-        description: `Ruta de evacuación generada automáticamente al registrarse un reporte en la zona ${zona.name}, hacia ${comuna.name}.`,
+        description: `Ruta de evacuación generada automáticamente desde el incendio reportado en la zona ${zona.name}, hacia punto seguro a ${safetyDistance}m.`,
         geoJson: JSON.stringify(data.routes[0].geometry),
-        zoneId: zona.id
+        zoneId: zona.id,
+        reportId
       }).subscribe({
         error: (err) => console.warn('No se pudo generar la ruta automática', err)
       });
@@ -526,6 +577,11 @@ export class Tab2Page implements OnInit {
         this.historialReportes = this.historialReportes.filter(r => r.id !== reporte.id);
         if (this.reporteSeleccionado?.id === reporte.id) { this.closeReporteDetalle(); }
         await this.showToast('Reporte eliminado', 'warning');
+
+        // La ruta de evacuación es personal de este reporte — al eliminarlo, se elimina también.
+        this.geoService.deleteEvacuationRoutesByReport(reporte.id).subscribe({
+          error: (err) => console.warn('No se pudo eliminar la ruta del reporte', err)
+        });
       },
       error: async (err) => {
         console.error('Error deleting report', err);

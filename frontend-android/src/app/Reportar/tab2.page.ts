@@ -7,7 +7,7 @@ import {
   IonIcon, IonSegment, IonSegmentButton,
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle,
   IonList, IonItem,
-  ToastController
+  ToastController, AlertController
 } from '@ionic/angular/standalone';
 
 import { addIcons } from 'ionicons';
@@ -16,16 +16,15 @@ import {
   paperPlaneOutline, warning, listOutline,
   timerOutline, navigate, ellipse, appsOutline, alertCircleOutline,
   trashOutline, timeOutline, imageOutline, closeCircle, videocamOutline,
-  cameraOutline, imagesOutline, eyeOutline, closeOutline,
-  chevronBackOutline, chevronForwardOutline
+  imagesOutline, eyeOutline, closeOutline, chevronBackOutline, chevronForwardOutline
 } from 'ionicons/icons';
 
 import * as L from 'leaflet';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { ReportService, ReporteResponse, ReporteMediaItem, SeverityLevel } from '../services/report.service';
 import { GeolocationService } from '../services/geolocation.service';
 import { ZonesAssetService, ComunaZone } from '../services/zones-asset.service';
 import { GeoService, ZoneResponse } from '../services/geo.service';
+import { ReportValidatorService, ReportValidation } from '../services/report-validator.service';
 
 export interface MediaPreview {
   url: string;
@@ -51,29 +50,35 @@ export class Tab2Page implements OnInit {
   clasificacionInicial: string = '';
   tipoDesc: string = '';
   severidad: string = 'media';
+  protocolo: string = 'Evacuación';
   descripcion: string = '';
   map: L.Map | undefined;
   marker: L.Marker | undefined;
   latLng = { lat: -33.4489, lng: -70.6693 };
   zones: ComunaZone[] = [];
+  zoneLayers: L.Layer[] = [];
+  mainBounds: L.LatLngBounds | null = null;
+  /** Zona (comuna real) que contiene el punto seleccionado actualmente. */
+  zonaSeleccionada: ComunaZone | null = null;
 
   isAdmin = false;
 
-  // Report history (loaded from backend)
+  // historial de reportes para mostrar en el panel lateral (solo admins)
   historialReportes: ReporteResponse[] = [];
 
-  // Media to attach to the next submission
+  // media seleccionada para subir con el reporte
   selectedFiles: File[] = [];
   filePreviews: MediaPreview[] = [];
   private readonly MAX_FILES = 5;
   private readonly MAX_SIZE_MB = 20;
 
-  // Report detail modal
+  // reporte actualmente seleccionado para mostrar en el detalle
   reporteSeleccionado: ReporteResponse | null = null;
   mediaDelReporte: ReporteMediaItem[] = [];
   cargandoMedia = false;
+  isSubmitting = false;
 
-  // Lightbox
+  // estado del lightbox, -1 si está cerrado o el índice del media mostrado si está abierto
   lightboxIndex = -1;
 
   headerHidden: boolean = false;
@@ -91,16 +96,18 @@ export class Tab2Page implements OnInit {
 
   constructor(
     private toastController: ToastController,
+    private alertController: AlertController,
     private reportService: ReportService,
     private geoSvc: GeolocationService,
     private zonesAssetService: ZonesAssetService,
-    private geoService: GeoService
+    private geoService: GeoService,
+    private reportValidator: ReportValidatorService
   ) {
     addIcons({
       ellipse, locationOutline, navigate, timerOutline, listOutline,
       alertCircleOutline, paperPlaneOutline, appsOutline, leafOutline,
       flameOutline, warning, trashOutline, timeOutline,
-      imageOutline, closeCircle, videocamOutline, cameraOutline,
+      imageOutline, closeCircle, videocamOutline,
       imagesOutline, eyeOutline, closeOutline,
       chevronBackOutline, chevronForwardOutline
     });
@@ -108,7 +115,6 @@ export class Tab2Page implements OnInit {
 
   ngOnInit() {
     setTimeout(() => { this.loadMap(); }, 200);
-    this.loadZones();
   }
 
   ionViewDidEnter() {
@@ -116,15 +122,6 @@ export class Tab2Page implements OnInit {
     this.isAdmin = (role === 'admin');
     setTimeout(() => { this.loadMap(); }, 200);
     if (this.isAdmin) { this.loadHistory(); }
-    this.loadZones();
-  }
-
-  /** Límites comunales reales (asset local — zone-service aún no tiene datos reales). */
-  private loadZones() {
-    this.zonesAssetService.getZones().subscribe({
-      next: (zones) => { this.zones = zones; },
-      error: (err) => console.warn('No se pudieron cargar las comunas', err)
-    });
   }
 
   private loadHistory() {
@@ -140,7 +137,7 @@ export class Tab2Page implements OnInit {
   }
 
   // ------------------------------------------------------------------ //
-  //  MAP
+  //  MAPA 
   // ------------------------------------------------------------------ //
 
   loadMap() {
@@ -163,11 +160,76 @@ export class Tab2Page implements OnInit {
     });
 
     this.marker = L.marker([this.latLng.lat, this.latLng.lng], { draggable: true, icon: fireIcon }).addTo(this.map);
-    this.marker.on('dragend', () => {
-      const p = this.marker?.getLatLng();
-      if (p) { this.latLng.lat = p.lat; this.latLng.lng = p.lng; }
-    });
+    this.marker.on('dragend', async () => {
+    const p = this.marker?.getLatLng();
+
+    if (!p) return;
+
+    const zona = this.zonesAssetService.findZoneContaining(p.lat, p.lng, this.zones);
+    if (!zona) {
+      await this.showToast('El reporte debe estar dentro del área de cobertura (Santiago y comunas cercanas).', 'warning');
+
+      this.marker?.setLatLng([this.latLng.lat, this.latLng.lng]);
+      return;
+    }
+
+    this.zonaSeleccionada = zona;
+    this.latLng.lat = p.lat;
+    this.latLng.lng = p.lng;
+});
     this.getMyLocation();
+    this.loadZonesForReportMap();
+  }
+
+  /** Límites comunales reales (asset local — zone-service aún no tiene datos reales). */
+  private loadZonesForReportMap() {
+    this.zonesAssetService.getZones().subscribe({
+      next: (zones) => {
+        this.zones = zones;
+        this.renderReportZones();
+
+        // Determina en qué comuna cae el marcador inicial (ubicación por defecto / GPS)
+        this.zonaSeleccionada = this.zonesAssetService.findZoneContaining(this.latLng.lat, this.latLng.lng, this.zones);
+      },
+      error: (err) => {
+        console.error('No se pudieron cargar las comunas en Reportar', err);
+      }
+    });
+  }
+
+  private renderReportZones() {
+    if (!this.map) return;
+
+    this.zoneLayers.forEach((layer: L.Layer) => layer.remove());
+    this.zoneLayers = [];
+    this.mainBounds = null;
+
+    this.zones.forEach((zone) => {
+      if (!zone.geometry) return;
+
+      const esProvincia = zone.zoneType === 'PROVINCE';
+
+      // Comunas: solo borde coloreado de referencia, sin relleno (igual que en
+      // el Mapa de Emergencias) — no son zonas operativas reales.
+      const layer = L.geoJSON(zone.geometry, {
+        style: {
+          color: zone.color || '#3388ff',
+          weight: 2,
+          dashArray: esProvincia ? '6 4' : undefined,
+          fillOpacity: 0
+        }
+      }).addTo(this.map!);
+
+      this.zoneLayers.push(layer);
+
+      if (esProvincia) {
+        this.mainBounds = layer.getBounds();
+        // No se hace fitBounds a la Región completa aquí tampoco: su
+        // territorio (~150km) es mucho más alto que este mapa, así que
+        // encajarlo entero aleja demasiado la vista. Se deja el zoom inicial
+        // (ver loadMap(), centrado en la posición del reporte).
+      }
+    });
   }
 
   async getMyLocation() {
@@ -185,7 +247,7 @@ export class Tab2Page implements OnInit {
   }
 
   // ------------------------------------------------------------------ //
-  //  TEMPLATES
+  //  TEMPLATES DE REPORTE
   // ------------------------------------------------------------------ //
 
   useTemplate(tipo: string | number | undefined) {
@@ -204,7 +266,7 @@ export class Tab2Page implements OnInit {
   }
 
   // ------------------------------------------------------------------ //
-  //  MEDIA (local selection)
+  //  MEDIA (selección local y subida al backend)
   // ------------------------------------------------------------------ //
 
   onFilesSelected(event: Event) {
@@ -233,49 +295,13 @@ export class Tab2Page implements OnInit {
     this.filePreviews.splice(index, 1);
   }
 
-  async takePicture() {
-    if (this.selectedFiles.length >= this.MAX_FILES) {
-      this.showToast(`Máximo ${this.MAX_FILES} archivos permitidos`, 'warning');
-      return;
-    }
-    try {
-      const photo = await Camera.getPhoto({
-        quality: 85,
-        allowEditing: false,
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Camera
-      });
-
-      if (!photo.dataUrl) return;
-
-      // Convert dataUrl to File for upload
-      const response = await fetch(photo.dataUrl);
-      const blob = await response.blob();
-      const filename = `foto_${Date.now()}.${photo.format ?? 'jpeg'}`;
-      const file = new File([blob], filename, { type: `image/${photo.format ?? 'jpeg'}` });
-
-      if (file.size > this.MAX_SIZE_MB * 1024 * 1024) {
-        this.showToast(`La foto supera los ${this.MAX_SIZE_MB} MB`, 'warning');
-        return;
-      }
-
-      this.selectedFiles.push(file);
-      this.filePreviews.push({ url: photo.dataUrl, type: 'image', name: filename });
-    } catch (err: any) {
-      // User cancelled — no toast needed
-      if (err?.message && !err.message.toLowerCase().includes('cancel')) {
-        this.showToast('No se pudo abrir la cámara', 'warning');
-      }
-    }
-  }
-
   private clearMedia() {
     this.filePreviews.forEach(p => URL.revokeObjectURL(p.url));
     this.selectedFiles = []; this.filePreviews = [];
   }
 
   // ------------------------------------------------------------------ //
-  //  SUBMIT
+  //  ENVÍO DE REPORTE
   // ------------------------------------------------------------------ //
 
   private mapSeverity(sev: string): SeverityLevel {
@@ -286,15 +312,22 @@ export class Tab2Page implements OnInit {
   }
 
   async submitReport() {
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
+
     if (!this.descripcion) {
-      await this.showToast('Por favor agregue una descripción del incidente', 'warning'); return;
+      await this.showToast('Por favor agregue una descripción del incidente', 'warning');
+      this.isSubmitting = false;
+      return;
     }
 
     const comuna = this.zonesAssetService.findZoneContaining(this.latLng.lat, this.latLng.lng, this.zones);
     if (!comuna) {
       await this.showToast('No puedes enviar reportes fuera del área de cobertura (Santiago y comunas cercanas).', 'warning');
+      this.isSubmitting = false;
       return;
     }
+    this.zonaSeleccionada = comuna;
 
     // El reporte tiene que asociarse a una zona REAL de zone-service (no a la
     // comuna estática del frontend): geo-service valida el zoneId contra
@@ -311,6 +344,7 @@ export class Tab2Page implements OnInit {
 
         if (!zonaReal) {
           this.showToast('El sistema de zonas aún no está configurado. Contacta al administrador.', 'danger');
+          this.isSubmitting = false;
           return;
         }
 
@@ -318,6 +352,7 @@ export class Tab2Page implements OnInit {
       },
       error: async () => {
         await this.showToast('No se pudo verificar la zona del reporte. Intenta de nuevo.', 'danger');
+        this.isSubmitting = false;
       }
     });
   }
@@ -331,14 +366,17 @@ export class Tab2Page implements OnInit {
       descripcion: this.descripcion,
       zoneId: zoneIdReal,
       longitude: this.latLng.lng, latitude: this.latLng.lat,
-      severity: this.mapSeverity(this.severidad)
+      severity: this.mapSeverity(this.severidad),
+      tipoIncendio: this.tipoDesc,
+      protocolo: this.protocolo
     }).subscribe({
       next: async (res) => {
-        // Upload media files if any
+        // Subir media si se seleccionó algo, pero no esperar a que termine para mostrar el éxito del reporte
         if (this.selectedFiles.length > 0) {
           const filesToUpload = [...this.selectedFiles];
           this.reportService.subirMedia(res.id, filesToUpload).subscribe({
             next: () => {
+              // Actualizar el conteo de media en el reporte del historial para que se muestre el ícono correspondiente
               res.mediaCount = filesToUpload.length;
             },
             error: (err) => console.warn('Could not upload media', err)
@@ -353,40 +391,37 @@ export class Tab2Page implements OnInit {
           'success'
         );
         this.descripcion = ''; this.clasificacionInicial = '';
-        this.tipoDesc = ''; this.severidad = 'media';
+        this.tipoDesc = ''; this.severidad = 'media'; this.protocolo = 'Evacuación';
         this.clearMedia();
+        this.isSubmitting = false;
 
-        // Si el reporte cae dentro de una zona operativa real que aún no
-        // tiene ruta de evacuación, se genera sola (el admin no la crea a mano).
-        this.tryAutoGenerateEvacuationRoute(this.latLng.lat, this.latLng.lng, comuna);
+        // Se genera una ruta de evacuación PERSONAL para este reporte (no
+        // compartida con otros reportes de la misma zona): el admin no la
+        // crea a mano.
+        this.tryAutoGenerateEvacuationRoute(res.id, this.latLng.lat, this.latLng.lng, comuna, this.tipoDesc, this.severidad);
       },
       error: async (err) => {
         console.error('Error submitting report', err);
         const msg = err.status === 0 ? 'No se pudo conectar con el servidor' : 'Error al enviar el reporte';
         await this.showToast(msg, 'danger');
+        this.isSubmitting = false;
       }
     });
   }
 
   /**
    * Cuando se registra un reporte, si su ubicación cae dentro de una zona
-   * operativa real (creada por el admin) que aún no tiene ruta de evacuación,
-   * se genera sola: origen = centro de la zona, destino = centro de la comuna
-   * donde está (el "punto de encuentro"), camino real por calles vía OSRM. No
-   * hay creación manual de rutas — el admin solo crea zonas.
+   * operativa real (creada por el admin), se genera sola una ruta PERSONAL
+   * para ESE reporte: origen = la ubicación exacta del incendio, destino =
+   * punto seguro a X metros según severidad e tipo. Camino real por calles
+   * vía OSRM. Fuera de una zona operativa no hay ruta posible.
    */
-  private tryAutoGenerateEvacuationRoute(lat: number, lng: number, comuna: ComunaZone) {
+  private tryAutoGenerateEvacuationRoute(reportId: string, lat: number, lng: number, comuna: ComunaZone, tipoIncendio: string, severidad: string) {
     this.geoService.getZones().subscribe({
       next: (zones) => {
         const zona = zones.find(z => z.zoneType === 'OPERATIONAL' && this.pointInZoneGeoJson(lng, lat, z.geoJson));
         if (!zona) return;
-
-        this.geoService.getEvacuationRoutesByZone(zona.id).subscribe({
-          next: (rutas) => {
-            if (rutas.length === 0) { this.generateAutoRoute(zona, comuna); }
-          },
-          error: () => this.generateAutoRoute(zona, comuna)
-        });
+        this.generateAutoRoute(reportId, zona, comuna, lat, lng, tipoIncendio, severidad);
       },
       error: (err) => console.warn('No se pudieron revisar las zonas para la ruta automática', err)
     });
@@ -423,13 +458,51 @@ export class Tab2Page implements OnInit {
     return [cx, cy];
   }
 
-  private async generateAutoRoute(zona: ZoneResponse, comuna: ComunaZone) {
-    let zoneGeometry: any;
-    try { zoneGeometry = JSON.parse(zona.geoJson); } catch { return; }
+  private getSafetyDistance(tipoIncendio: string, severidad: string): number {
+    const distanceMap: Record<string, Record<string, number>> = {
+      'FORESTAL': { 'baja': 300, 'media': 1000, 'alta': 3000, 'critica': 3000 },
+      'URBANO': { 'baja': 100, 'media': 300, 'alta': 500, 'critica': 500 },
+      'ESTRUCTURAL': { 'baja': 50, 'media': 100, 'alta': 200, 'critica': 200 }
+    };
+    return distanceMap[tipoIncendio]?.[severidad] || 200;
+  }
 
-    const origin = this.computeCentroid(zoneGeometry);
-    const destino = this.computeCentroid(comuna.geometry as any);
-    if (!origin || !destino) return;
+  private findSafePoint(origin: [number, number], zona: ZoneResponse, safetyDistanceMeters: number): [number, number] | null {
+    const centroid = this.computeCentroid(JSON.parse(zona.geoJson));
+    if (!centroid) return null;
+
+    // Vector desde origen hacia centroide
+    const dx = centroid[0] - origin[0];
+    const dy = centroid[1] - origin[1];
+    const distToCentroid = Math.sqrt(dx * dx + dy * dy);
+
+    // Si la distancia al centroide es menor que la seguridad, usar el centroide
+    if (distToCentroid < safetyDistanceMeters / 111000) {
+      return centroid;
+    }
+
+    // Calcular punto a safetyDistanceMeters en dirección al centroide
+    const normalizedDx = dx / distToCentroid;
+    const normalizedDy = dy / distToCentroid;
+    const safeDistanceDegrees = safetyDistanceMeters / 111000;
+    const safePoint: [number, number] = [
+      origin[0] + normalizedDx * safeDistanceDegrees,
+      origin[1] + normalizedDy * safeDistanceDegrees
+    ];
+
+    // Verificar si está dentro de la zona; si no, retornar el centroide
+    const inZone = this.pointInZoneGeoJson(safePoint[0], safePoint[1], zona.geoJson);
+    return inZone ? safePoint : centroid;
+  }
+
+  private async generateAutoRoute(reportId: string, zona: ZoneResponse, comuna: ComunaZone, lat: number, lng: number, tipoIncendio: string, severidad: string) {
+    // Origen = la ubicación exacta del incendio
+    const origin: [number, number] = [lng, lat];
+
+    // Calcular distancia segura según severidad e tipo
+    const safetyDistance = this.getSafetyDistance(tipoIncendio, severidad);
+    const destino = this.findSafePoint(origin, zona, safetyDistance);
+    if (!destino) return;
 
     try {
       const url = `https://router.project-osrm.org/route/v1/foot/${origin[0]},${origin[1]};${destino[0]},${destino[1]}?overview=full&geometries=geojson`;
@@ -443,9 +516,10 @@ export class Tab2Page implements OnInit {
 
       this.geoService.createEvacuationRoute({
         name,
-        description: `Ruta de evacuación generada automáticamente al registrarse un reporte en la zona ${zona.name}, hacia ${comuna.name}.`,
+        description: `Ruta de evacuación generada automáticamente desde el incendio reportado en la zona ${zona.name}, hacia punto seguro a ${safetyDistance}m.`,
         geoJson: JSON.stringify(data.routes[0].geometry),
-        zoneId: zona.id
+        zoneId: zona.id,
+        reportId
       }).subscribe({
         error: (err) => console.warn('No se pudo generar la ruta automática', err)
       });
@@ -455,7 +529,7 @@ export class Tab2Page implements OnInit {
   }
 
   // ------------------------------------------------------------------ //
-  //  REPORT DETAIL MODAL
+  //  REPORTE DETAIL PANEL (solo admins)
   // ------------------------------------------------------------------ //
 
   openReporteDetalle(reporte: ReporteResponse) {
@@ -494,7 +568,7 @@ export class Tab2Page implements OnInit {
   }
 
   // ------------------------------------------------------------------ //
-  //  HISTORY ACTIONS
+  //  HISTORIAL DE REPORTES (solo admins)
   // ------------------------------------------------------------------ //
 
   async deleteReport(reporte: ReporteResponse) {
@@ -503,6 +577,11 @@ export class Tab2Page implements OnInit {
         this.historialReportes = this.historialReportes.filter(r => r.id !== reporte.id);
         if (this.reporteSeleccionado?.id === reporte.id) { this.closeReporteDetalle(); }
         await this.showToast('Reporte eliminado', 'warning');
+
+        // La ruta de evacuación es personal de este reporte — al eliminarlo, se elimina también.
+        this.geoService.deleteEvacuationRoutesByReport(reporte.id).subscribe({
+          error: (err) => console.warn('No se pudo eliminar la ruta del reporte', err)
+        });
       },
       error: async (err) => {
         console.error('Error deleting report', err);
@@ -526,4 +605,6 @@ export class Tab2Page implements OnInit {
     };
     return map[sev] || sev;
   }
+
+  
 }

@@ -630,6 +630,13 @@ body.dark {
     box-shadow: 0 0 0 4px rgba(255, 77, 94, 0.18) !important;
   }
 
+  ion-input:focus::after,
+  ion-textarea:focus::after {
+    content: '|';
+    color: #FFFFFF;
+    animation: blink 0.7s infinite;
+  }
+
   ion-textarea, ion-select, ion-input {
     --color: #FFFFFF !important;
     --placeholder-color: #B89599 !important;

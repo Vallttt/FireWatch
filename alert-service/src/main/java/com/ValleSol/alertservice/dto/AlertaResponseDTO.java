@@ -17,6 +17,7 @@ public class AlertaResponseDTO {
     private boolean       canalPush;
     private String        estado;
     private LocalDateTime fechaCreacion;
+    private String        usuarioRemitente;
 
     public UUID getId()                           { return id; }
     public void setId(UUID id)                    { this.id = id; }
@@ -53,4 +54,7 @@ public class AlertaResponseDTO {
 
     public LocalDateTime getFechaCreacion()                       { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion)     { this.fechaCreacion = fechaCreacion; }
+
+    public String getUsuarioRemitente()                       { return usuarioRemitente; }
+    public void setUsuarioRemitente(String usuarioRemitente)  { this.usuarioRemitente = usuarioRemitente; }
 }

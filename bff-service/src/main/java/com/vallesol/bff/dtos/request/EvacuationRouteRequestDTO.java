@@ -19,4 +19,5 @@ public class EvacuationRouteRequestDTO {
     private String geoJson;
     @NotNull
     private UUID zoneId;
+    private String reportId;
 }

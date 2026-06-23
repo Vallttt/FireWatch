@@ -72,6 +72,34 @@ public class EvacuationRouteController {
         return ResponseEntity.ok(responseDTO);
     }
 
+    @GetMapping("/report/{reportId}")
+    public ResponseEntity<ApiResponseDTO<List<EvacuationResponseDTO>>> findByReportId(
+            @PathVariable String reportId) {
+
+        List<EvacuationResponseDTO> routes =
+                evacuationRouteService.findByReportId(reportId);
+
+        ApiResponseDTO<List<EvacuationResponseDTO>> responseDTO =
+                new ApiResponseDTO<>(
+                        true,
+                        "Rutas de evacuación del reporte cargadas correctamente",
+                        routes
+                );
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    @DeleteMapping("/report/{reportId}")
+    public ResponseEntity<ApiResponseDTO<Void>> deleteByReportId(@PathVariable String reportId) {
+
+        evacuationRouteService.deleteByReportId(reportId);
+
+        ApiResponseDTO<Void> responseDTO =
+                new ApiResponseDTO<>(true, "Rutas del reporte eliminadas con éxito", null);
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponseDTO<EvacuationResponseDTO>> update(
             @Valid @RequestBody EvacuationRouteRequestDTO evacuationRequest,@PathVariable UUID id){

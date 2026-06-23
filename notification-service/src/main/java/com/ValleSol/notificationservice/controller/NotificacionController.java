@@ -55,7 +55,7 @@ public class NotificacionController {
 
     @GetMapping("/conteo")
     public ResponseEntity<Integer> conteo() {
-        return ResponseEntity.ok((int) repository.count());
+        return ResponseEntity.ok(repository.countUniqueDispatches());
     }
 
     @DeleteMapping("/{id}")

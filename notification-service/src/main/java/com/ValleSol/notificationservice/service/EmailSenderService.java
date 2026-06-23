@@ -19,6 +19,7 @@ public class EmailSenderService {
 
     public void enviarAlerta(Notificacion notif) {
         try {
+            System.out.println(">>> Enviando alerta por EMAIL a: " + notif.getDestinatario());
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -28,10 +29,11 @@ public class EmailSenderService {
             helper.setText(buildHtml(notif), true);
 
             mailSender.send(message);
+            System.out.println(">>> Correo enviado exitosamente a: " + notif.getDestinatario());
 
         } catch (Exception e) {
-            System.err.println("[notification-service] Error al enviar correo a "
-                    + notif.getDestinatario() + ": " + e.getMessage());
+            System.out.println(">>> ERROR AL ENVIAR CORREO a " + notif.getDestinatario() + ": " + e.getClass().getName() + " - " + e.getMessage());
+            e.printStackTrace(System.out);
         }
     }
 
@@ -50,6 +52,12 @@ public class EmailSenderService {
         String nivel = notif.getNivelEmergencia() != null
                 ? notif.getNivelEmergencia()
                 : "BAJO";
+
+        String tipoAlerta = notif.getTipoAlerta() != null ? notif.getTipoAlerta() : "MANUAL";
+
+        // Si es una alerta de PREVENCIÓN (sin datos de reporte), usar template simplificado
+        boolean esPrevencion = "Preventiva".equalsIgnoreCase(tipoAlerta) ||
+                               (notif.getReporteId() == null && notif.getDescripcionReporte() == null);
 
         String descripcion = notif.getDescripcionReporte() != null
                 ? notif.getDescripcionReporte()
@@ -85,9 +93,15 @@ public class EmailSenderService {
         String colorNivel = "#28a745";
 
         switch (nivel.toUpperCase()) {
-            case "HIGH" -> colorNivel = "#dc3545";
-            case "MEDIUM" -> colorNivel = "#ffc107";
-            case "LOW" -> colorNivel = "#28a745";
+            case "ALTO", "HIGH" -> colorNivel = "#dc3545";
+            case "MEDIO", "MEDIUM" -> colorNivel = "#ffc107";
+            case "BAJO", "LOW" -> colorNivel = "#28a745";
+            case "CRÍTICO", "CRITICAL" -> colorNivel = "#8b0000";
+        }
+
+        // Si es alerta de PREVENCIÓN, usar template sin datos de reporte
+        if (esPrevencion) {
+            return buildPreventionHtml(notif, colorNivel, nivel);
         }
 
         return """
@@ -178,5 +192,61 @@ public class EmailSenderService {
                         lat,
                         lon
                 );
+    }
+
+    private String buildPreventionHtml(Notificacion notif, String colorNivel, String nivel) {
+        String mensaje = notif.getMensaje() != null
+                ? notif.getMensaje()
+                : "Alerta comunitaria del sistema FireWatch";
+
+        return """
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color:#f4f6f8; padding:20px;">
+
+            <div style="max-width:700px; margin:auto; background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+
+                <div style="background:%s; color:white; padding:20px;">
+                    <h2 style="margin:0;">📢 FireWatch - Alerta Comunitaria</h2>
+                </div>
+
+                <div style="padding:25px;">
+
+                    <h3 style="color:#d9534f;">
+                        Alerta de Prevención y Seguridad
+                    </h3>
+
+                    <div style="background:#f9f3e6; border-left:4px solid %s; padding:15px; margin:15px 0;">
+                        <p style="font-size:16px; margin:0; color:#333;">
+                            %s
+                        </p>
+                    </div>
+
+                    <p style="color:#555; line-height:1.6;">
+                        Recibiste esta alerta porque estás registrado en el sistema de alertas comunitarias
+                        de la Municipalidad Valle del Sol.
+                    </p>
+
+                    <hr/>
+
+                    <h4>Recomendaciones:</h4>
+                    <ul style="color:#555;">
+                        <li>Mantente atento a nuevas actualizaciones</li>
+                        <li>Comparte esta información con tu comunidad</li>
+                        <li>Reporta cualquier situación de riesgo usando la aplicación FireWatch</li>
+                    </ul>
+
+                    <hr/>
+
+                    <p style="font-size:12px; color:#666;">
+                        Este correo fue generado automáticamente por el Sistema FireWatch.
+                    </p>
+
+                </div>
+            </div>
+
+        </body>
+        </html>
+        """
+                .formatted(colorNivel, colorNivel, mensaje);
     }
 }

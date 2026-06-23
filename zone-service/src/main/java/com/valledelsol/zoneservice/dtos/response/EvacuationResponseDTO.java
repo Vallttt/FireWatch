@@ -12,4 +12,5 @@ public class EvacuationResponseDTO {
     private String description;
     private String geoJson;
     private UUID zoneId;
+    private String reportId;
 }

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   Router,
@@ -6,13 +6,13 @@ import {
   RouterLink,
   RouterLinkActive
 } from '@angular/router';
-import { filter } from 'rxjs/operators';
-import { Subscription, interval } from 'rxjs';
+import { filter, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 import {
   IonApp, IonRouterOutlet, IonSplitPane, IonMenu,
   IonHeader, IonToolbar, IonContent, IonList,
   IonItem, IonIcon, IonLabel, IonMenuToggle,
-  IonFooter, IonToggle, IonButton
+  IonFooter, IonToggle, IonButton, ToastController, AlertController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -23,8 +23,7 @@ import {
   notificationsOutline,
   moonOutline, logOut, logOutOutline } from 'ionicons/icons';
 import { AuthService } from './services/auth.service';
-import { AlertService } from './services/alert.service';
-import { LocalNotifications } from '@capacitor/local-notifications';
+import { TokenExpiryService } from './services/token-expiry.service';
 
 @Component({
   selector: 'app-root',
@@ -58,21 +57,31 @@ export class AppComponent implements OnInit, OnDestroy {
   public isAdmin = false;
   public isEmergencyMode = false;
 
-  private pollSubscription?: Subscription;
-  private lastAlertTimestamp: number = 0;
+  private destroy$ = new Subject<void>();
+  private sessionExpiringAlertShown = false;
 
   constructor(
     private router: Router,
     private authService: AuthService,
-    private alertService: AlertService
+    private tokenExpiryService: TokenExpiryService,
+    private toastController: ToastController,
+    private alertController: AlertController
   ) {
-    addIcons({flame,gridOutline,documentTextOutline,mapOutline,notificationsOutline,moonOutline,logOutOutline,logOut});
+    addIcons({
+      flame,
+      gridOutline,
+      documentTextOutline,
+      mapOutline,
+      notificationsOutline,
+      moonOutline,
+      logOutOutline,
+      logOut
+    });
 
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
-        this.isLoginPage =
-          event.url === '/login' || event.url === '/';
+        this.isLoginPage = event.url === '/login' || event.url === '/' || event.url === '/forgot-password';
 
         const role = localStorage.getItem('userRole');
         this.isAdmin = role === 'admin';
@@ -82,95 +91,97 @@ export class AppComponent implements OnInit, OnDestroy {
     this.toggleDarkTheme(false);
   }
 
-  async ngOnInit() {
-    await this.requestNotificationPermission();
-    this.startAlertPolling();
+  ngOnInit(): void {
+    // ✅ Iniciar monitoreo de expiración de tokens
+    this.tokenExpiryService.startMonitoring();
+
+    // ✅ Escuchar notificación de token expirando (faltan 5 minutos)
+    this.tokenExpiryService.tokenExpiring$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data) => {
+        if (!this.sessionExpiringAlertShown) {
+          this.sessionExpiringAlertShown = true;
+          this.showSessionExpiringAlert(data.timeRemaining);
+        }
+      });
+
+    // ✅ Escuchar notificación de sesión expirada
+    this.tokenExpiryService.sessionExpired$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.showSessionExpiredAndLogout();
+      });
+
+    // ✅ Reiniciar alerta cuando se inicia sesión nueva
+    this.authService.isAuthenticated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((isAuth) => {
+        if (isAuth) {
+          this.sessionExpiringAlertShown = false;
+        }
+      });
   }
 
-  ngOnDestroy() {
-    this.pollSubscription?.unsubscribe();
-  }
-
-  // ─── Local Push Notifications ────────────────────────────────────────────
-
-  private async requestNotificationPermission() {
-    try {
-      const perm = await LocalNotifications.requestPermissions();
-      if (perm.display === 'granted') {
-        console.log('[Push] Notification permission granted');
-      }
-    } catch (e) {
-      console.warn('[Push] Could not request permission:', e);
-    }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.tokenExpiryService.stopMonitoring();
   }
 
   /**
-   * Polls the alert history every 30 seconds.
-   * If a new alert arrives (more recent than the last seen one),
-   * shows a local push notification.
+   * ✅ Mostrar alerta de sesión expirando en 5 minutos
    */
-  private startAlertPolling() {
-    // Initialize timestamp to now so old alerts are not re-notified
-    this.lastAlertTimestamp = Date.now();
-
-    this.pollSubscription = interval(30_000).subscribe(() => {
-      if (!this.authService.isLoggedIn()) return;
-
-      this.alertService.historial().subscribe({
-        next: (alertas) => {
-          if (!alertas || alertas.length === 0) return;
-
-          const latest = alertas.reduce((prev, curr) =>
-            new Date(curr.fechaEnvio).getTime() > new Date(prev.fechaEnvio).getTime() ? curr : prev
-          );
-
-          const latestTime = new Date(latest.fechaEnvio).getTime();
-
-          if (latestTime > this.lastAlertTimestamp) {
-            this.lastAlertTimestamp = latestTime;
-            const titulo = latest.nivelEmergencia ? `Incendio nivel ${latest.nivelEmergencia}` : 'Nueva alerta';
-            this.showPushNotification(titulo, latest.mensaje);
+  async showSessionExpiringAlert(timeRemaining: number): Promise<void> {
+    const alert = await this.alertController.create({
+      header: '⏰ Sesión por expirar',
+      message: `Tu sesión expirará en ${this.tokenExpiryService.formatTimeRemaining(timeRemaining)}. ¿Deseas renovarla?`,
+      buttons: [
+        {
+          text: 'Logout',
+          role: 'cancel',
+          handler: () => {
+            this.logout();
           }
         },
-        error: () => { /* silent in background */ }
-      });
-    });
-  }
-
-  private async showPushNotification(title: string, body: string) {
-    try {
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            // Sin smallIcon/sound personalizados: esos recursos (ic_notification,
-            // beep.wav) no existen en res/, y referenciar un recurso inexistente
-            // hace que la notificación nunca se muestre. Se deja que el plugin
-            // use sus valores por defecto (ícono de la app, sonido del sistema).
-            id: Date.now(),
-            title: `🔥 Valle del Sol: ${title}`,
-            body: body.length > 100 ? body.substring(0, 100) + '…' : body,
-            actionTypeId: '',
-            extra: null
+        {
+          text: 'Renovar sesión',
+          handler: () => {
+            this.tokenExpiryService.renewSession();
           }
-        ]
-      });
-    } catch (e) {
-      console.warn('[Push] Error displaying notification:', e);
-    }
+        }
+      ],
+      backdropDismiss: false // ✅ No permitir cerrar sin elegir
+    });
+
+    await alert.present();
   }
 
-  // ─── General ─────────────────────────────────────────────────────────────
+  /**
+   * ✅ Mostrar alerta de sesión expirada y logout
+   */
+  async showSessionExpiredAndLogout(): Promise<void> {
+    const toast = await this.toastController.create({
+      message: '❌ Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+      duration: 5000,
+      position: 'top',
+      color: 'danger'
+    });
 
-  toggleDarkMode(event: any) {
+    await toast.present();
+    this.logout();
+  }
+
+  toggleDarkMode(event: any): void {
     this.toggleDarkTheme(event.detail.checked);
   }
 
-  toggleDarkTheme(shouldAdd: boolean) {
+  toggleDarkTheme(shouldAdd: boolean): void {
     document.body.classList.toggle('dark', shouldAdd);
   }
 
-  logout() {
+  logout(): void {
     this.authService.logout();
+    this.tokenExpiryService.stopMonitoring();
     window.location.href = '/login';
   }
 }

@@ -2,7 +2,7 @@
 
   <div class="login-wrapper">
 
-    <!-- BRAND BLOCK -->
+    <!-- bloque de marca -->
     <div class="brand-block">
       <div class="brand-icon">
         <ion-icon name="flame"></ion-icon>
@@ -11,7 +11,7 @@
       <p class="brand-subtitle">Municipalidad Valle del Sol</p>
     </div>
 
-    <!-- LOGIN CARD -->
+    <!-- iniciar sesión card -->
     <div class="login-card">
 
       <ion-segment
@@ -26,7 +26,7 @@
         </ion-segment-button>
       </ion-segment>
 
-      <!-- LOGIN FORM -->
+      <!-- iniciar sesión -->
       <div class="form-block" *ngIf="modo === 'login'">
 
         <div class="input-section">
@@ -64,10 +64,12 @@
           {{ loading ? 'Verificando…' : 'Iniciar sesión' }}
         </ion-button>
 
-        <p class="form-help">¿Olvidaste tu contraseña?</p>
+        <p class="form-help forgot-link" (click)="goForgotPassword()">
+          ¿Olvidaste tu contraseña?
+        </p>
       </div>
 
-      <!-- REGISTRATION FORM -->
+      <!-- registrarse -->
       <div class="form-block" *ngIf="modo === 'register'">
 
         <div class="input-section">
@@ -139,12 +141,12 @@
         </ion-button>
       </div>
 
-      <!-- Divider -->
+      <!-- Divisor -->
       <div class="divider">
         <span>o continuar directamente</span>
       </div>
 
-      <!-- Emergency button -->
+      <!-- botón de emergencia -->
       <ion-button
         expand="block"
         shape="round"
