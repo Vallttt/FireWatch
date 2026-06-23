@@ -276,6 +276,28 @@ Ciudadano/Admin                 Frontend (Web/Android)              Backend (Mic
 
 ---
 
+## 🚧 En Desarrollo
+
+Las siguientes funcionalidades están en desarrollo activo:
+
+### Backend
+- 📧 **Envío real de correos** - Integración completa con SMTP (actualmente simula el despacho)
+- 🔔 **Firebase Cloud Messaging** - Push notifications nativas para móvil y web
+- 👥 **Asignación automática de brigadas** - Sistema inteligente que asigna brigadas a zonas críticas según disponibilidad
+- 📊 **Dashboard táctico avanzado** - Timeline de eventos, predicciones, análisis predictivo
+- 📈 **Observabilidad y métricas** - Prometheus, Grafana, distributed tracing con Jaeger
+- 🔄 **Escalamiento horizontal** - Replicación automática de servicios críticos bajo carga
+- 🏥 **Registro dinámico completo** - Eureka service discovery con health checks avanzados
+- 🔐 **Autorización por roles** - RBAC granular en Spring Security + API Gateway
+- 🎯 **API Rate Limiting** - Control de velocidad por usuario/IP en gateway
+
+### Frontend
+- 🗺️ **Administración de zonas desde GUI** - Crear, editar, eliminar zonas sin código
+- 🖌️ **Creación interactiva de polígonos** - Dibuja zonas directamente sobre el mapa
+- 📱 **PWA (Progressive Web App)** - Funciona offline, instalable como app nativa
+
+---
+
 ## 🔐 Seguridad
 
 - ✅ JWT tokens con expiración automática
