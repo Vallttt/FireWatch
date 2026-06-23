@@ -14,6 +14,12 @@ export const routes: Routes = [
     loadComponent: () => import('./login/login.page').then(m => m.LoginPage)
   },
   {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./forgot-password/forgot-password.page')
+        .then(m => m.ForgotPasswordPage)
+  },
+  {
     path: 'unauthorized',
     loadComponent: () =>
       import('./pages/unauthorized.page')

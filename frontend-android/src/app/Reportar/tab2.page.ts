@@ -16,8 +16,10 @@ import {
   paperPlaneOutline, warning, listOutline,
   timerOutline, navigate, ellipse, appsOutline, alertCircleOutline,
   trashOutline, timeOutline, imageOutline, closeCircle, videocamOutline,
-  imagesOutline, eyeOutline, closeOutline, chevronBackOutline, chevronForwardOutline
+  imagesOutline, eyeOutline, closeOutline, chevronBackOutline, chevronForwardOutline,
+  cameraOutline
 } from 'ionicons/icons';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 import * as L from 'leaflet';
 import { ReportService, ReporteResponse, ReporteMediaItem, SeverityLevel } from '../services/report.service';
@@ -50,7 +52,6 @@ export class Tab2Page implements OnInit {
   clasificacionInicial: string = '';
   tipoDesc: string = '';
   severidad: string = 'media';
-  protocolo: string = 'Evacuación';
   descripcion: string = '';
   map: L.Map | undefined;
   marker: L.Marker | undefined;
@@ -109,7 +110,7 @@ export class Tab2Page implements OnInit {
       flameOutline, warning, trashOutline, timeOutline,
       imageOutline, closeCircle, videocamOutline,
       imagesOutline, eyeOutline, closeOutline,
-      chevronBackOutline, chevronForwardOutline
+      chevronBackOutline, chevronForwardOutline, cameraOutline
     });
   }
 
@@ -289,6 +290,45 @@ export class Tab2Page implements OnInit {
     input.value = '';
   }
 
+  /** Abre la cámara nativa del dispositivo (solo Android/Capacitor). */
+  async takePhoto() {
+    if (this.selectedFiles.length >= this.MAX_FILES) {
+      this.showToast(`Máximo ${this.MAX_FILES} archivos permitidos`, 'warning');
+      return;
+    }
+    try {
+      const photo = await Camera.getPhoto({
+        quality: 70,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+      });
+
+      if (!photo.dataUrl) return;
+
+      const blob = await (await fetch(photo.dataUrl)).blob();
+      const ext = photo.format || 'jpeg';
+      const file = new File([blob], `foto_${Date.now()}.${ext}`, {
+        type: blob.type || 'image/jpeg'
+      });
+
+      if (file.size > this.MAX_SIZE_MB * 1024 * 1024) {
+        this.showToast(`La foto supera los ${this.MAX_SIZE_MB} MB`, 'warning');
+        return;
+      }
+
+      this.selectedFiles.push(file);
+      this.filePreviews.push({
+        url: photo.dataUrl,
+        type: 'image',
+        name: file.name
+      });
+    } catch (e) {
+      // El usuario canceló o no concedió permiso de cámara — no es un error.
+      console.warn('Cámara cancelada/no disponible', e);
+    }
+  }
+
   removeFile(index: number) {
     URL.revokeObjectURL(this.filePreviews[index].url);
     this.selectedFiles.splice(index, 1);
@@ -367,8 +407,7 @@ export class Tab2Page implements OnInit {
       zoneId: zoneIdReal,
       longitude: this.latLng.lng, latitude: this.latLng.lat,
       severity: this.mapSeverity(this.severidad),
-      tipoIncendio: this.tipoDesc,
-      protocolo: this.protocolo
+      tipoIncendio: this.tipoDesc
     }).subscribe({
       next: async (res) => {
         // Subir media si se seleccionó algo, pero no esperar a que termine para mostrar el éxito del reporte
@@ -391,7 +430,7 @@ export class Tab2Page implements OnInit {
           'success'
         );
         this.descripcion = ''; this.clasificacionInicial = '';
-        this.tipoDesc = ''; this.severidad = 'media'; this.protocolo = 'Evacuación';
+        this.tipoDesc = ''; this.severidad = 'media';
         this.clearMedia();
         this.isSubmitting = false;
 

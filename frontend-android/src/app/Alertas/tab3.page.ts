@@ -15,6 +15,7 @@ import {
 } from 'ionicons/icons';
 
 import { AlertService, Notificacion } from '../services/alert.service';
+import { LocalNotifyService } from '../services/local-notify.service';
 
 @Component({
   selector: 'app-tab3',
@@ -39,13 +40,15 @@ export class Tab3Page {
   loadingHistorial = false;
 
   canalMail: boolean = true;
+  canalPush: boolean = true;
 
   headerHidden: boolean = false;
   private lastScroll: number = 0;
 
   constructor(
     private toastController: ToastController,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private localNotify: LocalNotifyService
   ) {
     addIcons({
       ellipse, megaphoneOutline, warningOutline, flameOutline, shieldHalfOutline,
@@ -56,6 +59,7 @@ export class Tab3Page {
 
   ionViewDidEnter() {
     this.loadHistory();
+    this.localNotify.init();
   }
 
   async deleteAlert(alerta: Notificacion) {
@@ -154,15 +158,25 @@ export class Tab3Page {
 
     const userEmail = localStorage.getItem('userEmail') || 'sistema@valledelsol.cl';
 
+    const mensajeEnviado = this.mensaje;
+    const tipoEnviado = this.tipo || 'General';
+
     this.alertService.enviarAlerta({
       mensaje: this.mensaje,
       tipo: this.tipo || 'General',
       canalEmail: this.canalMail,
+      canalPush: this.canalPush,
       usuarioRemitente: userEmail
     }).subscribe({
       next: async () => {
         this.loading = false;
         await this.showToast('Alerta enviada exitosamente', 'success');
+        if (this.canalPush) {
+          await this.localNotify.show(
+            `🚨 ${tipoEnviado} — FireWatch`,
+            mensajeEnviado
+          );
+        }
         this.mensaje = '';
         this.protocoloSeleccionado = '';
         this.loadHistory();

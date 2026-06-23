@@ -50,7 +50,6 @@ export class Tab2Page implements OnInit {
   clasificacionInicial: string = '';
   tipoDesc: string = '';
   severidad: string = 'media';
-  protocolo: string = 'Evacuación';
   descripcion: string = '';
   map: L.Map | undefined;
   marker: L.Marker | undefined;
@@ -367,8 +366,7 @@ export class Tab2Page implements OnInit {
       zoneId: zoneIdReal,
       longitude: this.latLng.lng, latitude: this.latLng.lat,
       severity: this.mapSeverity(this.severidad),
-      tipoIncendio: this.tipoDesc,
-      protocolo: this.protocolo
+      tipoIncendio: this.tipoDesc
     }).subscribe({
       next: async (res) => {
         // Subir media si se seleccionó algo, pero no esperar a que termine para mostrar el éxito del reporte
@@ -391,7 +389,7 @@ export class Tab2Page implements OnInit {
           'success'
         );
         this.descripcion = ''; this.clasificacionInicial = '';
-        this.tipoDesc = ''; this.severidad = 'media'; this.protocolo = 'Evacuación';
+        this.tipoDesc = ''; this.severidad = 'media';
         this.clearMedia();
         this.isSubmitting = false;
 

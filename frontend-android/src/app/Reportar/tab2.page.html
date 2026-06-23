@@ -113,18 +113,6 @@
       </div>
 
       <div class="input-section">
-        <ion-label class="section-label">Protocolo de actuación</ion-label>
-        <div class="custom-input">
-          <select class="native-select" [(ngModel)]="protocolo">
-            <option value="Evacuación">Evacuación</option>
-            <option value="Incendio">Incendio</option>
-            <option value="Prevención">Prevención</option>
-            <option value="Controlado">Controlado</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="input-section">
         <ion-label class="section-label">Observaciones del ciudadano</ion-label>
         <div class="custom-textarea">
           <ion-textarea
@@ -139,11 +127,11 @@
       <div class="input-section">
         <ion-label class="section-label">Fotos y videos</ion-label>
 
-        <!-- Botón subir archivos (web: solo file picker) -->
+        <!-- Galería (file picker) + Cámara nativa (Capacitor) -->
         <div class="media-action-row">
           <label class="media-upload-btn" for="fileUploadWeb">
             <ion-icon name="image-outline"></ion-icon>
-            <span>Subir archivos</span>
+            <span>Galería</span>
           </label>
           <input
             id="fileUploadWeb"
@@ -152,6 +140,11 @@
             multiple
             hidden
             (change)="onFilesSelected($event)">
+
+          <button type="button" class="media-upload-btn" (click)="takePhoto()">
+            <ion-icon name="camera-outline"></ion-icon>
+            <span>Cámara</span>
+          </button>
 
           <span class="media-counter" *ngIf="selectedFiles.length > 0">
             {{ selectedFiles.length }} / 5
