@@ -91,3 +91,11 @@ logs/
 # GENERATED FILES
 # =========================
 generated/
+
+# =========================
+# CLAUDE / AGENT FILES
+# =========================
+.claude/
+**/.claude/
+CLAUDE.md
+**/CLAUDE.md
