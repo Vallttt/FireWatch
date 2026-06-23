@@ -131,32 +131,68 @@ Rol: ADMIN
 
 ---
 
-## 🔑 Características Técnicas
+## ✅ Características Implementadas
 
-### Autenticación & Seguridad
+### 🔐 Autenticación & Seguridad
 - ✅ JWT con refresh tokens (5 min de expiración)
 - ✅ Alerta de sesión expirando (5 min antes)
 - ✅ Recuperación de contraseña por email
 - ✅ HttpInterceptor con validación automática
 - ✅ Guards de autenticación en rutas
+- ✅ JWT tokens con expiración automática
+- ✅ CORS configurado para APIs
+- ✅ SQL Injection prevention (Prepared statements)
+- ✅ XSS protection (Angular sanitization)
+- ✅ CSRF tokens en formularios sensibles
 
-### Data Management
+### 📊 Data Management & Geocercas
 - ✅ Point-in-polygon (geo-cercas) con ray casting
 - ✅ Auto-eliminación de rutas cuando incidente inactiva
 - ✅ Mapeo dinámico de severidad (EN ↔ ES)
 - ✅ Sincronización cross-device (web + Android)
+- ✅ Conteo correcto de alertas (únicas en dashboard)
+- ✅ Historial operacional con email del remitente
+- ✅ Persistencia en MySQL con transacciones
 
-### Integración Externa
-- ✅ **Brevo SMTP** para envío de emails
+### 📬 Notificaciones Multicanal
+- ✅ **Envío real de correos** via Brevo SMTP
+- ✅ **Push notifications reales** via Firebase Cloud Messaging (FCM)
+- ✅ Alertas de reporte con detalles de emergencia
+- ✅ Alertas comunitarias sin datos sensibles
+- ✅ Colores diferenciados por severidad
+- ✅ Plantillas HTML dinámicas por tipo de alerta
+- ✅ Notificación inmediata a brigadas asignadas
+
+### 👥 Gestión de Brigadas & Asignación
+- ✅ Asignación automática de brigadas a zonas críticas
+- ✅ Vinculación de brigadas a zonas operativas
+- ✅ Seguimiento operacional en tiempo real
+- ✅ Estados: DEPLOYED, STANDBY, INACTIVE
+- ✅ Notificación inmediata cuando se asigna
+
+### 🗺️ Mapa & Zonas Operativas
+- ✅ Zonas operativas clickeables en mapa
+- ✅ Rutas de evacuación dinámicas
+- ✅ Auto-generación de rutas según severidad
+- ✅ Centrado automático en zona al hacer clic
+- ✅ Marcadores de incendios activos
+- ✅ Visualización de distancias de seguridad
+
+### 🚨 Protocolos & Procedimientos
+- ✅ Protocolo automático según severidad del incendio
+- ✅ Tipos de protocolo: Evacuación, Incendio, Prevención, Controlado
+- ✅ Distancias de seguridad dinámicas por tipo:
+  - Forestal: 300m / 1000m / 3000m / 5000m
+  - Urbano: 100m / 300m / 500m / 1000m
+  - Estructural: 50m / 100m / 200m / 500m
+
+### 🔗 Integración Externa
+- ✅ **Brevo SMTP** para envío de emails en producción
 - ✅ **Firebase Cloud Messaging** (FCM) para push
-- ✅ **MySQL** para persistencia
-- ✅ **Leaflet** para mapas GeoJSON
-
-### Notificaciones
-- 📧 Alertas de reporte con detalles
-- 📧 Alertas comunitarias sin datos sensibles
-- 🔔 Push notifications por tipo (desktop/mobile)
-- ⏱️ Colores diferenciados por severidad
+- ✅ **MySQL** para persistencia de datos
+- ✅ **Leaflet** para mapas con GeoJSON
+- ✅ **Eureka** para service discovery
+- ✅ **Spring Cloud Gateway** para enrutamiento central
 
 ---
 
@@ -281,32 +317,19 @@ Ciudadano/Admin                 Frontend (Web/Android)              Backend (Mic
 Las siguientes funcionalidades están en desarrollo activo:
 
 ### Backend
-- 📧 **Envío real de correos** - Integración completa con SMTP (actualmente simula el despacho)
-- 🔔 **Firebase Cloud Messaging** - Push notifications nativas para móvil y web
-- 👥 **Asignación automática de brigadas** - Sistema inteligente que asigna brigadas a zonas críticas según disponibilidad
-- 📊 **Dashboard táctico avanzado** - Timeline de eventos, predicciones, análisis predictivo
+- 📊 **Dashboard táctico avanzado** - Timeline completo de eventos, análisis predictivo, heatmaps
 - 📈 **Observabilidad y métricas** - Prometheus, Grafana, distributed tracing con Jaeger
 - 🔄 **Escalamiento horizontal** - Replicación automática de servicios críticos bajo carga
-- 🏥 **Registro dinámico completo** - Eureka service discovery con health checks avanzados
-- 🔐 **Autorización por roles** - RBAC granular en Spring Security + API Gateway
-- 🎯 **API Rate Limiting** - Control de velocidad por usuario/IP en gateway
+- 🏥 **Health checks avanzados** - Registro dinámico completo en Eureka con validaciones
+- 🔐 **Autorización granular por roles** - RBAC con políticas dinámicas en Spring Security + Gateway
+- 🎯 **API Rate Limiting** - Control de velocidad por usuario/IP en API Gateway
 
 ### Frontend
-- 🗺️ **Administración de zonas desde GUI** - Crear, editar, eliminar zonas sin código
-- 🖌️ **Creación interactiva de polígonos** - Dibuja zonas directamente sobre el mapa
+- 🗺️ **Administración de zonas desde GUI** - Crear, editar, eliminar zonas sin recompilación
+- 🖌️ **Creación interactiva de polígonos** - Dibuja zonas directamente sobre el mapa Leaflet
 - 📱 **PWA (Progressive Web App)** - Funciona offline, instalable como app nativa
-
----
-
-## 🔐 Seguridad
-
-- ✅ JWT tokens con expiración automática
-- ✅ HTTPS en producción
-- ✅ CORS configurado para APIs
-- ✅ SQL Injection prevention (Prepared statements)
-- ✅ XSS protection (Angular sanitization)
-- ✅ CSRF tokens en formularios sensibles
-- ✅ Rate limiting en endpoints críticos
+- 📋 **Gestión de eventos operacionales** - CRUD completo con filtros y búsqueda
+- 🔍 **Análisis de patrones** - Detección automática de zonas de riesgo recurrente
 
 ---
 
