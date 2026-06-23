@@ -42,6 +42,7 @@ public class NotificacionServiceClient {
         payload.put("zoneId", request.getZoneId() != null ? request.getZoneId().toString() : null);
         payload.put("zoneName", request.getZoneName());
         payload.put("fechaReporte", request.getFechaReporte());
+        payload.put("usuarioRemitente", request.getUsuarioRemitente());
 
         try {
             System.out.println("========= PAYLOAD ALERTA =========");

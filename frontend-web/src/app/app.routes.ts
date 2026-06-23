@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './guards/auth.guard';
+import { authGuard, adminGuard, citizenGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -8,34 +8,53 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
 
-  {//ruta de login
+  // ✅ RUTAS PÚBLICAS (sin autenticación)
+  {
     path: 'login',
-    loadComponent: () => import('./login/login.page').then( m => m.LoginPage)
+    loadComponent: () => import('./login/login.page').then(m => m.LoginPage)
   },
   {
     path: 'forgot-password',
     loadComponent: () =>
       import('./forgot-password/forgot-password.page')
-      .then(m => m.ForgotPasswordPage)
+        .then(m => m.ForgotPasswordPage)
   },
-  {//ruta del dashboard
+  {
+    path: 'unauthorized',
+    loadComponent: () =>
+      import('./pages/unauthorized.page')
+        .then(m => m.UnauthorizedPage)
+  },
+
+  // ✅ RUTAS PROTEGIDAS: Solo ADMIN
+  {
     path: 'dashboard',
-    canActivate: [authGuard],
-    loadComponent: () => import('./Dashboard/tab1.page').then( m => m.Tab1Page)
+    canActivate: [adminGuard],
+    loadComponent: () => import('./Dashboard/tab1.page').then(m => m.Tab1Page),
+    data: { role: 'admin' }
   },
-  {//ruta de reportar fuego
+
+  // ✅ RUTAS PROTEGIDAS: USER o CIUDADANO
+  {
     path: 'reportar',
-    canActivate: [authGuard],
-    loadComponent: () => import('./Reportar/tab2.page').then( m => m.Tab2Page)
+    canActivate: [citizenGuard],
+    loadComponent: () => import('./Reportar/tab2.page').then(m => m.Tab2Page),
+    data: { role: 'citizen' }
   },
-  {//ruta de alertas
+  {
     path: 'alertas',
     canActivate: [authGuard],
-    loadComponent: () => import('./Alertas/tab3.page').then( m => m.Tab3Page)
+    loadComponent: () => import('./Alertas/tab3.page').then(m => m.Tab3Page)
   },
-  {//ruta del mapa
+  {
     path: 'mapa',
     canActivate: [authGuard],
-    loadComponent: () => import('./Mapa/mapa.page').then( m => m.MapaPage)
+    loadComponent: () => import('./Mapa/mapa.page').then(m => m.MapaPage)
+  },
+
+  // ✅ Catch-all: redirigir a login
+  {
+    path: '**',
+    redirectTo: 'login'
   }
 ];

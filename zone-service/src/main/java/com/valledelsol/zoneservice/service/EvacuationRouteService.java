@@ -62,6 +62,7 @@ public class EvacuationRouteService {
         evacuationRoute.setGeoJson(evacuationRouteRequestDTO.getGeoJson());
         evacuationRoute.setZone(zone);
         evacuationRoute.setActive(true);
+        evacuationRoute.setReportId(evacuationRouteRequestDTO.getReportId());
 
         return mapToResponse(evacuationRouteRepository.save(evacuationRoute));
 
@@ -97,6 +98,20 @@ public class EvacuationRouteService {
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    public List<EvacuationResponseDTO> findByReportId(String reportId) {
+        return evacuationRouteRepository.findByReportIdAndIsActiveTrue(reportId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    /** Borrado lógico de todas las rutas de un reporte (al eliminarlo o finalizarlo). No falla si no hay ninguna. */
+    public void deleteByReportId(String reportId) {
+        List<EvacuationRoute> routes = evacuationRouteRepository.findByReportIdAndIsActiveTrue(reportId);
+        routes.forEach(route -> route.setActive(false));
+        evacuationRouteRepository.saveAll(routes);
     }
 
     public EvacuationResponseDTO update(EvacuationRouteRequestDTO evacuationRouteRequestDTO, UUID id){

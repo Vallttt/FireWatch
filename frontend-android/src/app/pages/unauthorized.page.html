@@ -1,0 +1,32 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>Acceso Denegado</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <ion-card>
+    <ion-card-content class="ion-text-center">
+
+      <div class="error-icon">
+        <ion-icon name="alert-circle-outline" size="large"></ion-icon>
+      </div>
+
+      <h1>Acceso Denegado</h1>
+
+      <p>No tienes permiso para acceder a esta página.</p>
+      <p class="small-text">Tu rol de usuario no tiene los permisos necesarios.</p>
+
+      <ion-button
+        expand="block"
+        (click)="goBack()"
+        class="ion-margin-top">
+        <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+        Volver al Login
+      </ion-button>
+
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>

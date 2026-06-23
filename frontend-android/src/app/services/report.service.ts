@@ -25,6 +25,8 @@ export interface ReporteRequest {
   longitude: number;
   latitude: number;
   severity: SeverityLevel;
+  tipoIncendio?: string;
+  protocolo?: string;
 }
 
 /** DTO base devuelto por report-service (sin estado/severity/mediaCount). */

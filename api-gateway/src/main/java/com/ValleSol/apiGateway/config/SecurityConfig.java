@@ -37,6 +37,8 @@ import java.util.List;
  *   /api/auth/password/**     — recuperación de contraseña
  *   POST /api/reportes        — reporte anónimo (ciudadano sin cuenta, "Anonimo")
  *   POST /api/evidencias/**   — foto/video adjunto al reporte anónimo
+ *   GET /api/zones/**, GET|POST /api/evacuation-routes/** — el reporte anónimo
+ *     dispara internamente la resolución de zona y la ruta de evacuación
  *   OPTIONS /**                — preflight CORS
  *
  * Solo ADMIN (requiere rol ADMIN además de token válido):
@@ -49,10 +51,6 @@ import java.util.List;
  *   DELETE /api/evidencias/**              (eliminar evidencias)
  *   DELETE /api/geo/**                     (quitar incendio finalizado del mapa)
  *   POST|DELETE /api/alertas/**            (emitir / eliminar alertas)
- *
- * Cualquier usuario autenticado (USER o ADMIN):
- *   POST /api/evacuation-routes/**  — la ruta se genera sola desde la sesión
- *   del ciudadano al registrar su reporte, no hay creación manual por admin.
  *
  * Cualquier otro request — solo requiere un JWT válido (USER o ADMIN).
  */
@@ -79,7 +77,13 @@ public class SecurityConfig {
                         .pathMatchers("/api/auth/password/**").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/reportes").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/evidencias/**").permitAll()
-                        
+                        // El ciudadano anónimo ("modo emergencia", sin cuenta/token) también
+                        // dispara internamente: resolver su zona real (GET zones) y la
+                        // generación automática de su ruta de evacuación (GET+POST
+                        // evacuation-routes). Sin esto, reportar sin sesión queda roto.
+                        .pathMatchers(HttpMethod.GET,  "/api/zones/**").permitAll()
+                        .pathMatchers(HttpMethod.GET,  "/api/evacuation-routes/**").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/evacuation-routes/**").permitAll()
 
                         // ── Solo ADMIN ───────────────────────────────────────────
                         .pathMatchers("/api/users/**").hasRole("ADMIN")

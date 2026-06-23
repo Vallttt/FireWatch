@@ -25,6 +25,7 @@ import { AuthService } from '../services/auth.service';
     IonLabel
   ]
 })
+// El componente LoginPage maneja tanto el inicio de sesión como el registro de nuevos usuarios, con validaciones básicas y feedback mediante toasts. También incluye un modo de emergencia que simula un inicio de sesión rápido para ciudadanos en situaciones críticas. Las funciones están organizadas por secciones para facilitar su comprensión y mantenimiento.
 export class LoginPage {
   modo: string = 'login';
   email: string = '';
@@ -50,6 +51,9 @@ export class LoginPage {
     this.modo = modo;
   }
 
+  // ------------------------------------------------------------------ //
+  //  LOGIN
+  // ------------------------------------------------------------------ //
   async login() {
     if (!this.email || !this.password) {
       await this.showToast('Por favor complete todos los campos', 'warning');
@@ -86,6 +90,9 @@ export class LoginPage {
     });
   }
 
+  // ------------------------------------------------------------------ //
+  //  REGISTRO
+  // ------------------------------------------------------------------ //
   async register() {
     if (!this.nombre || !this.phone || !this.email || !this.password || !this.confirmPassword) {
       await this.showToast('Por favor complete todos los campos', 'warning');
@@ -103,7 +110,7 @@ export class LoginPage {
     this.loading = true;
     localStorage.removeItem('emergencyMode');
 
-    // Split full name into first and last name
+    // El backend espera firstName y lastName por separado, así que hacemos una división simple del campo nombre completo. Si solo se ingresa un nombre, se usará como firstName y lastName quedará igual para evitar campos vacíos.
     const parts = this.nombre.trim().split(' ');
     const firstName = parts[0];
     const lastName = parts.slice(1).join(' ') || firstName;
@@ -119,7 +126,7 @@ export class LoginPage {
         this.loading = false;
         await this.showToast('Cuenta creada exitosamente. Iniciando sesión...', 'success');
 
-        // Auto-login after registration
+        // Auto login después de registro exitoso, pero no esperar a que termine para mostrar el toast de éxito
         this.authService.login({ email: this.email, password: this.password }).subscribe({
           next: (loginRes) => {
             if (loginRes.role === 'ADMIN') {
@@ -148,7 +155,9 @@ export class LoginPage {
       }
     });
   }
-
+  // ------------------------------------------------------------------ //
+  //  MODO EMERGENCIA
+  // ------------------------------------------------------------------ //
   async enterEmergency() {
     this.loadingEmergencia = true;
     await this.showToast('Abriendo canal de emergencia...', 'danger');
@@ -173,4 +182,8 @@ export class LoginPage {
     });
     await toast.present();
   }
+
+  goForgotPassword(): void {
+  this.router.navigate(['/forgot-password']);
+}
 }

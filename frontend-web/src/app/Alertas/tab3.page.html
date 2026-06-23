@@ -121,7 +121,7 @@
         <ion-item *ngFor="let alerta of historialAlertas">
           <ion-icon name="mail-outline" slot="start" color="danger"></ion-icon>
           <ion-label>
-            <h3>{{ alerta.destinatario }}</h3>
+            <h3>{{ alerta.usuarioRemitente || 'Sistema' }}</h3>
             <p>{{ alerta.mensaje }}</p>
             <p class="fecha-alerta">{{ formatDate(alerta.fechaEnvio) }}</p>
           </ion-label>

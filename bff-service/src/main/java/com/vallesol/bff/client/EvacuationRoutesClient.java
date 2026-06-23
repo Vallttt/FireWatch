@@ -85,4 +85,22 @@ public class EvacuationRoutesClient {
                 .retrieve()
                 .toBodilessEntity();
     }
+
+    public List<EvacuationResponseDTO> getRoutesByReport(String reportId){
+
+        ApiResponseDTO<List<EvacuationResponseDTO>> responseDTO =
+                restClient.get()
+                        .uri(evacroutesServiceUrl + "/api/evacuation-routes/report/" + reportId)
+                        .retrieve()
+                        .body(new ParameterizedTypeReference<>() {});
+
+        return responseDTO.getData();
+    }
+
+    public void deleteByReportId(String reportId){
+        restClient.delete()
+                .uri(evacroutesServiceUrl + "/api/evacuation-routes/report/" + reportId)
+                .retrieve()
+                .toBodilessEntity();
+    }
 }

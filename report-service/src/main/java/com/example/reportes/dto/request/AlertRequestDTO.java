@@ -11,6 +11,7 @@ public class AlertRequestDTO {
     private UUID reporteId;
     private String mensaje;
     private String tipo;
+    private String protocolo;  // ✅ NUEVO: Evacuación, Incendio, Prevención, Controlado
 
     private String descripcionReporte;
     private String usuarioReportante;
@@ -20,4 +21,5 @@ public class AlertRequestDTO {
     private String zoneName;
     private LocalDateTime fechaReporte;
     private String nivelEmergencia;
+    private String tipoIncendio; // ✅ NUEVO: FORESTAL, URBANO, ESTRUCTURAL
 }

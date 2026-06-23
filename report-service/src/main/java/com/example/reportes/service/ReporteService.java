@@ -95,16 +95,20 @@ public class ReporteService {
             alerta.setLongitude(guardado.getLongitude());
             alerta.setZoneId(guardado.getZoneId());
             alerta.setFechaReporte(guardado.getFechaIncidente());
+
+            // ✅ Mapear severidad de inglés (LOW, MEDIUM, HIGH, CRITICAL) a español (BAJO, MEDIO, ALTO, CRITICO)
             alerta.setNivelEmergencia(
                     request.getSeverity() != null
-                            ? request.getSeverity().name()
-                            : "MEDIUM"
+                            ? mapSeverityToSpanish(request.getSeverity().name())
+                            : "BAJO"
             );
-            String zoneName =
-                    zoneClient.obtenerNombreZona(guardado.getZoneId());
 
+            // ✅ Agregar tipo de incendio y protocolo
+            alerta.setTipoIncendio(request.getTipoIncendio()); // FORESTAL, URBANO, ESTRUCTURAL
+            alerta.setProtocolo(request.getProtocolo());       // Evacuación, Incendio, Prevención, Controlado
+
+            String zoneName = zoneClient.obtenerNombreZona(guardado.getZoneId());
             alerta.setZoneName(guardado.getZoneId().toString());
-
 
             alertasService.enviarAlerta(alerta);
         } catch (Exception e) {
@@ -158,5 +162,24 @@ public class ReporteService {
         dto.setLongitude(reporte.getLongitude());
         dto.setZoneId(reporte.getZoneId());
         return dto;
+    }
+
+    /**
+     * ✅ Mapear severidad de inglés (del frontend) a español (para alert-service)
+     * Frontend: LOW, MEDIUM, HIGH, CRITICAL
+     * Backend: BAJO, MEDIO, ALTO, CRITICO
+     */
+    private String mapSeverityToSpanish(String severity) {
+        if (severity == null) {
+            return "BAJO";
+        }
+
+        return switch (severity.toUpperCase()) {
+            case "LOW" -> "BAJO";
+            case "MEDIUM" -> "MEDIO";
+            case "HIGH" -> "ALTO";
+            case "CRITICAL" -> "CRITICO";
+            default -> "BAJO";
+        };
     }
 }

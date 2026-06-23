@@ -51,6 +51,7 @@ public class AlertaService {
         alerta.setCanalPush(request.isCanalPush());
         alerta.setEstado("PROCESADO");
         alerta.setFechaCreacion(LocalDateTime.now());
+        alerta.setUsuarioRemitente(request.getUsuarioRemitente());
         alertaRepository.save(alerta);
 
 
@@ -92,6 +93,7 @@ public class AlertaService {
         dto.setCanalPush(a.isCanalPush());
         dto.setEstado(a.getEstado());
         dto.setFechaCreacion(a.getFechaCreacion());
+        dto.setUsuarioRemitente(a.getUsuarioRemitente());
         return dto;
     }
 }

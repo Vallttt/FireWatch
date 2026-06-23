@@ -242,12 +242,12 @@
     </ion-card-content>
   </ion-card>
 
-  <!-- 6.5. GESTIÓN DE ZONAS Y RUTAS DE EVACUACIÓN (admin) -->
+  <!-- 6.5. GESTIÓN DE ZONAS OPERATIVAS (admin) -->
   <ion-card *ngIf="isAdmin" class="main-card admin-panel">
     <ion-card-header>
       <div class="card-title-container">
         <ion-icon name="add-circle-outline"></ion-icon>
-        <ion-card-title>Zonas y rutas de evacuación</ion-card-title>
+        <ion-card-title>Zonas operativas</ion-card-title>
       </div>
     </ion-card-header>
 
@@ -313,9 +313,12 @@
         </div>
       </div>
 
-      <!-- Lista de zonas reales existentes -->
+      <!-- Lista de zonas operativas existentes -->
       <ion-list lines="none" class="history-list" *ngIf="backendZones.length > 0; else noZones">
-        <ion-item *ngFor="let z of backendZones" class="history-item">
+        <ion-item
+          *ngFor="let z of backendZones"
+          class="history-item zone-item clickable"
+          (click)="navigateToZone(z)">
           <div class="history-icon-bg" slot="start">
             <ion-icon name="ellipse"></ion-icon>
           </div>
@@ -325,7 +328,7 @@
               <span class="brigada-tag">{{ z.zoneType }}</span>
             </p>
           </ion-label>
-          <button type="button" slot="end" class="delete-btn" (click)="deleteBackendZone(z)">
+          <button type="button" slot="end" class="delete-btn" (click)="deleteBackendZone(z); $event.stopPropagation()">
             <ion-icon name="trash-outline"></ion-icon>
           </button>
         </ion-item>
@@ -333,27 +336,6 @@
       <ng-template #noZones>
         <div class="empty-state">
           <p>Aún no hay zonas creadas.</p>
-        </div>
-      </ng-template>
-
-      <!-- Lista de rutas reales existentes -->
-      <ion-list lines="none" class="history-list" *ngIf="backendRoutes.length > 0; else noRoutes">
-        <ion-item *ngFor="let r of backendRoutes" class="history-item">
-          <div class="history-icon-bg" slot="start">
-            <ion-icon name="exit-outline"></ion-icon>
-          </div>
-          <ion-label>
-            <h2>{{ r.name }}</h2>
-            <p>{{ r.description }}</p>
-          </ion-label>
-          <button type="button" slot="end" class="delete-btn" (click)="deleteBackendRoute(r)">
-            <ion-icon name="trash-outline"></ion-icon>
-          </button>
-        </ion-item>
-      </ion-list>
-      <ng-template #noRoutes>
-        <div class="empty-state">
-          <p>Aún no hay rutas de evacuación creadas.</p>
         </div>
       </ng-template>
 

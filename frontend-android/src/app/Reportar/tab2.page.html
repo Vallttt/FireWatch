@@ -106,7 +106,22 @@
           <ion-segment-button value="alta">
             <ion-label>Alta</ion-label>
           </ion-segment-button>
+          <ion-segment-button value="critica">
+            <ion-label>Crítica</ion-label>
+          </ion-segment-button>
         </ion-segment>
+      </div>
+
+      <div class="input-section">
+        <ion-label class="section-label">Protocolo de actuación</ion-label>
+        <div class="custom-input">
+          <select class="native-select" [(ngModel)]="protocolo">
+            <option value="Evacuación">Evacuación</option>
+            <option value="Incendio">Incendio</option>
+            <option value="Prevención">Prevención</option>
+            <option value="Controlado">Controlado</option>
+          </select>
+        </div>
       </div>
 
       <div class="input-section">
@@ -124,25 +139,19 @@
       <div class="input-section">
         <ion-label class="section-label">Fotos y videos</ion-label>
 
-        <!-- Botones: Galería + Cámara -->
+        <!-- Botón subir archivos (web: solo file picker) -->
         <div class="media-action-row">
-
-          <label class="media-upload-btn" for="fileUploadAndroid">
+          <label class="media-upload-btn" for="fileUploadWeb">
             <ion-icon name="image-outline"></ion-icon>
-            <span>Galería</span>
+            <span>Subir archivos</span>
           </label>
           <input
-            id="fileUploadAndroid"
+            id="fileUploadWeb"
             type="file"
             accept="image/*,video/*"
             multiple
             hidden
             (change)="onFilesSelected($event)">
-
-          <button type="button" class="media-upload-btn camera" (click)="takePicture()">
-            <ion-icon name="camera-outline"></ion-icon>
-            <span>Cámara</span>
-          </button>
 
           <span class="media-counter" *ngIf="selectedFiles.length > 0">
             {{ selectedFiles.length }} / 5
@@ -184,9 +193,10 @@
         expand="block"
         shape="round"
         class="submit-btn"
+        [disabled]="isSubmitting"
         (click)="submitReport()">
         <ion-icon slot="start" name="paper-plane-outline"></ion-icon>
-        Enviar reporte
+        {{ isSubmitting ? 'Enviando…' : 'Enviar reporte' }}
       </ion-button>
 
     </ion-card-content>
@@ -347,9 +357,9 @@
           </button>
         </div>
 
-      </div><!-- /detail-body -->
-    </div><!-- /detail-panel -->
-  </div><!-- /detail-overlay -->
+      </div><!-- /detalle del reporte -->
+    </div><!-- /detalle del panel -->
+  </div><!-- /detalle del overlay -->
 
   <!-- ============================================================ -->
   <!--  LIGHTBOX                                                   -->

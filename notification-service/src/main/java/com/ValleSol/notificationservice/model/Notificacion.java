@@ -62,4 +62,7 @@ public class Notificacion {
     private String zoneId;
 
     private LocalDateTime fechaReporte;
+
+    @Column(name = "usuario_remitente")
+    private String usuarioRemitente;
 }

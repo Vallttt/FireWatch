@@ -72,6 +72,8 @@ export interface EvacuationRouteRequest {
   description: string;
   geoJson: string;
   zoneId: string;
+  /** Id del reporte que generó esta ruta — la hace personal (solo el dueño la ve). */
+  reportId?: string;
 }
 
 export interface EvacuationResponse {
@@ -80,6 +82,7 @@ export interface EvacuationResponse {
   description: string;
   geoJson: string;
   zoneId: string;
+  reportId?: string;
 }
 
 /** Respuesta consolidada de GET /api/map-data */
@@ -170,6 +173,15 @@ export class GeoService {
 
   getEvacuationRoutesByZone(zoneId: string): Observable<EvacuationResponse[]> {
     return this.http.get<EvacuationResponse[]>(`${this.apiUrl}/api/evacuation-routes/zone/${zoneId}`);
+  }
+
+  getEvacuationRoutesByReport(reportId: string): Observable<EvacuationResponse[]> {
+    return this.http.get<EvacuationResponse[]>(`${this.apiUrl}/api/evacuation-routes/report/${reportId}`);
+  }
+
+  /** Borra la(s) ruta(s) de un reporte — al eliminarlo o al marcar el incendio finalizado. */
+  deleteEvacuationRoutesByReport(reportId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/api/evacuation-routes/report/${reportId}`);
   }
 
   createEvacuationRoute(body: EvacuationRouteRequest): Observable<EvacuationResponse> {

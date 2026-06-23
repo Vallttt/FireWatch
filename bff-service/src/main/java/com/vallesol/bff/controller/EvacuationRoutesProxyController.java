@@ -48,4 +48,15 @@ public class EvacuationRoutesProxyController {
         evacuationRoutesClient.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/report/{reportId}")
+    public ResponseEntity<List<EvacuationResponseDTO>> getRoutesByReport(@PathVariable String reportId){
+        return ResponseEntity.ok(evacuationRoutesClient.getRoutesByReport(reportId));
+    }
+
+    @DeleteMapping("/report/{reportId}")
+    public ResponseEntity<Void> deleteRoutesByReport(@PathVariable String reportId){
+        evacuationRoutesClient.deleteByReportId(reportId);
+        return ResponseEntity.noContent().build();
+    }
 }

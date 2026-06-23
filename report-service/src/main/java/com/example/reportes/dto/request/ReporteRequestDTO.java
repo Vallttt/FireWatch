@@ -17,6 +17,8 @@ public class ReporteRequestDTO {
     private Double latitude;
     @NotNull
     private SeverityLevel severity;
+    private String tipoIncendio;  // ✅ NUEVO: FORESTAL, URBANO, ESTRUCTURAL
+    private String protocolo;     // ✅ NUEVO: Evacuación, Incendio, Prevención, Controlado
 
     
     public ReporteRequestDTO() {
@@ -84,5 +86,21 @@ public class ReporteRequestDTO {
 
     public void setSeverity(SeverityLevel severity) {
         this.severity = severity;
+    }
+
+    public String getTipoIncendio() {
+        return tipoIncendio;
+    }
+
+    public void setTipoIncendio(String tipoIncendio) {
+        this.tipoIncendio = tipoIncendio;
+    }
+
+    public String getProtocolo() {
+        return protocolo;
+    }
+
+    public void setProtocolo(String protocolo) {
+        this.protocolo = protocolo;
     }
 }

@@ -1,0 +1,28 @@
+.error-icon {
+  margin: 2rem 0 1rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  ion-icon {
+    color: var(--ion-color-danger);
+    font-size: 4rem;
+  }
+}
+
+h1 {
+  font-weight: 600;
+  margin: 1rem 0;
+  color: var(--ion-text-color);
+}
+
+p {
+  color: var(--ion-text-color-step-600);
+  line-height: 1.6;
+  margin: 0.5rem 0;
+}
+
+.small-text {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}

@@ -39,7 +39,6 @@ export class Tab3Page {
   loadingHistorial = false;
 
   canalMail: boolean = true;
-  canalPush: boolean = false;
 
   headerHidden: boolean = false;
   private lastScroll: number = 0;
@@ -153,11 +152,13 @@ export class Tab3Page {
 
     this.loading = true;
 
+    const userEmail = localStorage.getItem('userEmail') || 'sistema@valledelsol.cl';
+
     this.alertService.enviarAlerta({
       mensaje: this.mensaje,
       tipo: this.tipo || 'General',
       canalEmail: this.canalMail,
-      canalPush: this.canalPush
+      usuarioRemitente: userEmail
     }).subscribe({
       next: async () => {
         this.loading = false;

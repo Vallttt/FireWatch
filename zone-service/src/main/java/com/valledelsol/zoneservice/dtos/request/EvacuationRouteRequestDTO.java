@@ -19,4 +19,6 @@ public class EvacuationRouteRequestDTO {
     private String geoJson;
     @NotNull
     private UUID zoneId;
+    /** Id del reporte que generó esta ruta (opcional — nulo en rutas legadas). */
+    private String reportId;
 }

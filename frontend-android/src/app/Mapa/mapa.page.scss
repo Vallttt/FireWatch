@@ -2,6 +2,15 @@
    MAPA  ·  estilos específicos
    ========================================================================== */
 
+/* Pin de "zona segura" al final de la ruta de evacuación del ciudadano.
+   Leaflet inserta este divIcon fuera de la vista de Angular (manipulación
+   directa del DOM), por eso el selector no necesita ::ng-deep. */
+.safe-zone-marker {
+  font-size: 26px;
+  line-height: 1;
+  text-align: center;
+}
+
 /* ==========================================================================
    MAPA (contenedor)
    ========================================================================== */

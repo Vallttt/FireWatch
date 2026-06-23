@@ -32,4 +32,10 @@ public interface NotificacionRepository extends JpaRepository<Notificacion, UUID
     List<Notificacion> findByNivelEmergencia(String nivelEmergencia);
 
     void deleteByDespachoId(UUID despachoId);
+
+    @Query(value = """
+            SELECT COUNT(DISTINCT COALESCE(despacho_id, id))
+            FROM notificaciones
+            """, nativeQuery = true)
+    Integer countUniqueDispatches();
 }
