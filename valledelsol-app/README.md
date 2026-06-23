@@ -131,68 +131,61 @@ Rol: ADMIN
 
 ---
 
-## ✅ Características Implementadas
+## 🚧 Estado Actual del Proyecto
 
-### 🔐 Autenticación & Seguridad
-- ✅ JWT con refresh tokens (5 min de expiración)
-- ✅ Alerta de sesión expirando (5 min antes)
-- ✅ Recuperación de contraseña por email
-- ✅ HttpInterceptor con validación automática
-- ✅ Guards de autenticación en rutas
-- ✅ JWT tokens con expiración automática
-- ✅ CORS configurado para APIs
-- ✅ SQL Injection prevention (Prepared statements)
-- ✅ XSS protection (Angular sanitization)
-- ✅ CSRF tokens en formularios sensibles
+### ✅ Implementado
 
-### 📊 Data Management & Geocercas
-- ✅ Point-in-polygon (geo-cercas) con ray casting
-- ✅ Auto-eliminación de rutas cuando incidente inactiva
-- ✅ Mapeo dinámico de severidad (EN ↔ ES)
-- ✅ Sincronización cross-device (web + Android)
-- ✅ Conteo correcto de alertas (únicas en dashboard)
-- ✅ Historial operacional con email del remitente
-- ✅ Persistencia en MySQL con transacciones
+**Arquitectura & Comunicación**
+- Arquitectura de microservicios completa.
+- API Gateway con validación JWT (HMAC-SHA256).
+- Autorización por roles (ADMIN / USER) en el API Gateway.
+- BFF con orquestación y consolidación de datos.
+- Eureka Server para service discovery.
+- Comunicación alert-service → notification-service vía Eureka.
+- Descubrimiento BFF → alert-service y notification-service vía Feign + Eureka.
+- Integración BFF ↔ Zone Service y BFF ↔ Brigade Service.
+- Docker Compose con orden de arranque correcto.
 
-### 📬 Notificaciones Multicanal
-- ✅ **Envío real de correos** via Brevo SMTP
-- ✅ **Push notifications reales** via Firebase Cloud Messaging (FCM)
-- ✅ Alertas de reporte con detalles de emergencia
-- ✅ Alertas comunitarias sin datos sensibles
-- ✅ Colores diferenciados por severidad
-- ✅ Plantillas HTML dinámicas por tipo de alerta
-- ✅ Notificación inmediata a brigadas asignadas
+**Reportes & Incidentes**
+- Migración de report-service en tres microservicios: report (núcleo), incident (estado/severidad) y evidence (multimedia), expuestos por el BFF y ruteados por el Gateway.
+- Endpoint agregador de reporte completo en el BFF (`/api/reportes/{id}/completo`).
+- Reportes multimedia (foto/video).
+- Mapeo dinámico de severidad (EN ↔ ES) y protocolos de actuación.
+- Distancias de seguridad dinámicas por tipo de incendio.
 
-### 👥 Gestión de Brigadas & Asignación
-- ✅ Asignación automática de brigadas a zonas críticas
-- ✅ Vinculación de brigadas a zonas operativas
-- ✅ Seguimiento operacional en tiempo real
-- ✅ Estados: DEPLOYED, STANDBY, INACTIVE
-- ✅ Notificación inmediata cuando se asigna
+**Alertas & Notificaciones**
+- alert-service: generación, clasificación y tipos de alerta.
+- notification-service: correo, push, brigadas, admins, sistema.
+- Envío real de correos vía Brevo SMTP.
+- Push notifications.
+- Correos HTML personalizados por tipo de alerta.
+- Dashboard centralizado (totalIncendios, alertasEmitidas, brigadasActivas).
+- Historial operacional con email del remitente.
 
-### 🗺️ Mapa & Zonas Operativas
-- ✅ Zonas operativas clickeables en mapa
-- ✅ Rutas de evacuación dinámicas
-- ✅ Auto-generación de rutas según severidad
-- ✅ Centrado automático en zona al hacer clic
-- ✅ Marcadores de incendios activos
-- ✅ Visualización de distancias de seguridad
+**Zonas, Rutas & Brigadas**
+- Gestión de zonas operativas y rutas de evacuación.
+- CRUD completo de zonas, rutas de evacuación y brigadas.
+- Gestión de brigadas y estado operativo (asignación manual a zonas).
+- Auto-generación y auto-eliminación de rutas según el estado del incidente.
+- Validaciones geoespaciales mediante JTS (point-in-polygon).
+- Administración de zonas desde interfaz gráfica.
+- Creación interactiva de polígonos sobre el mapa.
 
-### 🚨 Protocolos & Procedimientos
-- ✅ Protocolo automático según severidad del incendio
-- ✅ Tipos de protocolo: Evacuación, Incendio, Prevención, Controlado
-- ✅ Distancias de seguridad dinámicas por tipo:
-  - Forestal: 300m / 1000m / 3000m / 5000m
-  - Urbano: 100m / 300m / 500m / 1000m
-  - Estructural: 50m / 100m / 200m / 500m
+**Usuarios & Seguridad**
+- Separación auth-service ↔ user-service.
+- Separación geo-service ↔ zone-service ↔ brigade-service.
+- JWT con expiración automática y aviso de sesión por expirar.
+- Recuperación de contraseña con Brevo SMTP.
+- Usuarios semilla para demostración.
 
-### 🔗 Integración Externa
-- ✅ **Brevo SMTP** para envío de emails en producción
-- ✅ **Firebase Cloud Messaging** (FCM) para push
-- ✅ **MySQL** para persistencia de datos
-- ✅ **Leaflet** para mapas con GeoJSON
-- ✅ **Eureka** para service discovery
-- ✅ **Spring Cloud Gateway** para enrutamiento central
+**Frontend**
+- Frontend web y Android (APK Capacitor) sincronizados.
+
+### 🚧 En Desarrollo
+- Dashboard táctico avanzado con timeline de eventos.
+- Asignación automática de brigadas a zonas críticas.
+- Observabilidad y métricas operacionales.
+- Escalamiento horizontal de servicios críticos.
 
 ---
 
@@ -309,27 +302,6 @@ Ciudadano/Admin                 Frontend (Web/Android)              Backend (Mic
 | MEDIUM   | MEDIO   | Amarillo | 1000m             | General        |
 | HIGH     | ALTO    | Rojo  | 3000m                | Crítica        |
 | CRITICAL | CRÍTICO | Rojo Oscuro | 5000m         | Máxima urgencia|
-
----
-
-## 🚧 En Desarrollo
-
-Las siguientes funcionalidades están en desarrollo activo:
-
-### Backend
-- 📊 **Dashboard táctico avanzado** - Timeline completo de eventos, análisis predictivo, heatmaps
-- 📈 **Observabilidad y métricas** - Prometheus, Grafana, distributed tracing con Jaeger
-- 🔄 **Escalamiento horizontal** - Replicación automática de servicios críticos bajo carga
-- 🏥 **Health checks avanzados** - Registro dinámico completo en Eureka con validaciones
-- 🔐 **Autorización granular por roles** - RBAC con políticas dinámicas en Spring Security + Gateway
-- 🎯 **API Rate Limiting** - Control de velocidad por usuario/IP en API Gateway
-
-### Frontend
-- 🗺️ **Administración de zonas desde GUI** - Crear, editar, eliminar zonas sin recompilación
-- 🖌️ **Creación interactiva de polígonos** - Dibuja zonas directamente sobre el mapa Leaflet
-- 📱 **PWA (Progressive Web App)** - Funciona offline, instalable como app nativa
-- 📋 **Gestión de eventos operacionales** - CRUD completo con filtros y búsqueda
-- 🔍 **Análisis de patrones** - Detección automática de zonas de riesgo recurrente
 
 ---
 
