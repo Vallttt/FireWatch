@@ -11,9 +11,18 @@ import { catchError, switchMap, throwError, BehaviorSubject, filter, take } from
 const authUrls = [
   '/auth/login',
   '/api/users/register',
-  '/api/auth/password/forgot',
-  '/api/auth/password/reset',
+  '/api/users/password/forgot',
+  '/api/users/password/reset',
   '/api/auth/emergency-mode'
+];
+
+// Endpoints de LECTURA pública (GET): el ciudadano anónimo los usa sin login.
+// NO se les debe adjuntar token: si el token está expirado/ inválido, el gateway
+// rechaza con 401 incluso una ruta pública (valida el bearer antes del permitAll).
+// Las ESCRITURAS (POST/PUT/DELETE) sí necesitan token y se manejan abajo.
+const publicReadPrefixes = [
+  '/api/zones',
+  '/api/evacuation-routes'
 ];
 
 let isRefreshing = false;
@@ -25,6 +34,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next): any => {
 
   // ✅ Endpoints de autenticación: nunca llevan token
   if (authUrls.some(url => req.url.includes(url))) {
+    return next(req);
+  }
+
+  // ✅ Lecturas públicas (GET zonas / rutas): nunca llevan token, así un token
+  //    expirado no rompe la carga pública con un 401.
+  const isPublicRead = req.method === 'GET'
+    && publicReadPrefixes.some(url => req.url.includes(url));
+  if (isPublicRead) {
     return next(req);
   }
 

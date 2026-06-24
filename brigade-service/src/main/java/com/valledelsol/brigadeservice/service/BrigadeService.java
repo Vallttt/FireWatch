@@ -121,6 +121,11 @@ public class BrigadeService {
 
 
     private void validateBrigadeInsideZone(UUID zoneId, Double latitude, Double longitude) {
+        // La zona es opcional: una brigada puede no tener zona asignada.
+        if (zoneId == null) {
+            return;
+        }
+
         ZoneResponseDTO zone = zoneClient.findById(zoneId);
 
         Geometry zoneGeometry = geoJsonToGeometry(zone.getGeoJson());
@@ -131,7 +136,12 @@ public class BrigadeService {
                 new Coordinate(longitude, latitude)
         );
 
-        if (!zoneGeometry.contains(brigadePoint)) {
+        // covers() en vez de contains(): contains() rechaza un punto que cae
+        // justo sobre el borde de la zona. buffer(0) normaliza la geometría y
+        // una tolerancia pequeña (~50 m) absorbe la imprecisión del marcador
+        // colocado sobre el mapa, para no rechazar brigadas que están al borde.
+        double toleranciaGrados = 0.0005; // ~50 m
+        if (!zoneGeometry.buffer(0).buffer(toleranciaGrados).covers(brigadePoint)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "La brigada debe estar dentro de la zona asignada"

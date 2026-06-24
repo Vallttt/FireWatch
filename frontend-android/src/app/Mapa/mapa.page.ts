@@ -619,13 +619,23 @@ export class MapaPage implements OnInit {
       return;
     }
 
+    // La brigada se ubica en el centro de la zona seleccionada, así siempre
+    // queda dentro de su polígono (el backend valida que la brigada esté en
+    // su zona). Antes se mandaban coordenadas fijas que casi nunca caían
+    // dentro de la zona dibujada y el backend rechazaba con 400.
+    const centro = this.getZoneCenter(this.newBrigadaZoneId);
+    if (!centro) {
+      await this.showToast('No se pudo ubicar la zona seleccionada.', 'danger');
+      return;
+    }
+
     // Attempt to create in backend
     this.geoService.createBrigade({
       name: nombre,
       institution: 'Valle del Sol',
       status: 'AVAILABLE',
-      latitude: -33.46,
-      longitude: -70.65,
+      latitude: centro.lat,
+      longitude: centro.lng,
       zoneId: this.newBrigadaZoneId
     }).subscribe({
       next: (res) => {
@@ -645,6 +655,19 @@ export class MapaPage implements OnInit {
         this.showToast('Error al crear brigada. Verifica tu conexión.', 'danger');
       }
     });
+  }
+
+  /** Centro (de los bounds) del polígono de una zona, para ubicar brigadas dentro de ella. */
+  private getZoneCenter(zoneId: string): { lat: number; lng: number } | null {
+    const zone = this.backendZones.find(z => z.id === zoneId);
+    if (!zone || !zone.geoJson) return null;
+    try {
+      const geo = JSON.parse(zone.geoJson);
+      const center = L.geoJSON(geo).getBounds().getCenter();
+      return { lat: center.lat, lng: center.lng };
+    } catch {
+      return null;
+    }
   }
 
   async deleteBrigade(brigada: any) {

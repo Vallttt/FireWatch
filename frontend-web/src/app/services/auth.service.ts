@@ -83,7 +83,7 @@ export class AuthService {
 
   private authUrl = `${environment.apiGateway}/auth`;
   private usersUrl = `${environment.apiGateway}/api/users`;
-  private passwordUrl = `${environment.apiGateway}/api/auth/password`;
+  private passwordUrl = `${environment.apiGateway}/api/users/password`;
 
   // ✅ BehaviorSubject para notificar cambios de estado de autenticación
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.isLoggedIn());
