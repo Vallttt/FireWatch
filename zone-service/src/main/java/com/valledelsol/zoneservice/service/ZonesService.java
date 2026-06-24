@@ -53,10 +53,10 @@ public class ZonesService {
             Geometry mainGeometry = geoJsonToGeometry(mainZone.getGeoJson());
             Geometry newGeometry = geoJsonToGeometry(zoneRequestDTO.getGeoJson());
 
-            if (!mainGeometry.contains(newGeometry)) {
+            if (!seSolapaConRegionPrincipal(mainGeometry, newGeometry)) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
-                        "La zona debe estar dentro de la zona principal"
+                        "La zona debe solaparse con la región principal"
                 );
             }
         }
@@ -71,6 +71,18 @@ public class ZonesService {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "GeoJSON inválido");
         }
+    }
+
+    /**
+     * Verifica que la zona operativa se solape con la región principal.
+     *
+     * Usa intersects(): basta con que la zona comparta área con la región
+     * principal — no necesita estar totalmente contenida. Así se permiten
+     * zonas grandes que cruzan el borde de la región. buffer(0) normaliza
+     * geometrías inválidas (auto-intersecciones) antes de comparar.
+     */
+    private boolean seSolapaConRegionPrincipal(Geometry main, Geometry candidate) {
+        return main.buffer(0).intersects(candidate.buffer(0));
     }
 
     public List<ZoneResponseDTO> findAll(){
@@ -155,10 +167,10 @@ public class ZonesService {
         Geometry mainGeometry = geoJsonToGeometry(mainZone.getGeoJson());
         Geometry newGeometry = geoJsonToGeometry(zoneRequestDTO.getGeoJson());
 
-        if (!mainGeometry.contains(newGeometry)) {
+        if (!seSolapaConRegionPrincipal(mainGeometry, newGeometry)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "La zona debe estar dentro de la zona principal"
+                    "La zona debe solaparse con la región principal"
             );
         }
     }
